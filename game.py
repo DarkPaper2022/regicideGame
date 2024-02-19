@@ -3,16 +3,17 @@ from typing import List,Union,Deque
 from queue import Queue as LockQueue
 from messageDefine import MESSAGE,DATATYPE
 from myLogger import logger
+from enum import Enum
 import random
 import asyncio
 import math
 import web_pipe_ver
 
-
-colorC = 0
-colorD = 1
-colorH = 2
-colorS = 3
+class COLOR(Enum)
+    colorC = 0
+    colorD = 1
+    colorH = 2
+    colorS = 3
 colorSet = (colorC,colorD,colorH,colorS)
 
 class BOSS:
@@ -20,7 +21,7 @@ class BOSS:
         self.name = name
         self.atk = 5 + 5*((name % 13) - 10)
         self.hp = 2 * self.atk
-        self.color = math.floor(name / 13)
+        self.color = COLOR(math.floor(name / 13))
     def hurt(self,cnt):  #return if were just killed
         self.hp = self.hp - cnt
     def weak(self,cnt):
@@ -41,6 +42,7 @@ class GAME:
     discard     = E F G H   (not ordered)   
     """
     #TODO 聊天列表
+    currentBoss:BOSS
     playerList:List[PLAYER]
     discardHeap:Deque[int]
     atkHeap:Deque[int]
@@ -109,26 +111,21 @@ class GAME:
         cardColors = []
         if len(cards) == 0:
             return
-        elif len(cards) == 1:
-            card = cards[0]
-            cardColor = math.floor (card / 13)
-            cardColors.append(cardColor)
-            cardNum = card % 13
         else:
             cardNum = sum((card % 13) for card in cards)
-            cardColors = [math.floor (card / 13) for card in cards]
+            cardColors = [COLOR(math.floor(card / 13)) for card in cards]
             #重复问题
             #顺序问题
         for cardColor in cardColors:
             if cardColor == self.currentBoss.color:
                 continue
-            if cardColor == colorC:
+            if cardColor == COLOR.colorC:
                 self.weaken(cardNum)
-            elif cardColor == colorD:
+            elif cardColor == COLOR.colorD:
                 self.getCard_cardHeap(cardNum)
-            elif cardColor == colorH:
+            elif cardColor == COLOR.colorH:
                 self.update_cardHeap(cardNum)
-            elif cardColor == colorS:
+            elif cardColor == COLOR.colorS:
                 self.atkBoss(cardNum)
             else:
                 raise ValueError("Wrong card color")            
@@ -219,15 +216,15 @@ class GAME:
     def startGame(self):
         self.bossHeap = deque()
         for num in [11,12,13]:
-            for color in random.sample(colorSet, 4):
+            for color in random.sample(list(COLOR), 4):
                 # maybe only card as arg is more readable
-                self.bossHeap.append(BOSS(color*13+num))
+                self.bossHeap.append(BOSS(color.value*13+num))
         self.currentBoss = self.bossHeap.popleft()
 
         self.cardHeap = deque()
-        for color in colorSet:
+        for color in list(COLOR):
             for i in range(1,11):
-                self.cardHeap.append(color*13 + i)
+                self.cardHeap.append(color.value*13 + i)
         self.cardHeap.append(53)
         self.cardHeap.append(54)
         random.shuffle(self.cardHeap)
