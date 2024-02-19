@@ -14,12 +14,11 @@ class COLOR(Enum)
     colorD = 1
     colorH = 2
     colorS = 3
-colorSet = (colorC,colorD,colorH,colorS)
 
 class BOSS:
     def __init__(self,name):
         self.name = name
-        self.atk = 5 + 5*((name % 13) - 10)
+        self.atk = 10 + 5*((name % 13) - 10)
         self.hp = 2 * self.atk
         self.color = COLOR(math.floor(name / 13))
     def hurt(self,cnt):  #return if were just killed
@@ -112,7 +111,7 @@ class GAME:
         if len(cards) == 0:
             return
         else:
-            cardNum = sum((card % 13) for card in cards)
+            cardNum = sum((card % 13 + 1) for card in cards)
             cardColors = [COLOR(math.floor(card / 13)) for card in cards]
             #重复问题
             #顺序问题
@@ -137,13 +136,14 @@ class GAME:
         self.currentPlayer.deleteCards(cards)
         for card in cards:
             self.atkHeap.appendleft(card)
-        if (len(cards) == 1 and (cards[0] == 53 or cards[0] == 54)):
+        if (len(cards) == 1 and (cards[0] == 53 or cards[0] == 52)):
             return self.joker()
         else:
             self.atkRound_legalCards_withoutJoker(cards)
             return None
     def defendRound(self):
         cards = self.ioGetCards()
+        #TODO:失败逻辑混乱
         if sum(self.currentPlayer.cards) < self.currentBoss.atk:
             self.fail()
         elif self.leagalDeffendCards(cards):
@@ -166,8 +166,10 @@ class GAME:
         return
 
     def legalAtkCards(self,cards:List[int]) -> bool:
+        #TODO
         return True
     def leagalDeffendCards(self,cards:List[int]) -> bool:
+        #TODO
         return True
 
     """
@@ -215,15 +217,14 @@ class GAME:
                 self.changePlayer(nextPlayer)          
     def startGame(self):
         self.bossHeap = deque()
-        for num in [11,12,13]:
+        for num in [10,11,12]:
             for color in random.sample(list(COLOR), 4):
-                # maybe only card as arg is more readable
                 self.bossHeap.append(BOSS(color.value*13+num))
         self.currentBoss = self.bossHeap.popleft()
 
         self.cardHeap = deque()
         for color in list(COLOR):
-            for i in range(1,11):
+            for i in range(10):
                 self.cardHeap.append(color.value*13 + i)
         self.cardHeap.append(53)
         self.cardHeap.append(54)
