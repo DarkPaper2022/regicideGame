@@ -49,7 +49,7 @@ class GAME:
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
 
-        #这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是随机给的
+        #这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
         self.playerList = []
         for player_num in range(self.playerTotalNum):
             self.playerList.append(PLAYER(player_num))
@@ -135,9 +135,7 @@ class GAME:
         self.atkBoss(cardNum)
         self.bossKilledCheck()
         return   
-    """
-    return None or PlayerIndex
-    """
+    #return None or PlayerIndex
     def atkRound_leagalCards(self, cards:List[int]) -> Union[int, None]:
         self.currentPlayer.deleteCards(cards)
         for card in cards:
