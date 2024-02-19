@@ -1,11 +1,10 @@
 import socket
 import threading
 import uuid
-import web_pipe_ver
 import random
 from myLogger import logger
 from typing import List,Any
-from web_pipe_ver import WEB
+from webSystem import WEB
 from messageDefine import MESSAGE,DATATYPE
 from dataclasses import dataclass
 from errorDefine import AuthError,MessageFormatError

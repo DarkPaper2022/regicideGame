@@ -7,9 +7,9 @@ from enum import Enum
 import random
 import asyncio
 import math
-import web_pipe_ver
+from webSystem import WEB
 
-class COLOR(Enum)
+class COLOR(Enum):
     colorC = 0
     colorD = 1
     colorH = 2
@@ -21,7 +21,7 @@ class BOSS:
         self.atk = 10 + 5*((name % 13) - 10)
         self.hp = 2 * self.atk
         self.color = COLOR(math.floor(name / 13))
-    def hurt(self,cnt):  #return if were just killed
+    def hurt(self,cnt): 
         self.hp = self.hp - cnt
     def weak(self,cnt):
         self.atk = self.atk - cnt if self.atk >= cnt else 0
@@ -45,7 +45,7 @@ class GAME:
     playerList:List[PLAYER]
     discardHeap:Deque[int]
     atkHeap:Deque[int]
-    web:web_pipe_ver.WEB
+    web:WEB
     def __init__(self, maxPlayer, web):
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
