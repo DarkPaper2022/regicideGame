@@ -166,7 +166,7 @@ cython_debug/
 temp/
 
 #log
-example.log
+*.log
 
 #API document
 *.pdf
