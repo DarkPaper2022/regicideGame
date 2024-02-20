@@ -101,6 +101,8 @@ class TCP_CLIENT:
                 logger.info("A card Message")
             elif dataType == DATATYPE.speak:
                 messageData = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
+            elif dataType == DATATYPE.confirmJoker:
+                messageData = int(l[1].strip())
             else:
                 messageData = None
         except:

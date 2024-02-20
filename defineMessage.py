@@ -13,6 +13,7 @@ class DATATYPE(Enum):
     exception = 7
     logInSuccess = 8 #to client
     speak = 9
+    confirmJoker = 10
 
 @dataclass(frozen=True)
 class MESSAGE:

@@ -90,7 +90,7 @@ class GAME:
     def __init__(self, maxPlayer, web):
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
-
+        self.talkings = TALKING()
         self.talkableFlag = False
         self.overFlag = False
         self.startFlag = False
@@ -134,11 +134,7 @@ class GAME:
             self.discardHeap = deque(discardHeapList[cnt+1:])
 
     def joker(self) -> int:
-        self.talkableFlag = True
-
-        self.talkableFlag = False
-        return 
-        #TODO
+        return self.ioGetJokerNum()
 
     def atkRound(self) ->  Union[int, None]:
         while True:
@@ -291,13 +287,13 @@ class GAME:
         retMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.answerStatus, data=state)
         self.mainSend(retMessage)
     def ioSendTalkings(self, playerIndex:int):
-        talking = ""
+        talking = self.talkings.get()
         retMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.answerTalking, data=talking)
         self.mainSend(retMessage)
     def ioSendException(self, playerIndex:int, exceptStr:str):
         exceptMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=exceptStr)
         self.mainSend(exceptMessage) 
-    def readSeprator(self, expected:DATATYPE):
+    def readSeprator(self, expected:List[DATATYPE]):
         #ret：此函数保证一定可以返回合适类型的信息
         while True:
             message = self.mainRead()
@@ -307,23 +303,31 @@ class GAME:
             elif message.dataType == DATATYPE.askTalking:
                 self.ioSendTalkings(message.player)
                 continue
-            elif message.dataType != expected:
+            elif message.dataType not in expected:
                 self.ioSendException(message.player, "我现在不要这种的信息啊岂可修")
                 continue
             else:
                 return message
     def ioGetStartSignal(self) -> GAME_SETTINGS:
-        message = self.readSeprator(DATATYPE.startSignal)
+        message = self.readSeprator([DATATYPE.startSignal])
         return message.data
     def ioGetCards(self) -> List[int]:
         while True:
-            messgae = self.readSeprator(DATATYPE.card)
+            messgae = self.readSeprator([DATATYPE.card])
             try:
                 return messgae.data
             except:
                 self.ioSendException(messgae.player, "卡牌格式错误")
                 continue
-
+    def ioGetJokerNum(self) -> int:
+        while True:
+            messgae = self.readSeprator([DATATYPE.speak, DATATYPE.confirmJoker])
+            if messgae.dataType == DATATYPE.speak:
+                self.talkings.insert(messgae.data)
+            else:
+                if messgae.player != self.currentPlayer.num:
+                    self.ioSendException(messgae.player, "这事儿您可说了不算")
+                return messgae.data
     
 
     def mainRead(self) -> MESSAGE:
@@ -333,5 +337,3 @@ class GAME:
     def mainSend(self,message:MESSAGE):
         logger.info("SEND:" + message.dataType.name + str(message.data))
         self.web.gameSendMessage(message)
-
-
