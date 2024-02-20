@@ -236,7 +236,7 @@ class GAME:
             for i in range(10):
                 self.cardHeap.append(color.value*13 + i)
         self.cardHeap.append(53)
-        self.cardHeap.append(54)
+        self.cardHeap.append(52)
         random.shuffle(self.cardHeap)
         self.discardHeap = deque()
         self.atkHeap = deque()
