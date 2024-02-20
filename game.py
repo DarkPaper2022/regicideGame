@@ -135,7 +135,7 @@ class GAME:
 
     def joker(self) -> int:
         self.talkableFlag = True
-        
+
         self.talkableFlag = False
         return 
         #TODO
@@ -294,22 +294,11 @@ class GAME:
         talking = ""
         retMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.answerTalking, data=talking)
         self.mainSend(retMessage)
-    def ioGetStartSignal(self) -> GAME_SETTINGS:
-        message = self.readSeprator(DATATYPE.startSignal)
-        return message.data
-    def ioGetCards(self) -> List[int]:
-        while True:
-            messgae = self.readSeprator(DATATYPE.card)
-            try:
-                return messgae.data
-            except:
-                self.ioSendException(messgae.player, "卡牌格式错误")
-                continue
     def ioSendException(self, playerIndex:int, exceptStr:str):
         exceptMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=exceptStr)
         self.mainSend(exceptMessage) 
-    #ret：此函数保证一定可以返回合适类型的信息
     def readSeprator(self, expected:DATATYPE):
+        #ret：此函数保证一定可以返回合适类型的信息
         while True:
             message = self.mainRead()
             if message.dataType == DATATYPE.askStatus:
@@ -323,6 +312,20 @@ class GAME:
                 continue
             else:
                 return message
+    def ioGetStartSignal(self) -> GAME_SETTINGS:
+        message = self.readSeprator(DATATYPE.startSignal)
+        return message.data
+    def ioGetCards(self) -> List[int]:
+        while True:
+            messgae = self.readSeprator(DATATYPE.card)
+            try:
+                return messgae.data
+            except:
+                self.ioSendException(messgae.player, "卡牌格式错误")
+                continue
+
+    
+
     def mainRead(self) -> MESSAGE:
         message:MESSAGE = self.web.gameGetMessage()
         logger.info("READ:" + message.dataType.name + str(message.data))
