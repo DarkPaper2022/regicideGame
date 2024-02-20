@@ -2,10 +2,11 @@ import socket
 import threading
 import uuid
 import random
+import time
 from myLogger import logger
-from typing import List,Any
+from typing import List,Any,Tuple
 from webSystem import WEB
-from defineMessage import MESSAGE,DATATYPE
+from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError
 
@@ -19,6 +20,7 @@ class TCP_CLIENT:
     clientAddr:Any
     playerIndex:int
     playerCookie:uuid.UUID
+    userName:str    #be careful, once initialized it should never be changed 
     web:WEB
     def __init__(self, clientSocket, clientAddr, web) -> None:
         self.clientAddr = clientAddr
@@ -31,6 +33,7 @@ class TCP_CLIENT:
     #and it will start the other two thread, the children will release the socket on their own
     def authThread(self):
         print(f"Accepted connection from {self.clientAddr}")
+        username = ""
         while True:
             self.clientSocket.send(b"Username and Password, plz")
             data = self.clientSocket.recv(1024)
@@ -41,11 +44,13 @@ class TCP_CLIENT:
             l = data.strip().split(b" ")
             try:
                 self.playerCookie, self.playerIndex = self.web.register(playerName=l[0].decode("utf-8"), password=l[1].decode("utf-8"))
+                username = l[0].decode("utf-8")
                 break
             except AuthError as e:
                 self.clientSocket.send(str(e).encode())
             except Exception as e:
                 self.clientSocket.send("Wrong Format Username and Password: 你在乱输什么啊\n".encode())
+        self.userName = username
         recvThread = threading.Thread(target=self.recvThreadFunc)
         sendThread = threading.Thread(target=self.sendThreadFunc)
         recvThread.start()
@@ -91,22 +96,33 @@ class TCP_CLIENT:
         try:
             l = [line.strip() for line in data.strip().split(b'#')]
             dataType = DATATYPE(int(l[0].decode()))
-            messgaeData:Any = None
             if dataType == DATATYPE.card:
-                messgaeData = [int(card.decode()) for card in l[1].split(b" ")]
+                messageData = [int(card.decode()) for card in l[1].split(b" ")]
                 logger.info("A card Message")
+            elif dataType == DATATYPE.speak:
+                messageData = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
+            else:
+                messageData = None
         except:
             self.clientSocket.send("Wrong Format Mesasge: 你在乱输什么啊\n".encode())
             raise MessageFormatError("Fuck you!")
-        message = MESSAGE(self.playerIndex, dataType, messgaeData)
+        message = MESSAGE(self.playerIndex, dataType, messageData)
         return message
     def messageToData(self, message:MESSAGE) -> bytes:
-        if (message.dataType == DATATYPE.answerStatus):
+        if message.dataType == DATATYPE.answerStatus:
             flag, status = message.data
             if flag:
                 messageData = str(status)
             else:
-                messageData = "没开呢，别急\n" 
+                messageData = "没开呢，别急\n"
+        elif message.dataType == DATATYPE.answerTalking:
+            messageData = ""
+            talkings:Tuple[TALKING_MESSAGE,...] = message.data
+            for line in talkings:
+                timeStr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(line.time))
+                nameStr = line.userName
+                talkStr = line.message
+                messageData += (timeStr+nameStr+"\n\t"+talkStr)
         elif (message.data == None):
             messageData = ""
         else:

@@ -1,11 +1,11 @@
 from collections import deque
-from typing import List,Union,Deque
+from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
-from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS,GAME_SETTINGS
+from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS,GAME_SETTINGS,TALKING_MESSAGE
 from defineError import CardError
 from defineColor import COLOR
 from myLogger import logger
-from enum import Enum
+from dataclasses import dataclass
 import random
 import asyncio
 import math
@@ -34,6 +34,20 @@ class PLAYER:
     def deleteCards(self,cards:List[int]):
         for card in cards:
             self.cards.remove(card)
+
+class TALKING:
+    messages:Deque[TALKING_MESSAGE]
+    def __init__(self) -> None:
+        self.messages = deque(maxlen=100)
+    def insert(self, message:TALKING_MESSAGE):
+        if self.messages[0].time < message.time:
+            self.messages.appendleft(message)
+        else:
+            #TODO: maybe a little sort ?
+            self.messages.appendleft(message)
+    def get(self) -> Tuple[TALKING_MESSAGE,...]:
+        return tuple(self.messages)
+
 
 class GAME:
     """
@@ -77,9 +91,9 @@ class GAME:
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
 
-
-        self.overflag = False
-        self.startflag = False
+        self.talkableFlag = False
+        self.overFlag = False
+        self.startFlag = False
         self.web = web
 
     def getCard_cardHeap(self, cnt):
@@ -120,7 +134,10 @@ class GAME:
             self.discardHeap = deque(discardHeapList[cnt+1:])
 
     def joker(self) -> int:
-        pass
+        self.talkableFlag = True
+        
+        self.talkableFlag = False
+        return 
         #TODO
 
     def atkRound(self) ->  Union[int, None]:
@@ -210,12 +227,12 @@ class GAME:
         while True:
             self.ioSendStatus(self.currentPlayer.num)
             nextPlayer = self.atkRound()
-            if self.overflag:
+            if self.overFlag:
                 return
             if nextPlayer == None:
                 self.ioSendStatus(self.currentPlayer.num)
                 self.defendRound()
-                if self.overflag:
+                if self.overFlag:
                     return
                 self.changePlayer((self.currentPlayer.num + 1) % self.playerTotalNum)
             else:
@@ -244,7 +261,7 @@ class GAME:
         self.discardHeap = deque()
         self.atkHeap = deque()
         self.getCard_cardHeap(self.playerTotalNum * self.maxHandSize)
-        self.startflag = True
+        self.startFlag = True
         return         
 
     def changePlayer(self,playerIndex:int) -> None:
@@ -253,24 +270,24 @@ class GAME:
 
     def congratulations(self):
         print("YOU ARE SO NB, BOYS!")
-        self.overflag = True
+        self.overFlag = True
     def fail(self):
         print("LET'S TRY IT AGAIN, BOYS")
-        self.overflag = True
+        self.overFlag = True
 
 
 
 
 
     def ioSendStatus(self, playerIndex:int):
-        if self.startflag:
-            state = (self.startflag,
+        if self.startFlag:
+            state = (self.startFlag,
                      STATUS(
                         yourCards=tuple(self.playerList[playerIndex].cards), 
                         currentBoss=self.currentBoss.final(),
                         elsedata=1))
         else:
-            state = (self.startflag, None)
+            state = (self.startFlag, None)
         retMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.answerStatus, data=state)
         self.mainSend(retMessage)
     def ioSendTalkings(self, playerIndex:int):

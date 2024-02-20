@@ -12,6 +12,7 @@ class DATATYPE(Enum):
     startSignal = 6
     exception = 7
     logInSuccess = 8 #to client
+    speak = 9
 
 @dataclass(frozen=True)
 class MESSAGE:
@@ -69,3 +70,9 @@ class STATUS:
 @dataclass(frozen=True)
 class GAME_SETTINGS:
     playerNames:Tuple[str,...]
+
+@dataclass(frozen=True)
+class TALKING_MESSAGE:
+    time:float
+    userName:str
+    message:str
