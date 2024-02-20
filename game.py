@@ -293,8 +293,9 @@ class GAME:
     def ioSendException(self, playerIndex:int, exceptStr:str):
         exceptMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=exceptStr)
         self.mainSend(exceptMessage) 
-    def readSeprator(self, expected:List[DATATYPE]):
+    def datatypeSeprator(self, expected:DATATYPE):
         #ret：此函数保证一定可以返回合适类型的信息
+        #TODO:是否要支持针对playerIndex的复杂筛选
         while True:
             message = self.mainRead()
             if message.dataType == DATATYPE.askStatus:
@@ -303,17 +304,31 @@ class GAME:
             elif message.dataType == DATATYPE.askTalking:
                 self.ioSendTalkings(message.player)
                 continue
-            elif message.dataType not in expected:
+            elif message.dataType != expected:
                 self.ioSendException(message.player, "我现在不要这种的信息啊岂可修")
                 continue
             else:
                 return message
+    def mixSeperator(self, expected:List[Tuple[int,DATATYPE]]):
+        while True:
+            message = self.mainRead()
+            if message.dataType == DATATYPE.askStatus:
+                self.ioSendStatus(message.player)
+                continue
+            elif message.dataType == DATATYPE.askTalking:
+                self.ioSendTalkings(message.player)
+                continue
+            elif (message.player, message.dataType) not in expected:
+                self.ioSendException(message.player, "我现在不要这种的信息啊岂可修")
+                continue
+            else:
+                return message       
     def ioGetStartSignal(self) -> GAME_SETTINGS:
-        message = self.readSeprator([DATATYPE.startSignal])
+        message = self.datatypeSeprator(DATATYPE.startSignal)
         return message.data
     def ioGetCards(self) -> List[int]:
         while True:
-            messgae = self.readSeprator([DATATYPE.card])
+            messgae = self.datatypeSeprator(DATATYPE.card)
             try:
                 return messgae.data
             except:
@@ -321,13 +336,15 @@ class GAME:
                 continue
     def ioGetJokerNum(self) -> int:
         while True:
-            messgae = self.readSeprator([DATATYPE.speak, DATATYPE.confirmJoker])
-            if messgae.dataType == DATATYPE.speak:
-                self.talkings.insert(messgae.data)
+            l:List[Tuple[int,DATATYPE]] = [(i,DATATYPE.speak) for i in range(4)] 
+            l = l + [(-1,DATATYPE.startSignal)]
+            message = self.mixSeperator(l)
+            if message.dataType == DATATYPE.speak:
+                self.talkings.insert(message.data)
             else:
-                if messgae.player != self.currentPlayer.num:
-                    self.ioSendException(messgae.player, "这事儿您可说了不算")
-                return messgae.data
+                if message.player != self.currentPlayer.num:
+                    self.ioSendException(message.player, "这事儿您可说了不算")
+                return message.data
     
 
     def mainRead(self) -> MESSAGE:

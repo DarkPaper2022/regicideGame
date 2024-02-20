@@ -41,12 +41,15 @@ class WEB:
         logger.info("get a message")
         return message
     def gameSendMessage(self, message:MESSAGE):
-        player = self.players[message.player]
-        if player == None:
-            pass
-            #TODO
+        if message.player == -1:
+            print(message.data)
         else:
-            player.playerQueue.put(message)
+            player = self.players[message.player]
+            if player == None:
+                pass
+                #TODO
+            else:
+                player.playerQueue.put(message)
         return
     def playerGetMessage(self, playerIndex:int, cookie:uuid.UUID)->MESSAGE:
         #cookie check
