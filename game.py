@@ -1,20 +1,16 @@
 from collections import deque
 from typing import List,Union,Deque
 from queue import Queue as LockQueue
-from messageDefine import MESSAGE,DATATYPE
+from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS
+from defineError import CardError
+from defineColor import COLOR
 from myLogger import logger
 from enum import Enum
-from messageDefine import STATUS,FROZEN_BOSS
 import random
 import asyncio
 import math
 from webSystem import WEB
 
-class COLOR(Enum):
-    colorC = 0
-    colorD = 1
-    colorH = 2
-    colorS = 3
 
 class BOSS:
     color:Union[COLOR,None]
@@ -110,8 +106,11 @@ class GAME:
     def atkRound(self) ->  Union[int, None]:
         while True:
             cards = self.ioGetCards()
-            if self.legalAtkCards(cards):
+            try:
+                self.legalAtkCards(cards)
                 break
+            except CardError as e:
+                self.ioSendException(self.currentPlayer.num, str(e))
         return self.atkRound_leagalCards(cards)   
     def atkRound_legalCards_withoutJoker(self, cards:List[int]) -> None:
         cardColors = []

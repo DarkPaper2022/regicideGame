@@ -5,9 +5,9 @@ import random
 from myLogger import logger
 from typing import List,Any
 from webSystem import WEB
-from messageDefine import MESSAGE,DATATYPE
+from defineMessage import MESSAGE,DATATYPE
 from dataclasses import dataclass
-from errorDefine import AuthError,MessageFormatError
+from defineError import AuthError,MessageFormatError
 
 
 
@@ -101,8 +101,17 @@ class TCP_CLIENT:
         message = MESSAGE(self.playerIndex, dataType, messgaeData)
         return message
     def messageToData(self, message:MESSAGE) -> bytes:
-        messageData = str(message.data)
-        data:bytes = message.dataType.name.encode() + messageData.encode() + b"\n"
+        if (message.dataType == DATATYPE.answerStatus):
+            flag, status = message.data
+            if flag:
+                messageData = str(status)
+            else:
+                messageData = "没开呢，别急\n" 
+        elif (message.data == None):
+            messageData = ""
+        else:
+            messageData = str(message.data)
+        data:bytes = message.dataType.name.encode() +b"\n"+ messageData.encode()
         return data
 
 class TCP_SERVER:

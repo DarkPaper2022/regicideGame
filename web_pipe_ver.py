@@ -5,11 +5,11 @@ import os
 import subprocess
 import uuid
 from dataclasses import dataclass
-from messageDefine import MESSAGE,DATATYPE
+from defineMessage import MESSAGE,DATATYPE
 from queue import Queue as LockQueue
 from collections import deque
 from typing import List,Union
-from errorDefine import AuthError
+from defineError import AuthError
 from myLogger import logger
 
 
