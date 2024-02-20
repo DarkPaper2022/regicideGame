@@ -107,12 +107,12 @@ class GAME:
         while True:
             cards = self.ioGetCards()
             try:
-                self._atkRoundLegalCards(cards)
+                self._atkRoundCheckLegalCards(cards)
                 break
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
-        return self._atkRoundLeagalCards(cards)   
-    def _atkRoundLegalCardsWithoutJoker(self, cards:List[int]) -> None:
+        return self._atkRoundHandleLegalCards(cards)   
+    def _atkRoundHandleLegalCardsWithoutJoker(self, cards:List[int]) -> None:
         cardColors = []
         if len(cards) == 0:
             return
@@ -137,7 +137,7 @@ class GAME:
         self.atkBoss(cardNum)
         self.bossKilledCheck()
         return      
-    def _atkRoundLeagalCards(self, cards:List[int]) -> Union[int, None]:
+    def _atkRoundHandleLegalCards(self, cards:List[int]) -> Union[int, None]:
         #return None or PlayerIndex
         self.currentPlayer.deleteCards(cards)
         for card in cards:
@@ -145,9 +145,9 @@ class GAME:
         if (len(cards) == 1 and (cards[0] == 53 or cards[0] == 52)):
             return self.joker()
         else:
-            self._atkRoundLegalCardsWithoutJoker(cards)
+            self._atkRoundHandleLegalCardsWithoutJoker(cards)
             return None
-    def _atkRoundLegalCards(self,cards:List[int]) -> bool:
+    def _atkRoundCheckLegalCards(self,cards:List[int]) -> bool:
         #TODO
         return True
 
