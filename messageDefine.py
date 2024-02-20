@@ -1,6 +1,8 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any,List,Tuple,Union
+from game import COLOR            # that's bad?
 from enum import Enum
+import math
 class DATATYPE(Enum):
     askStatus = 1
     askTalking = 2
@@ -11,8 +13,7 @@ class DATATYPE(Enum):
     exception = 7
     logInSuccess = 8 #to client
 
-
-@dataclass
+@dataclass(frozen=True)
 class MESSAGE:
     player: int
     dataType: DATATYPE
@@ -20,4 +21,47 @@ class MESSAGE:
     card时，data 应为 List[int]
     """
     data: Any
+
+@dataclass(frozen=True)
+class FROZEN_BOSS:
+    name:int
+    atk:int
+    hp:int
+    color:Union[COLOR,None]
+    def __str__(self) -> str:
+        return f"""Boss
+    name:{cardToStr(self.name)}
+    atk:{self.atk}
+    hp:{self.hp}
+    免疫:{self.color}
+    """
+
+def cardsToStr(cards:Tuple[int,...]) -> str:
+    return ', '.join([str(card) for card in cards])
+def cardToStr(card:int) -> str:
+    if (card == 52):
+        return "小王"
+    elif (card == 53):
+        return "大王"
+    else:
+        num = card%13 + 1
+        numStr =    'A' if (num == 1) else\
+                    'J' if (num == 10) else\
+                    'Q' if (num == 11) else\
+                    'K' if (num == 12) else\
+                    str(num)
+        color = COLOR(math.floor(card / 13))
+        colorStr = color.name
+        return colorStr+numStr
+                    
+@dataclass
+class STATUS:
+    yourCards:Tuple[int,...]
+    currentBoss:FROZEN_BOSS
+    elsedata: Any
     
+    def __str__(self) -> str:
+        re:str = f"""{"YourCards"}:{cardsToStr(self.yourCards)}\n""" \
+                + str(self.currentBoss)
+        return re
+

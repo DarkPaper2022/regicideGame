@@ -4,6 +4,7 @@ from queue import Queue as LockQueue
 from messageDefine import MESSAGE,DATATYPE
 from myLogger import logger
 from enum import Enum
+from messageDefine import STATUS,FROZEN_BOSS
 import random
 import asyncio
 import math
@@ -16,11 +17,14 @@ class COLOR(Enum):
     colorS = 3
 
 class BOSS:
+    color:Union[COLOR,None]
     def __init__(self,name):
         self.name = name
         self.atk = 10 + 5*((name % 13) - 10)
         self.hp = 2 * self.atk
         self.color = COLOR(math.floor(name / 13))
+    def final(self):
+        return FROZEN_BOSS(self.name,self.atk,self.hp,self.color)
     def hurt(self,cnt): 
         self.hp = self.hp - cnt
     def weak(self,cnt):
@@ -39,6 +43,9 @@ class GAME:
     """
     card        = A B C D   (pop card here, ordered)
     discard     = E F G H   (not ordered)   
+    num = card%13 + 1
+    color = COLOR(math.floor(card / 13))
+    name = num + color * 13 - 1
     """
     #TODO 聊天列表
     currentBoss:BOSS
@@ -254,14 +261,13 @@ class GAME:
     #arg：预设self已经启动，未启动请另行io
     def ioSendStatus(self, playerIndex:int):
         if self.startflag:
-            state = f"""
-                boss.name == {self.currentBoss.name}
-                boss.atk  == {self.currentBoss.atk}
-                boss.hp   == {self.currentBoss.hp}
-                yourCard  == {self.currentPlayer.cards}
-                """
+            state = (self.startflag,
+                     STATUS(
+                        yourCards=tuple(self.playerList[playerIndex].cards), 
+                        currentBoss=self.currentBoss.final(),
+                        elsedata=1))
         else:
-            state = f"""还没开呢，别急"""
+            state = (self.startflag, None)
         retMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.answerStatus, data=state)
         self.mainSend(retMessage)
     def ioSendTalkings(self, playerIndex:int):
