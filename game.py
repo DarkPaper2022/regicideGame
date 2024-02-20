@@ -1,7 +1,7 @@
 from collections import deque
 from typing import List,Union,Deque
 from queue import Queue as LockQueue
-from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS
+from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS,GAME_SETTINGS
 from defineError import CardError
 from defineColor import COLOR
 from myLogger import logger
@@ -27,10 +27,10 @@ class BOSS:
         self.atk = self.atk - cnt if self.atk >= cnt else 0
 
 class PLAYER:
-    def __init__(self,num):
+    def __init__(self, num, userName:str):
         self.cards = []
         self.num = num
-        #self.upCards = []
+        self.userName = userName
     def deleteCards(self,cards:List[int]):
         for card in cards:
             self.cards.remove(card)
@@ -77,11 +77,7 @@ class GAME:
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
 
-        #这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
-        self.playerList = []
-        for player_num in range(self.playerTotalNum):
-            self.playerList.append(PLAYER(player_num))
-        self.currentPlayer = self.playerList[0]
+
         self.overflag = False
         self.startflag = False
         self.web = web
@@ -206,11 +202,11 @@ class GAME:
 
 
     def run(self):
-        self.ioGetStartSignal()
-        self.start()
+        settings = self.ioGetStartSignal()
+        self.start(settings)
 
-    def start(self):
-        self.startGame()
+    def start(self,settings:GAME_SETTINGS):
+        self.startGame(settings)
         while True:
             self.ioSendStatus(self.currentPlayer.num)
             nextPlayer = self.atkRound()
@@ -224,7 +220,14 @@ class GAME:
                 self.changePlayer((self.currentPlayer.num + 1) % self.playerTotalNum)
             else:
                 self.changePlayer(nextPlayer)          
-    def startGame(self):
+    def startGame(self,settings:GAME_SETTINGS):
+        #这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
+        self.playerList = []
+        for player_num in range(self.playerTotalNum):
+            self.playerList.append(PLAYER(player_num, settings.playerNames[player_num]))
+        self.currentPlayer = self.playerList[0]
+
+
         self.bossHeap = deque()
         for num in [10,11,12]:
             for color in random.sample(list(COLOR), 4):
@@ -274,8 +277,9 @@ class GAME:
         talking = ""
         retMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.answerTalking, data=talking)
         self.mainSend(retMessage)
-    def ioGetStartSignal(self):
+    def ioGetStartSignal(self) -> GAME_SETTINGS:
         message = self.readSeprator(DATATYPE.startSignal)
+        return message.data
     def ioGetCards(self) -> List[int]:
         while True:
             messgae = self.readSeprator(DATATYPE.card)

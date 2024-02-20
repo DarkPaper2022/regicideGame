@@ -5,11 +5,11 @@ import os
 import subprocess
 import uuid
 from dataclasses import dataclass
-from defineMessage import MESSAGE,DATATYPE
+from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS
+from defineError import AuthError,PlayerNumError
 from queue import Queue as LockQueue
 from collections import deque
 from typing import List,Union
-from defineError import AuthError
 from myLogger import logger
 
 
@@ -74,7 +74,12 @@ class WEB:
             self.players[playerIndex] = player
             player.playerQueue.put(MESSAGE(playerIndex, DATATYPE.logInSuccess, None))
             if (self.indexPool.empty()):
-                self.gameQueue.put(MESSAGE(-1, DATATYPE.startSignal, None))
+                #TODO:no exception Here
+                l = [player.playerName for player in self.players if player != None]
+                if len(l) != self.maxPlayer:
+                    raise PlayerNumError("PlayerNum Wrong, webSystem side caught")
+                self.gameQueue.put(MESSAGE(-1, DATATYPE.startSignal, 
+                                           GAME_SETTINGS(tuple(l))))
             return (id, playerIndex)
         else:
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")

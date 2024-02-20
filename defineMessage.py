@@ -66,3 +66,6 @@ class STATUS:
                 + str(self.currentBoss)
         return re
 
+@dataclass(frozen=True)
+class GAME_SETTINGS:
+    playerNames:Tuple[str,...]
