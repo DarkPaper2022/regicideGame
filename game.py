@@ -107,12 +107,12 @@ class GAME:
         while True:
             cards = self.ioGetCards()
             try:
-                self.legalAtkCards(cards)
+                self._atkRoundLegalCards(cards)
                 break
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
-        return self.atkRound_leagalCards(cards)   
-    def atkRound_legalCards_withoutJoker(self, cards:List[int]) -> None:
+        return self._atkRoundLeagalCards(cards)   
+    def _atkRoundLegalCardsWithoutJoker(self, cards:List[int]) -> None:
         cardColors = []
         if len(cards) == 0:
             return
@@ -136,17 +136,21 @@ class GAME:
                 raise ValueError("Wrong card color")            
         self.atkBoss(cardNum)
         self.bossKilledCheck()
-        return   
-    #return None or PlayerIndex
-    def atkRound_leagalCards(self, cards:List[int]) -> Union[int, None]:
+        return      
+    def _atkRoundLeagalCards(self, cards:List[int]) -> Union[int, None]:
+        #return None or PlayerIndex
         self.currentPlayer.deleteCards(cards)
         for card in cards:
             self.atkHeap.appendleft(card)
         if (len(cards) == 1 and (cards[0] == 53 or cards[0] == 52)):
             return self.joker()
         else:
-            self.atkRound_legalCards_withoutJoker(cards)
+            self._atkRoundLegalCardsWithoutJoker(cards)
             return None
+    def _atkRoundLegalCards(self,cards:List[int]) -> bool:
+        #TODO
+        return True
+
     def defendRound(self):
         cards = self.ioGetCards()
         #TODO:失败逻辑混乱
@@ -171,9 +175,7 @@ class GAME:
             self.currentBoss = self.bossHeap.popleft()
         return
 
-    def legalAtkCards(self,cards:List[int]) -> bool:
-        #TODO
-        return True
+
     def leagalDeffendCards(self,cards:List[int]) -> bool:
         #TODO
         return True

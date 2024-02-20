@@ -30,10 +30,10 @@ class WEB:
         self.indexPool = LockQueue()
         for i in range(maxPlayer):
             self.indexPool.put(i)
-    """
-    binding     playerQueue-playerIndex-cookie-playerName
-    cookie      playerName+password = cookie 
-    """
+        """
+        binding     playerQueue-playerIndex-cookie-playerName
+        cookie      playerName+password = cookie 
+        """
     def gameGetMessage(self) -> MESSAGE:
         #此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
         logger.info("wanting a meesgae")
@@ -64,8 +64,9 @@ class WEB:
         """
         password are needed
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
+        WARNING: PLZ, check should be threading SAFE
         """
-        checkBool:bool = self.check()
+        checkBool:bool = self._check()
         if checkBool:
             id = uuid.uuid4()
             playerIndex = self.indexPool.get()
@@ -77,7 +78,7 @@ class WEB:
             return (id, playerIndex)
         else:
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
-    def check(self) -> bool:
+    def _check(self) -> bool:
         #TODO
         return True
 
