@@ -180,7 +180,7 @@ class GAME:
         #TODO:失败逻辑混乱
         if sum(self.currentPlayer.cards) < self.currentBoss.atk:
             self.fail()
-        elif self.leagalDeffendCards(cards):
+        elif self._defendRoundCheckLegalCards(cards):
             self.currentPlayer.deleteCards(cards)
         else:
             raise ValueError("Wrong card selection")
@@ -200,7 +200,7 @@ class GAME:
         return
 
 
-    def leagalDeffendCards(self,cards:List[int]) -> bool:
+    def _defendRoundCheckLegalCards(self,cards:List[int]) -> bool:
         #TODO
         return True
 
@@ -243,6 +243,7 @@ class GAME:
         self.getCard_cardHeap(self.playerTotalNum * self.maxHandSize)
         self.startflag = True
         return         
+
     def changePlayer(self,playerIndex:int) -> None:
         self.currentPlayer = self.playerList[playerIndex]
         return
@@ -257,10 +258,7 @@ class GAME:
 
 
 
-    """
-    这些函数用来解包message
-    """
-    #arg：预设self已经启动，未启动请另行io
+
     def ioSendStatus(self, playerIndex:int):
         if self.startflag:
             state = (self.startflag,
