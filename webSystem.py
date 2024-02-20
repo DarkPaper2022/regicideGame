@@ -77,7 +77,7 @@ class WEB:
             self.players[playerIndex] = player
             player.playerQueue.put(MESSAGE(playerIndex, DATATYPE.logInSuccess, None))
             if (self.indexPool.empty()):
-                #TODO:no exception Here
+                #TODO:no exception the other side
                 l = [player.playerName for player in self.players if player != None]
                 if len(l) != self.maxPlayer:
                     raise PlayerNumError("PlayerNum Wrong, webSystem side caught")

@@ -81,7 +81,6 @@ class GAME:
 
         此时,用户发来(以函数参数的形式)同一的结构体格式(管道, 请求类型（str）,具体数据)
     """
-    #TODO 聊天列表
     currentBoss:BOSS
     playerList:List[PLAYER]
     discardHeap:Deque[int]
@@ -293,9 +292,8 @@ class GAME:
     def ioSendException(self, playerIndex:int, exceptStr:str):
         exceptMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=exceptStr)
         self.mainSend(exceptMessage) 
-    def datatypeSeprator(self, expected:DATATYPE):
+    def dataTypeSeprator(self, expected:DATATYPE):
         #ret：此函数保证一定可以返回合适类型的信息
-        #TODO:是否要支持针对playerIndex的复杂筛选
         while True:
             message = self.mainRead()
             if message.dataType == DATATYPE.askStatus:
@@ -324,11 +322,11 @@ class GAME:
             else:
                 return message       
     def ioGetStartSignal(self) -> GAME_SETTINGS:
-        message = self.datatypeSeprator(DATATYPE.startSignal)
+        message = self.dataTypeSeprator(DATATYPE.startSignal)
         return message.data
     def ioGetCards(self) -> List[int]:
         while True:
-            messgae = self.datatypeSeprator(DATATYPE.card)
+            messgae = self.dataTypeSeprator(DATATYPE.card)
             try:
                 return messgae.data
             except:
