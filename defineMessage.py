@@ -12,11 +12,12 @@ class DATATYPE(Enum):
     answerTalking = 4   #to client
     card = 5            #from client
     startSignal = 6     #none
-    exception = 7       #to client
-    logInSuccess = 8    #to client
+    exception = 7       #to client                  TODO:no str
+    logInSuccess = 8    #to client          
     speak = 9           #from client
     confirmJoker = 10   #from client
     overSignal = 11     #to client
+    gameTalk = 12       #to client                  TODO:no str
 
 @dataclass(frozen=True)
 class MESSAGE:

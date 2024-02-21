@@ -272,6 +272,7 @@ class GAME:
                 self.ioSendException(self.currentPlayer.num, str(e))
         self.currentPlayer.deleteCards(cards)
         
+        self.ioSendGameTalk(self.currentPlayer.num, "您全防住了\n")
         self.simpleChangePlayer()
         self.currentRound = ROUND.atk
         return
@@ -396,6 +397,9 @@ class GAME:
     def ioSendException(self, playerIndex:int, exceptStr:str):
         exceptMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=exceptStr)
         self.mainSend(exceptMessage) 
+    def ioSendGameTalk(self, playerIndex:int, gameTalkStr:str):
+        talkMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=gameTalkStr)
+        self.mainSend(talkMessage) 
     def ioSendOverSignal(self, isWin:bool):
         for i in range(self.playerTotalNum):
             overMessage:MESSAGE = MESSAGE(i, DATATYPE.overSignal, isWin)

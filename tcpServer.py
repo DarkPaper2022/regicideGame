@@ -124,6 +124,8 @@ class TCP_CLIENT:
         elif message.dataType == DATATYPE.answerTalking:
             messageData = ""
             talkings:Tuple[TALKING_MESSAGE,...] = message.data
+            if len(talkings) == 0:
+                messageData += "还没人说话呢,等joker了再说吧"
             for line in talkings:
                 timeStr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(line.time))
                 nameStr = line.userName
