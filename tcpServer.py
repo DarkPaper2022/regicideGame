@@ -153,7 +153,8 @@ class TCP_SERVER:
         try:
             self.server_socket.bind((self.SERVER_HOST, self.SERVER_PORT))
         except:
-            self.server_socket.bind((self.SERVER_HOST, self.SERVER_PORT + random.randint(1,200)))
+            self.SERVER_PORT += random.randint(1,200)
+            self.server_socket.bind((self.SERVER_HOST, self.SERVER_PORT))
         self.server_socket.listen(5)
         print(f"Server listening on {self.SERVER_HOST}:{self.SERVER_PORT}")
         while True:
