@@ -144,9 +144,10 @@ class TCP_CLIENT:
     def _statusToStr(self, status:STATUS) -> str:
         cardHeapLengthStr:str = f"牌堆还剩{status.cardHeapLength}张牌\n"
         discardHeapLengthStr = f"弃牌堆有{status.discardHeapLength}张牌\n"
-        defeatedBossesStr = f"您已经打败了{cardsToStr(status.defeatedBosses)},还有{12 - len(status.defeatedBosses)}个哦"
-        currentPlayerStr = "该怎么搞由您说了算" if status.currentPlayerIndex == self.playerIndex else\
-                            f"""该怎么搞由您的{status.currentPlayerIndex}号队友"""
+        defeatedBossesStr = f"您已经打败了{(cardsToStr(status.defeatedBosses))},还有{12 - len(status.defeatedBosses)}个哦\n" \
+                            if len(status.defeatedBosses) != 0 else "还有12个boss要打哦\n"
+        currentPlayerStr = "该怎么搞由您说了算\n" if status.currentPlayerIndex == self.playerIndex else\
+                            f"""该怎么搞由您的{status.currentPlayerIndex}号位队友说了算\n"""
         currentRoundStr =   ("现在是攻击轮" if status.currentRound == ROUND.atk else\
                             "现在是防御轮" if status.currentRound == ROUND.defend else\
                             "现在joker生效了" if status.currentRound == ROUND.jokerTime else "现在是一个奇怪的轮次, 你不应该看见我的")        
@@ -160,7 +161,8 @@ class TCP_CLIENT:
     用户名:{player.playerName}
     手牌数目:{player.playerHandCardCnt}/{9 - status.totalPlayer}
     用户位置:{player.playerLocation}号位，你的{delta*"下"}家
-    """
+
+"""
         yourCardsStr = f"""{"YourCards"}:
         {cardsToStr(status.yourCards)}
     """

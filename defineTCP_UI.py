@@ -21,7 +21,8 @@ def cardToStr(card:int) -> str:
         colorStr = str(color)
         return colorStr+numStr+f"({str(card)})"
 def bossToStr(boss:FROZEN_BOSS) -> str:
-        return f"""Boss
+        return f"""
+Boss:
     name:{cardToStr(boss.name)}
     atk:{boss.atk}
     hp:{boss.hp}

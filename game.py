@@ -167,7 +167,7 @@ class GAME:
     def _atkRoundHandleLegalCardsWithoutJoker(self, cards:List[int]) -> None:
         if len(cards) == 0:
             self.currentRound = ROUND.defend
-            self.simpleChangePlayer()
+            #self.simpleChangePlayer() 不用改哦
             return
         else:
             cardNum = sum(cardToNum(card) for card in cards)
