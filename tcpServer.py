@@ -130,7 +130,7 @@ class TCP_CLIENT:
                 timeStr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(line.time))
                 nameStr = line.userName
                 talkStr = line.message
-                messageData += (timeStr+" "+nameStr+"说"+"\n\t"+talkStr + "\n")
+                messageData = (timeStr+" "+nameStr+"说"+"\n\t"+talkStr + "\n") + messageData
         elif message.dataType == DATATYPE.overSignal:
             isWin:bool = message.data
             if isWin:

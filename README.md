@@ -8,6 +8,7 @@
 ## TODO List
 - webSystem 中register部分的线程安全性保障,使用sql
 - 黑桃的无效化
+- 连续跳过
 - 中文支持
 - cookie的重用、game的重开、更多人的大厅与房间机制
     - cookie的重用 也即短线重连：
