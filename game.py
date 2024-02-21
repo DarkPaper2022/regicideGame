@@ -399,7 +399,7 @@ class GAME:
         exceptMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=exceptStr)
         self.mainSend(exceptMessage) 
     def ioSendGameTalk(self, playerIndex:int, gameTalkStr:str):
-        talkMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=gameTalkStr)
+        talkMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.gameTalk, data=gameTalkStr)
         self.mainSend(talkMessage) 
     def ioSendOverSignal(self, isWin:bool):
         for i in range(self.playerTotalNum):
