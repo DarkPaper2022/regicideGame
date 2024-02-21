@@ -41,7 +41,7 @@ class TALKING:
     def __init__(self) -> None:
         self.messages = deque(maxlen=100)
     def insert(self, message:TALKING_MESSAGE):
-        if self.messages[0].time < message.time:
+        if len(self.messages) == 0 or self.messages[0].time < message.time:
             self.messages.appendleft(message)
         else:
             #TODO: maybe a little sort ?
