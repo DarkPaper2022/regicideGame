@@ -4,16 +4,16 @@ from defineColor import COLOR
 from enum import Enum
 import math
 class DATATYPE(Enum):
-    askStatus = 1
-    askTalking = 2
+    askStatus = 1   #from client
+    askTalking = 2  #from client
     answerStatus = 3
     answerTalking = 4
     card = 5
     startSignal = 6
     exception = 7
-    logInSuccess = 8 #to client
-    speak = 9
-    confirmJoker = 10
+    logInSuccess = 8    #to client
+    speak = 9           #from client
+    confirmJoker = 10   #from client
 
 @dataclass(frozen=True)
 class MESSAGE:

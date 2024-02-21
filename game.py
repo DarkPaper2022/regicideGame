@@ -142,8 +142,9 @@ class GAME:
         while True:
             cards = self.ioGetCards()
             try:
-                self._atkRoundCheckLegalCards(cards)
-                break
+                check = self._atkRoundCheckLegalCards(cards)
+                if check:
+                    break
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
         return self._atkRoundHandleLegalCards(cards) 
