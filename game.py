@@ -267,6 +267,11 @@ class GAME:
 
 
     def _defendRoundCheckLegalCards(self,cards:List[int]) -> bool:
+        for card in cards:
+            if card not in self.currentPlayer.cards:
+                return False
+        if len(set(cards)) != len(cards):
+                return False 
         return (sum([cardToNum(card) for card in cards]) >= self.currentBoss.atk)
 
 
@@ -364,8 +369,8 @@ class GAME:
     def ioSendException(self, playerIndex:int, exceptStr:str):
         exceptMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=exceptStr)
         self.mainSend(exceptMessage) 
+    #ret:保证一定返回合适类型的信息
     def dataTypeSeprator(self, expected:DATATYPE):
-        #ret：此函数保证一定可以返回合适类型的信息
         while True:
             message = self.mainRead()
             if message.dataType == DATATYPE.askStatus:
@@ -379,6 +384,7 @@ class GAME:
                 continue
             else:
                 return message
+    #ret:保证一定返回合适类型、由合适人发来的消息
     def mixSeperator(self, expected:List[Tuple[int,DATATYPE]]):
         while True:
             message = self.mainRead()
@@ -393,6 +399,7 @@ class GAME:
                 continue
             else:
                 return message       
+    #ret:保证
     def ioGetStartSignal(self) -> GAME_SETTINGS:
         message = self.dataTypeSeprator(DATATYPE.startSignal)
         return message.data
@@ -404,6 +411,7 @@ class GAME:
             except:
                 self.ioSendException(messgae.player, "卡牌格式错误")
                 continue
+
     def ioGetJokerNum(self) -> int:
         while True:
             l:List[Tuple[int,DATATYPE]] = [(i,DATATYPE.speak) for i in range(4)] 
