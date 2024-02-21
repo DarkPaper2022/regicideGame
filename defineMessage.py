@@ -69,10 +69,16 @@ class STATUS:
     yourLocation:int
 
     yourCards:Tuple[int,...]
+    cardHeapLength:int
+    discardHeapLength:int
+    defeatedBosses:Tuple[int,...]
     currentBoss:FROZEN_BOSS
     players:Tuple[FROZEN_PLAYER,...]
     elsedata: Any
     def __str__(self) -> str:
+        cardHeapLengthStr:str = f"牌堆还剩{self.cardHeapLength}张牌\n"
+        discardHeapLengthStr = f"弃牌堆有{self.discardHeapLength}张牌\n"
+        defeatedBossesStr = f"您已经打败了{cardsToStr(self.defeatedBosses)},还有{12 - len(self.defeatedBosses)}个哦"
         playersStr:str = "您的队友:"
         for player in self.players:
             preDelta = player.playerLocation - self.yourLocation
@@ -80,7 +86,7 @@ class STATUS:
             #TODO:防御性编程
             playersStr += f"""
 用户名:{player.playerName}
-手牌数目:{player.playerHandCardCnt}/{self.totalPlayer}
+手牌数目:{player.playerHandCardCnt}/{9 - self.totalPlayer}
 用户位置:{player.playerLocation}号位，你的{delta*"下"}家
 """
         yourCardsStr = f"""{"YourCards"}:

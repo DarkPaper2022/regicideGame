@@ -82,6 +82,7 @@ class GAME:
 
         此时,用户发来(以函数参数的形式)同一的结构体格式(管道, 请求类型（str）,具体数据)
     """
+    discardBossHeap:Deque[int]
     currentBoss:BOSS
     playerList:List[PLAYER]
     discardHeap:Deque[int]
@@ -233,8 +234,10 @@ class GAME:
             return
         elif currentBoss.hp == 0:
             self.cardHeap.append(currentBoss.name)
+            self.discardBossHeap.append(currentBoss.name)
         else:
             self.discardHeap.appendleft(currentBoss.name)
+            self.discardBossHeap.append(currentBoss.name)
             self.discardHeap = self.atkHeap
         if len(self.bossHeap) == 0:
             self.congratulations()
@@ -289,6 +292,7 @@ class GAME:
         random.shuffle(self.cardHeap)
         self.discardHeap = deque()
         self.atkHeap = deque()
+        self.discardBossHeap = deque()
         self.getCard_cardHeap(self.playerTotalNum * self.maxHandSize)
         self.startFlag = True
         return
@@ -312,14 +316,17 @@ class GAME:
         if self.startFlag:
             playersLocal = tuple([FROZEN_PLAYER(player.userName,len(player.cards),player.num)
                             for player in self.playerList if player.num != playerIndex])
-            state = (self.startFlag,
-                     STATUS(
+            status = STATUS(
                         totalPlayer = self.playerTotalNum,
                         yourLocation = playerIndex,
                         players = playersLocal,
                         yourCards=tuple(self.playerList[playerIndex].cards), 
                         currentBoss=self.currentBoss.final(),
-                        elsedata=1))
+                        cardHeapLength=len(self.cardHeap),
+                        defeatedBosses=tuple(self.discardBossHeap),
+                        discardHeapLength=len(self.discardHeap),
+                        elsedata=0)
+            state = (self.startFlag, status)
         else:
             state = (self.startFlag, None)
         retMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.answerStatus, data=state)
