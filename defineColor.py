@@ -16,9 +16,9 @@ def cardToNum(card:int) -> int:
     #num is only about how big it is, it don't care J or 10
     if 0 <= card <= 51:
         preNum = (card % 13 + 1)
-        if preNum in [10,11,12]:
-            num =   10 if preNum == 10 else\
-                    15 if preNum == 11 else\
+        if preNum in [11,12,13]:
+            num =   10 if preNum == 11 else\
+                    15 if preNum == 12 else\
                     20
             return num
         else:

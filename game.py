@@ -4,6 +4,7 @@ from queue import Queue as LockQueue
 from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS,GAME_SETTINGS,TALKING_MESSAGE,FROZEN_PLAYER
 from defineError import CardError
 from defineColor import COLOR,cardToNum
+from defineRound import ROUND
 from myLogger import logger
 from dataclasses import dataclass
 import random
@@ -82,6 +83,7 @@ class GAME:
 
         此时,用户发来(以函数参数的形式)同一的结构体格式(管道, 请求类型（str）,具体数据)
     """
+    currentRound:ROUND
     discardBossHeap:Deque[int]
     currentBoss:BOSS
     playerList:List[PLAYER]
@@ -93,7 +95,6 @@ class GAME:
         self.playerTotalNum = maxPlayer
         self.talkings = TALKING()
         self.talkableFlag = False
-        self.overFlag = False
         self.startFlag = False
         self.web = web
 
@@ -134,7 +135,8 @@ class GAME:
             self.cardHeap = deque(discardHeapList[:cnt]) + self.cardHeap
             self.discardHeap = deque(discardHeapList[cnt+1:])
 
-    def joker(self) -> int:
+    #ret: change the state
+    def joker(self) -> None:
         self.currentBoss.color = None
         while True:
             playerIndex = self.ioGetJokerNum()
@@ -144,9 +146,12 @@ class GAME:
             elif playerIndex >= self.playerTotalNum or playerIndex < 0:
                 self.ioSendException(self.currentPlayer.num, "有人在乱搞")
             else:
-                return playerIndex
+                self.currentPlayer = self.playerList[playerIndex]
+                self.currentRound = ROUND.atk
+                return
 
-    def atkRound(self) ->  Tuple[Union[int, None],bool]:
+    #ret: change the state
+    def atkRound(self) -> None:
         while True:
             cards = self.ioGetCards()
             try:
@@ -157,10 +162,14 @@ class GAME:
                     self.ioSendException(self.currentPlayer.num, "你小子乱出牌？看规则书吧你！\n")
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
-        return self._atkRoundHandleLegalCards(cards) 
-    def _atkRoundHandleLegalCardsWithoutJoker(self, cards:List[int]) -> Tuple[None,bool]:
+        self._atkRoundHandleLegalCards(cards)       #here change state
+        return
+    #ret change the state
+    def _atkRoundHandleLegalCardsWithoutJoker(self, cards:List[int]) -> None:
         if len(cards) == 0:
-            return (None, False)
+            self.currentRound = ROUND.defend
+            self.simpleChangePlayer()
+            return
         else:
             cardNum = sum(cardToNum(card) for card in cards)
             cardColors:List[COLOR] = list(set([COLOR(math.floor(card / 13)) for card in cards]))    #去重
@@ -181,16 +190,26 @@ class GAME:
                 raise ValueError("Wrong card color")            
         self.atkBoss(cardNum)
         killed = self.bossKilledCheck()
-        return (None, killed)
-    def _atkRoundHandleLegalCards(self, cards:List[int]) -> Tuple[Union[int, None],bool]:
-        #return None or PlayerIndex
+        if killed:
+            self.simpleChangePlayer()
+            self.currentRound = ROUND.atk
+            return
+        else:
+            #currentPlayer不变哦
+            self.currentRound = ROUND.defend
+            return
+    #ret: change the state
+    def _atkRoundHandleLegalCards(self, cards:List[int]) -> None:
         self.currentPlayer.deleteCards(cards)
         for card in cards:
             self.atkHeap.appendleft(card)
         if (len(cards) == 1 and (cards[0] == 53 or cards[0] == 52)):
-            return (self.joker(),False)
+            self.currentRound = ROUND.jokerTime
+            #self.currentPlayer 不变哦 
+            return
         else:
-            return self._atkRoundHandleLegalCardsWithoutJoker(cards)
+            self._atkRoundHandleLegalCardsWithoutJoker(cards) #here change state
+            return 
     def _atkRoundCheckLegalCards(self,cards:List[int]) -> bool:
         if len(cards) > self.maxHandSize:
             return False
@@ -232,9 +251,12 @@ class GAME:
                 else:
                     return True
 
+    #ret: change the state
     def defendRound(self):
         if sum([cardToNum(card) for card in self.currentPlayer.cards]) < self.currentBoss.atk:
             self.fail()
+            #self.currentPlayer 不用改
+            self.currentRound = ROUND.over
             return
         while True:
             cards = self.ioGetCards()
@@ -247,6 +269,9 @@ class GAME:
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
         self.currentPlayer.deleteCards(cards)
+        
+        self.simpleChangePlayer()
+        self.currentRound = ROUND.atk
         return
     #不负责用户的切换，仅负责牌堆的更新
     def bossKilledCheck(self):
@@ -284,23 +309,17 @@ class GAME:
         self.startGame(settings)
         bossKilled = False
         while True:
-            self.ioSendStatus(self.currentPlayer.num)
-            nextPlayer, bossKilled = self.atkRound()
-            if self.overFlag:
+            if self.currentRound == ROUND.over:
                 return
-            if nextPlayer == None and bossKilled == False:
-                self.ioSendStatus(self.currentPlayer.num)
+            elif self.currentRound == ROUND.atk:
+                self.atkRound()
+            elif self.currentRound == ROUND.defend:
                 self.defendRound()
-                if self.overFlag:
-                    return
-                self.changePlayer((self.currentPlayer.num + 1) % self.playerTotalNum)
-            elif nextPlayer != None:
-                self.changePlayer(nextPlayer)  
+            elif self.currentRound == ROUND.jokerTime:
+                self.joker()
             else:
-                self.changePlayer((self.currentPlayer.num + 1) % self.playerTotalNum)
-                if self.overFlag:
-                    return
-                #规则：这里认为死了boss以后，下一个boss由下一个人来打
+                raise ValueError("strange round")
+    
     def startGame(self,settings:GAME_SETTINGS):
         #这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
         self.playerList = []
@@ -327,18 +346,18 @@ class GAME:
         self.discardBossHeap = deque()
         self.getCard_cardHeap(self.playerTotalNum * self.maxHandSize)
         self.startFlag = True
+        self.currentRound = ROUND.atk
         return
 
-    def changePlayer(self,playerIndex:int) -> None:        
-        self.currentPlayer = self.playerList[playerIndex]
+    
+    def simpleChangePlayer(self) -> None:     
+        self.currentPlayer = self.playerList[(self.currentPlayer.num + 1) % self.playerTotalNum]
         return
 
     def congratulations(self):
         print("YOU ARE SO NB, BOYS!")
-        self.overFlag = True
     def fail(self):
         print("LET'S TRY IT AGAIN, BOYS")
-        self.overFlag = True
 
 
 
