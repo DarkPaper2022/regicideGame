@@ -423,7 +423,7 @@ class GAME:
                 return message       
     #ret:保证
     def ioGetStartSignal(self) -> GAME_SETTINGS:
-        message = self.dataTypeSeprator(DATATYPE.startSignal)
+        message = self.mixSeperator([(-1,DATATYPE.startSignal)])
         return message.data
     def ioGetCards(self) -> List[int]:
         while True:
