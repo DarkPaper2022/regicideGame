@@ -151,7 +151,7 @@ class GAME:
         else:
             cardNum = sum(cardToNum(card) for card in cards)
             cardColors = [COLOR(math.floor(card / 13)) for card in cards]
-            #重复问题
+            #TODO：重复问题
             #顺序问题
         for cardColor in cardColors:
             if cardColor == self.currentBoss.color:
@@ -182,6 +182,8 @@ class GAME:
     def _atkRoundCheckLegalCards(self,cards:List[int]) -> bool:
         if len(cards) > self.maxHandSize:
             return False
+        elif len(cards) == 0:
+            return True
         else:
             if len(set(cards)) != len(cards):
                 return False 
@@ -290,7 +292,7 @@ class GAME:
         self.atkHeap = deque()
         self.getCard_cardHeap(self.playerTotalNum * self.maxHandSize)
         self.startFlag = True
-        return         
+        return
 
     def changePlayer(self,playerIndex:int) -> None:
         self.currentPlayer = self.playerList[playerIndex]

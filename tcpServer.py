@@ -97,7 +97,10 @@ class TCP_CLIENT:
             l = [line.strip() for line in data.strip().split(b'#')]
             dataType = DATATYPE(int(l[0].decode()))
             if dataType == DATATYPE.card:
-                messageData = [int(card.decode()) for card in l[1].split(b" ")]
+                if len(l) == 1 or l[1] == b"":
+                    messageData = []
+                else:
+                    messageData = [int(card.decode()) for card in l[1].split(b" ")]
                 logger.info("A card Message")
             elif dataType == DATATYPE.speak:
                 messageData = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
