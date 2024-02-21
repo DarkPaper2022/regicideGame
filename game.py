@@ -138,7 +138,7 @@ class GAME:
         self.currentBoss.color = None
         return self.ioGetJokerNum()
 
-    def atkRound(self) ->  Union[int, None]:
+    def atkRound(self) ->  Tuple[Union[int, None],bool]:
         while True:
             cards = self.ioGetCards()
             try:
@@ -150,9 +150,9 @@ class GAME:
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
         return self._atkRoundHandleLegalCards(cards) 
-    def _atkRoundHandleLegalCardsWithoutJoker(self, cards:List[int]) -> None:
+    def _atkRoundHandleLegalCardsWithoutJoker(self, cards:List[int]) -> Tuple[None,bool]:
         if len(cards) == 0:
-            return
+            return (None, False)
         else:
             cardNum = sum(cardToNum(card) for card in cards)
             cardColors:List[COLOR] = list(set([COLOR(math.floor(card / 13)) for card in cards]))    #去重
@@ -172,18 +172,17 @@ class GAME:
             else:
                 raise ValueError("Wrong card color")            
         self.atkBoss(cardNum)
-        self.bossKilledCheck()
-        return      
-    def _atkRoundHandleLegalCards(self, cards:List[int]) -> Union[int, None]:
+        killed = self.bossKilledCheck()
+        return (None, killed)
+    def _atkRoundHandleLegalCards(self, cards:List[int]) -> Tuple[Union[int, None],bool]:
         #return None or PlayerIndex
         self.currentPlayer.deleteCards(cards)
         for card in cards:
             self.atkHeap.appendleft(card)
         if (len(cards) == 1 and (cards[0] == 53 or cards[0] == 52)):
-            return self.joker()
+            return (self.joker(),False)
         else:
-            self._atkRoundHandleLegalCardsWithoutJoker(cards)
-            return None
+            return self._atkRoundHandleLegalCardsWithoutJoker(cards)
     def _atkRoundCheckLegalCards(self,cards:List[int]) -> bool:
         if len(cards) > self.maxHandSize:
             return False
@@ -240,10 +239,11 @@ class GAME:
                 self.ioSendException(self.currentPlayer.num, str(e))
         self.currentPlayer.deleteCards(cards)
         return
+    #不负责用户的切换，仅负责牌堆的更新
     def bossKilledCheck(self):
         currentBoss:BOSS = self.currentBoss
         if currentBoss.hp > 0:
-            return
+            return False
         elif currentBoss.hp == 0:
             self.cardHeap.append(currentBoss.name)
             self.discardBossHeap.append(currentBoss.name)
@@ -255,7 +255,7 @@ class GAME:
             self.congratulations()
         else:
             self.currentBoss = self.bossHeap.popleft()
-        return
+        return True
 
 
     def _defendRoundCheckLegalCards(self,cards:List[int]) -> bool:
@@ -268,19 +268,25 @@ class GAME:
 
     def start(self,settings:GAME_SETTINGS):
         self.startGame(settings)
+        bossKilled = False
         while True:
             self.ioSendStatus(self.currentPlayer.num)
-            nextPlayer = self.atkRound()
+            nextPlayer, bossKilled = self.atkRound()
             if self.overFlag:
                 return
-            if nextPlayer == None:
+            if nextPlayer == None and bossKilled == False:
                 self.ioSendStatus(self.currentPlayer.num)
                 self.defendRound()
                 if self.overFlag:
                     return
                 self.changePlayer((self.currentPlayer.num + 1) % self.playerTotalNum)
+            elif nextPlayer != None:
+                self.changePlayer(nextPlayer)  
             else:
-                self.changePlayer(nextPlayer)          
+                self.changePlayer((self.currentPlayer.num + 1) % self.playerTotalNum)
+                if self.overFlag:
+                    return
+                #规则：这里认为死了boss以后，下一个boss由下一个人来打
     def startGame(self,settings:GAME_SETTINGS):
         #这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
         self.playerList = []

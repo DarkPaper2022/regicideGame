@@ -7,6 +7,7 @@
 - 有其他问题也欢迎联系本人
 ## TODO List
 - webSystem 中register部分的线程安全性保障,使用sql
+- 黑桃的无效化
 - cookie的重用、game的重开、更多人的大厅与房间机制
     - cookie的重用 也即短线重连：
         - 如果game和web始终保留着cookie的话，关键问题是让相同的账号拿到相同的cookie
