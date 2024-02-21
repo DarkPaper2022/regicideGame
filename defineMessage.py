@@ -46,7 +46,7 @@ def cardToStr(card:int) -> str:
     elif (card == 53):
         return "大王"
     else:
-        num = card%13 + 1
+        num = card % 13 + 1
         numStr =    'A' if (num == 1) else\
                     'J' if (num == 10) else\
                     'Q' if (num == 11) else\

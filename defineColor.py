@@ -10,3 +10,16 @@ class COLOR(Enum):
                 "方片" if (self == COLOR.colorD) else\
                 "红桃" if (self == COLOR.colorH) else\
                 "无"
+    
+def cardToNum(card:int) -> int:
+    if 0 <= card <= 51:
+        preNum = (card % 13 + 1)
+        if preNum in [10,11,12]:
+            num =   10 if preNum == 10 else\
+                    15 if preNum == 11 else\
+                    20
+            return num
+        else:
+            return preNum
+    else:
+        raise ValueError(f"card wrong {card}")

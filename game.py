@@ -3,7 +3,7 @@ from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
 from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS,GAME_SETTINGS,TALKING_MESSAGE
 from defineError import CardError
-from defineColor import COLOR
+from defineColor import COLOR,cardToNum
 from myLogger import logger
 from dataclasses import dataclass
 import random
@@ -52,8 +52,8 @@ class TALKING:
 class GAME:
     """
     card        = A B C D   (pop card here, ordered)
-    discard     = E F G H   (not ordered)   
-    num = card%13 + 1
+    discard     = E F G H   (not ordered)  
+    num = func()
     color = COLOR(math.floor(card / 13))
     name = num + color * 13 - 1
     """
@@ -149,7 +149,7 @@ class GAME:
         if len(cards) == 0:
             return
         else:
-            cardNum = sum((card % 13 + 1) for card in cards)
+            cardNum = sum(cardToNum(card) for card in cards)
             cardColors = [COLOR(math.floor(card / 13)) for card in cards]
             #重复问题
             #顺序问题
@@ -180,8 +180,41 @@ class GAME:
             self._atkRoundHandleLegalCardsWithoutJoker(cards)
             return None
     def _atkRoundCheckLegalCards(self,cards:List[int]) -> bool:
-        #TODO
-        return True
+        if len(cards) > self.maxHandSize:
+            return False
+        else:
+            if len(set(cards)) != len(cards):
+                return False 
+        for card in cards:
+            if card not in self.currentPlayer.cards:
+                return False
+        if (52 in cards or 53 in cards):
+            return (len(cards) == 1)
+        # here, card无重复, card 一定在手里, card一定没有joker
+        elif len(cards) == 1:
+            return True
+        # here, card无重复, card 一定在手里, card一定没有joker, card 多于一个
+        else:
+            #仅一狗
+            for card in cards:
+                if cardToNum(card) != 1:
+                    cntA += 1
+                else:
+                    cntElse += 1
+            if cntA == 1 and cntElse == 1:
+                return True
+            else:
+                #3、4个A是允许的
+                total = 0
+                for card in cards:
+                    if card == cards[0]:
+                        total += card
+                    else:
+                        return False
+                if total >= 10:
+                    return False
+                else:
+                    return True
 
     def defendRound(self):
         cards = self.ioGetCards()
@@ -326,7 +359,7 @@ class GAME:
         return message.data
     def ioGetCards(self) -> List[int]:
         while True:
-            messgae = self.dataTypeSeprator(DATATYPE.card)
+            messgae = self.mixSeperator([(self.currentPlayer.num, DATATYPE.card)])
             try:
                 return messgae.data
             except:
