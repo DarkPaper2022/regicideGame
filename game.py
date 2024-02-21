@@ -310,10 +310,14 @@ class GAME:
             if self.currentRound == ROUND.over:
                 return
             elif self.currentRound == ROUND.atk:
+                self.ioSendStatus(self.currentPlayer.num)
                 self.atkRound()
             elif self.currentRound == ROUND.defend:
+                self.ioSendStatus(self.currentPlayer.num)
                 self.defendRound()
             elif self.currentRound == ROUND.jokerTime:
+                for i in range(self.playerTotalNum):
+                    self.ioSendStatus(i)
                 self.jokerRound()
             else:
                 raise ValueError("strange round")
