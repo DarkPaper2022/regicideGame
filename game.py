@@ -136,7 +136,7 @@ class GAME:
             self.discardHeap = deque(discardHeapList[cnt+1:])
 
     #ret: change the state
-    def joker(self) -> None:
+    def jokerRound(self) -> None:
         self.currentBoss.color = None
         while True:
             playerIndex = self.ioGetJokerNum()
@@ -316,7 +316,7 @@ class GAME:
             elif self.currentRound == ROUND.defend:
                 self.defendRound()
             elif self.currentRound == ROUND.jokerTime:
-                self.joker()
+                self.jokerRound()
             else:
                 raise ValueError("strange round")
     
