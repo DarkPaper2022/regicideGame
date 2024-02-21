@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Any,List,Tuple,Union
 from defineColor import COLOR
+from defineRound import ROUND
 from enum import Enum
 import math
 class DATATYPE(Enum):
@@ -44,7 +45,8 @@ class FROZEN_PLAYER:
 class STATUS:
     totalPlayer:int
     yourLocation:int
-
+    currentRound:ROUND
+    currentPlayerIndex:int
     yourCards:Tuple[int,...]
     cardHeapLength:int
     discardHeapLength:int

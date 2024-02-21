@@ -9,7 +9,8 @@ from webSystem import WEB
 from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,STATUS
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError
-from defineTCP_UI import statusToStr
+from defineTCP_UI import cardsToStr,cardToStr,bossToStr
+from defineRound import ROUND
 
 
 
@@ -117,7 +118,7 @@ class TCP_CLIENT:
         if message.dataType == DATATYPE.answerStatus:
             flag, status = message.data
             if flag:
-                messageData = statusToStr(status)
+                messageData = self._statusToStr(status)
             else:
                 messageData = "没开呢，别急\n"
         elif message.dataType == DATATYPE.answerTalking:
@@ -140,6 +141,33 @@ class TCP_CLIENT:
             messageData = str(message.data)
         data:bytes = message.dataType.name.encode() +b"\n"+ messageData.encode()
         return data
+    def _statusToStr(self, status:STATUS) -> str:
+        cardHeapLengthStr:str = f"牌堆还剩{status.cardHeapLength}张牌\n"
+        discardHeapLengthStr = f"弃牌堆有{status.discardHeapLength}张牌\n"
+        defeatedBossesStr = f"您已经打败了{cardsToStr(status.defeatedBosses)},还有{12 - len(status.defeatedBosses)}个哦"
+        currentPlayerStr = "该怎么搞由您说了算" if status.currentPlayerIndex == self.playerIndex else\
+                            f"""该怎么搞由您的{status.currentPlayerIndex}号队友"""
+        currentRoundStr =   ("现在是攻击轮" if status.currentRound == ROUND.atk else\
+                            "现在是防御轮" if status.currentRound == ROUND.defend else\
+                            "现在joker生效了" if status.currentRound == ROUND.jokerTime else "现在是一个奇怪的轮次, 你不应该看见我的")        
+        currentPlayerAndRoundStr = currentRoundStr + "," +currentPlayerStr
+        playersStr:str = "您的队友:"
+        for player in status.players:
+            preDelta = player.playerLocation - status.yourLocation
+            delta =  preDelta if preDelta >= 1 else preDelta + status.totalPlayer 
+            #TODO:防御性编程
+            playersStr += f"""
+    用户名:{player.playerName}
+    手牌数目:{player.playerHandCardCnt}/{9 - status.totalPlayer}
+    用户位置:{player.playerLocation}号位，你的{delta*"下"}家
+    """
+        yourCardsStr = f"""{"YourCards"}:
+        {cardsToStr(status.yourCards)}
+    """
+        currentBossStr = bossToStr(status.currentBoss)
+        re:str = cardHeapLengthStr + discardHeapLengthStr + defeatedBossesStr + playersStr + currentPlayerAndRoundStr + yourCardsStr + currentBossStr 
+        return re
+
 
 class TCP_SERVER:
     cookies:List[uuid.UUID]

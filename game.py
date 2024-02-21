@@ -188,8 +188,11 @@ class GAME:
             else:
                 raise ValueError("Wrong card color")            
         self.atkBoss(cardNum)
-        killed = self.bossKilledCheck()
-        if killed:
+        killed, gameover = self.bossKilledCheck()
+        if gameover:
+            #self.currentPlayer 不用改
+            self.currentRound = ROUND.over
+        elif killed:
             self.simpleChangePlayer()
             self.currentRound = ROUND.atk
             return
@@ -273,10 +276,10 @@ class GAME:
         self.currentRound = ROUND.atk
         return
     #不负责用户的切换，仅负责牌堆的更新
-    def bossKilledCheck(self):
+    def bossKilledCheck(self) -> Tuple[bool, bool]:
         currentBoss:BOSS = self.currentBoss
         if currentBoss.hp > 0:
-            return False
+            return (False,False)
         elif currentBoss.hp == 0:
             self.cardHeap.append(currentBoss.name)
             self.discardBossHeap.append(currentBoss.name)
@@ -286,9 +289,10 @@ class GAME:
             self.discardHeap = self.atkHeap
         if len(self.bossHeap) == 0:
             self.congratulations()
+            return (True,True)
         else:
             self.currentBoss = self.bossHeap.popleft()
-        return True
+            return (True,False)
 
 
     def _defendRoundCheckLegalCards(self,cards:List[int]) -> bool:
@@ -369,6 +373,8 @@ class GAME:
             playersLocal = tuple([FROZEN_PLAYER(player.userName,len(player.cards),player.num)
                             for player in self.playerList if player.num != playerIndex])
             status = STATUS(
+                        currentRound=self.currentRound,
+                        currentPlayerIndex= self.currentPlayer.num,
                         totalPlayer = self.playerTotalNum,
                         yourLocation = playerIndex,
                         players = playersLocal,
