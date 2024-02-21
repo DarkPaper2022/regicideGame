@@ -1,5 +1,6 @@
 from enum import Enum
 class COLOR(Enum):
+    #红桃先于方片,如果key=lambda x:-x.value
     colorC = 0
     colorD = 1
     colorH = 2

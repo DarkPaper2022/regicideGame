@@ -144,16 +144,15 @@ class GAME:
                 break
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
-        return self._atkRoundHandleLegalCards(cards)   
+        return self._atkRoundHandleLegalCards(cards) 
     def _atkRoundHandleLegalCardsWithoutJoker(self, cards:List[int]) -> None:
-        cardColors = []
         if len(cards) == 0:
             return
         else:
             cardNum = sum(cardToNum(card) for card in cards)
-            cardColors = [COLOR(math.floor(card / 13)) for card in cards]
-            #TODO：重复问题
-            #顺序问题
+            cardColors:List[COLOR] = list(set([COLOR(math.floor(card / 13)) for card in cards]))    #去重
+            cardColors.sort(key=lambda x:-x.value)
+            #红桃先于方片
         for cardColor in cardColors:
             if cardColor == self.currentBoss.color:
                 continue
