@@ -22,5 +22,7 @@ def cardToNum(card:int) -> int:
             return num
         else:
             return preNum
+    elif card in [52,53]:
+        return 0
     else:
-        raise ValueError(f"card wrong {card}")
+        raise ValueError(f"wrong card number: {card}")
