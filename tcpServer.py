@@ -127,7 +127,7 @@ class TCP_CLIENT:
                 timeStr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(line.time))
                 nameStr = line.userName
                 talkStr = line.message
-                messageData += (timeStr+nameStr+"\n\t"+talkStr)
+                messageData += (timeStr+" "+nameStr+"说"+"\n\t"+talkStr + "\n")
         elif (message.data == None):
             messageData = ""
         else:

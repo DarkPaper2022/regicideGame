@@ -136,7 +136,15 @@ class GAME:
 
     def joker(self) -> int:
         self.currentBoss.color = None
-        return self.ioGetJokerNum()
+        while True:
+            playerIndex = self.ioGetJokerNum()
+            if playerIndex == self.currentPlayer.num:
+                self.ioSendException(self.currentPlayer.num, "不要joker给自己！")
+                continue
+            elif playerIndex >= self.playerTotalNum or playerIndex < 0:
+                self.ioSendException(self.currentPlayer.num, "有人在乱搞")
+            else:
+                return playerIndex
 
     def atkRound(self) ->  Tuple[Union[int, None],bool]:
         while True:
@@ -315,7 +323,7 @@ class GAME:
         self.startFlag = True
         return
 
-    def changePlayer(self,playerIndex:int) -> None:
+    def changePlayer(self,playerIndex:int) -> None:        
         self.currentPlayer = self.playerList[playerIndex]
         return
 
@@ -399,11 +407,12 @@ class GAME:
     def ioGetJokerNum(self) -> int:
         while True:
             l:List[Tuple[int,DATATYPE]] = [(i,DATATYPE.speak) for i in range(4)] 
-            l = l + [(-1,DATATYPE.startSignal)]
+            l = l + [(self.currentPlayer.num,DATATYPE.confirmJoker)]
             message = self.mixSeperator(l)
             if message.dataType == DATATYPE.speak:
                 self.talkings.insert(message.data)
             else:
+                #TODO:bad logic
                 if message.player != self.currentPlayer.num:
                     self.ioSendException(message.player, "这事儿您可说了不算")
                 return message.data
