@@ -243,7 +243,7 @@ class GAME:
                 if check:
                     break
                 else:
-                    self.ioSendException(self.currentPlayer.num, "你小子乱出牌？看规则书吧你！\n")
+                    self.ioSendException(self.currentPlayer.num, "你小子乱弃牌？看规则书吧你！\n")
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
         self.currentPlayer.deleteCards(cards)
@@ -370,6 +370,11 @@ class GAME:
     def ioSendException(self, playerIndex:int, exceptStr:str):
         exceptMessage:MESSAGE = MESSAGE(player=playerIndex, dataType=DATATYPE.exception, data=exceptStr)
         self.mainSend(exceptMessage) 
+    def ioSendOverSignal(self, isWin:bool):
+        for i in range(self.playerTotalNum):
+            overMessage:MESSAGE = MESSAGE(i, DATATYPE.overSignal, isWin)
+            self.mainSend(overMessage)
+        return
     #ret:保证一定返回合适类型的信息
     def dataTypeSeprator(self, expected:DATATYPE):
         while True:

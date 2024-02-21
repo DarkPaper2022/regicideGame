@@ -14,7 +14,7 @@ class DATATYPE(Enum):
     logInSuccess = 8    #to client
     speak = 9           #from client
     confirmJoker = 10   #from client
-    
+    overSignal = 11     #to client
 
 @dataclass(frozen=True)
 class MESSAGE:
