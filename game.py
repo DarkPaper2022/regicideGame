@@ -94,7 +94,6 @@ class GAME:
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
         self.talkings = TALKING()
-        self.talkableFlag = False
         self.startFlag = False
         self.web = web
 
@@ -304,7 +303,6 @@ class GAME:
     def run(self):
         settings = self.ioGetStartSignal()
         self.start(settings)
-
     def start(self,settings:GAME_SETTINGS):
         self.startGame(settings)
         bossKilled = False
@@ -319,7 +317,6 @@ class GAME:
                 self.jokerRound()
             else:
                 raise ValueError("strange round")
-    
     def startGame(self,settings:GAME_SETTINGS):
         #这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
         self.playerList = []
@@ -355,9 +352,9 @@ class GAME:
         return
 
     def congratulations(self):
-        print("YOU ARE SO NB, BOYS!")
+        self.ioSendOverSignal(True)
     def fail(self):
-        print("LET'S TRY IT AGAIN, BOYS")
+        self.ioSendOverSignal(False)
 
 
 
@@ -436,7 +433,6 @@ class GAME:
             except:
                 self.ioSendException(messgae.player, "卡牌格式错误")
                 continue
-
     def ioGetJokerNum(self) -> int:
         while True:
             l:List[Tuple[int,DATATYPE]] = [(i,DATATYPE.speak) for i in range(4)] 
