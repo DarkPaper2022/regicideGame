@@ -51,6 +51,8 @@ class STATUS:
     yourCards:Tuple[int,...]
     cardHeapLength:int
     discardHeapLength:int
+    disCardHeap:Tuple[int,...]
+    atkCardHeap:Tuple[int,...]
     defeatedBosses:Tuple[int,...]
     currentBoss:FROZEN_BOSS
     players:Tuple[FROZEN_PLAYER,...]

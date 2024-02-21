@@ -284,11 +284,11 @@ class GAME:
             return (False,False)
         elif currentBoss.hp == 0:
             self.cardHeap.append(currentBoss.name)
-            self.discardBossHeap.append(currentBoss.name)
         else:
             self.discardHeap.appendleft(currentBoss.name)
-            self.discardBossHeap.append(currentBoss.name)
-            self.discardHeap = self.atkHeap
+        self.discardBossHeap.append(currentBoss.name)
+        self.discardHeap += self.atkHeap
+        self.atkHeap.clear()
         if len(self.bossHeap) == 0:
             self.congratulations()
             return (True,True)
@@ -375,6 +375,8 @@ class GAME:
             playersLocal = tuple([FROZEN_PLAYER(player.userName,len(player.cards),player.num)
                             for player in self.playerList if player.num != playerIndex])
             status = STATUS(
+                        disCardHeap=tuple(self.discardHeap),
+                        atkCardHeap=tuple(self.atkHeap),
                         currentRound=self.currentRound,
                         currentPlayerIndex= self.currentPlayer.num,
                         totalPlayer = self.playerTotalNum,

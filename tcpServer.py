@@ -154,6 +154,8 @@ class TCP_CLIENT:
                             "现在是防御轮" if status.currentRound == ROUND.defend else\
                             "现在joker生效了" if status.currentRound == ROUND.jokerTime else "现在是一个奇怪的轮次, 你不应该看见我的")        
         currentPlayerAndRoundStr = currentRoundStr + "," +currentPlayerStr
+        disCardHeapStr = f"""弃牌堆里有这些牌:{cardsToStr(status.disCardHeap)}\n"""
+        atkCardHeapStr = f"""攻击堆里有这些牌:{cardsToStr(status.atkCardHeap)}\n"""
         playersStr:str = "您的队友:"
         for player in status.players:
             preDelta = player.playerLocation - status.yourLocation
@@ -169,7 +171,7 @@ class TCP_CLIENT:
         {cardsToStr(status.yourCards)}
     """
         currentBossStr = bossToStr(status.currentBoss)
-        re:str = cardHeapLengthStr + discardHeapLengthStr + defeatedBossesStr + playersStr + currentPlayerAndRoundStr + yourCardsStr + currentBossStr 
+        re:str = cardHeapLengthStr + discardHeapLengthStr + disCardHeapStr + atkCardHeapStr + defeatedBossesStr + playersStr + currentPlayerAndRoundStr + yourCardsStr + currentBossStr 
         return re
 
 
