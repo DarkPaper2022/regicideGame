@@ -223,8 +223,8 @@ class GAME:
                 #3、4个A是允许的
                 total = 0
                 for card in cards:
-                    if card == cards[0]:
-                        total += card
+                    if cardToNum(card) == cardToNum(cards[0]):
+                        total += cardToNum(card)
                     else:
                         return False
                 if total >= 10:
