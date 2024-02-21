@@ -145,6 +145,8 @@ class GAME:
                 check = self._atkRoundCheckLegalCards(cards)
                 if check:
                     break
+                else:
+                    self.ioSendException(self.currentPlayer.num, "你小子乱出牌？看规则书吧你！\n")
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
         return self._atkRoundHandleLegalCards(cards) 

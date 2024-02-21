@@ -49,9 +49,9 @@ def cardsToStr(cards:Tuple[int,...]) -> str:
     return ', '.join([cardToStr(card) for card in cards])
 def cardToStr(card:int) -> str:
     if (card == 52):
-        return "小王"
+        return "小王"+f"({str(card)})"
     elif (card == 53):
-        return "大王"
+        return "大王"+f"({str(card)})"
     else:
         num = card % 13 + 1
         numStr =    'A' if (num == 1) else\
