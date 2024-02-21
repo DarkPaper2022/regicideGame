@@ -436,7 +436,6 @@ class GAME:
                 continue
             else:
                 return message       
-    #ret:保证
     def ioGetStartSignal(self) -> GAME_SETTINGS:
         message = self.mixSeperator([(-1,DATATYPE.startSignal)])
         return message.data
@@ -459,8 +458,6 @@ class GAME:
                     self.ioSendTalkings(i)
             else:
                 #TODO:bad logic
-                if message.player != self.currentPlayer.num:
-                    self.ioSendException(message.player, "这事儿您可说了不算")
                 return message.data
     
 
