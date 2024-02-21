@@ -133,6 +133,7 @@ class GAME:
             self.discardHeap = deque(discardHeapList[cnt+1:])
 
     def joker(self) -> int:
+        self.currentBoss.color = None
         return self.ioGetJokerNum()
 
     def atkRound(self) ->  Union[int, None]:
