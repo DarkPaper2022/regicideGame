@@ -1,7 +1,7 @@
 from collections import deque
 from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
-from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS,GAME_SETTINGS,TALKING_MESSAGE
+from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS,GAME_SETTINGS,TALKING_MESSAGE,FROZEN_PLAYER
 from defineError import CardError
 from defineColor import COLOR,cardToNum
 from myLogger import logger
@@ -310,8 +310,13 @@ class GAME:
 
     def ioSendStatus(self, playerIndex:int):
         if self.startFlag:
+            playersLocal = tuple([FROZEN_PLAYER(player.userName,len(player.cards),player.num)
+                            for player in self.playerList if player.num != playerIndex])
             state = (self.startFlag,
                      STATUS(
+                        totalPlayer = self.playerTotalNum,
+                        yourLocation = playerIndex,
+                        players = playersLocal,
                         yourCards=tuple(self.playerList[playerIndex].cards), 
                         currentBoss=self.currentBoss.final(),
                         elsedata=1))

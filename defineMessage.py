@@ -38,6 +38,13 @@ class FROZEN_BOSS:
     免疫:{self.color}
 """
 
+@dataclass(frozen=True)
+class FROZEN_PLAYER:
+    playerName:str
+    playerHandCardCnt:int
+    playerLocation:int
+
+
 def cardsToStr(cards:Tuple[int,...]) -> str:
     return ', '.join([cardToStr(card) for card in cards])
 def cardToStr(card:int) -> str:
@@ -58,14 +65,30 @@ def cardToStr(card:int) -> str:
                     
 @dataclass
 class STATUS:
+    totalPlayer:int
+    yourLocation:int
+
     yourCards:Tuple[int,...]
     currentBoss:FROZEN_BOSS
+    players:Tuple[FROZEN_PLAYER,...]
     elsedata: Any
     def __str__(self) -> str:
-        re:str = f"""{"YourCards"}:
+        playersStr:str = "您的队友:"
+        for player in self.players:
+            preDelta = player.playerLocation - self.yourLocation
+            delta =  preDelta if preDelta >= 1 else preDelta + self.totalPlayer 
+            #TODO:防御性编程
+            playersStr += f"""
+用户名:{player.playerName}
+手牌数目:{player.playerHandCardCnt}/{self.totalPlayer}
+用户位置:{player.playerLocation}号位，你的{delta*"下"}家
+"""
+        yourCardsStr = f"""{"YourCards"}:
     {cardsToStr(self.yourCards)}
-""" \
-                + str(self.currentBoss)
+"""
+        currentBossStr = str(self.currentBoss)
+        re:str =  yourCardsStr + currentBossStr + playersStr
+        
         return re
 
 @dataclass(frozen=True)
