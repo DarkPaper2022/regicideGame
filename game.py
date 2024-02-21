@@ -203,6 +203,8 @@ class GAME:
         # here, card无重复, card 一定在手里, card一定没有joker, card 多于一个
         else:
             #仅一狗
+            cntA = 0
+            cntElse = 0
             for card in cards:
                 if cardToNum(card) != 1:
                     cntA += 1
