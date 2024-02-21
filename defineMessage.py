@@ -31,13 +31,7 @@ class FROZEN_BOSS:
     atk:int
     hp:int
     color:Union[COLOR,None]
-    def __str__(self) -> str:
-        return f"""Boss
-    name:{cardToStr(self.name)}
-    atk:{self.atk}
-    hp:{self.hp}
-    免疫:{self.color}
-"""
+
 
 @dataclass(frozen=True)
 class FROZEN_PLAYER:
@@ -46,23 +40,7 @@ class FROZEN_PLAYER:
     playerLocation:int
 
 
-def cardsToStr(cards:Tuple[int,...]) -> str:
-    return ', '.join([cardToStr(card) for card in cards])
-def cardToStr(card:int) -> str:
-    if (card == 52):
-        return "小王"+f"({str(card)})"
-    elif (card == 53):
-        return "大王"+f"({str(card)})"
-    else:
-        num = card % 13 + 1
-        numStr =    'A' if (num == 1) else\
-                    'J' if (num == 11) else\
-                    'Q' if (num == 12) else\
-                    'K' if (num == 13) else\
-                    str(num)
-        color = COLOR(math.floor(card / 13))
-        colorStr = str(color)
-        return colorStr+numStr+f"({str(card)})"
+
                     
 @dataclass
 class STATUS:
@@ -76,27 +54,7 @@ class STATUS:
     currentBoss:FROZEN_BOSS
     players:Tuple[FROZEN_PLAYER,...]
     elsedata: Any
-    def __str__(self) -> str:
-        cardHeapLengthStr:str = f"牌堆还剩{self.cardHeapLength}张牌\n"
-        discardHeapLengthStr = f"弃牌堆有{self.discardHeapLength}张牌\n"
-        defeatedBossesStr = f"您已经打败了{cardsToStr(self.defeatedBosses)},还有{12 - len(self.defeatedBosses)}个哦"
-        playersStr:str = "您的队友:"
-        for player in self.players:
-            preDelta = player.playerLocation - self.yourLocation
-            delta =  preDelta if preDelta >= 1 else preDelta + self.totalPlayer 
-            #TODO:防御性编程
-            playersStr += f"""
-用户名:{player.playerName}
-手牌数目:{player.playerHandCardCnt}/{9 - self.totalPlayer}
-用户位置:{player.playerLocation}号位，你的{delta*"下"}家
-"""
-        yourCardsStr = f"""{"YourCards"}:
-    {cardsToStr(self.yourCards)}
-"""
-        currentBossStr = str(self.currentBoss)
-        re:str =  yourCardsStr + currentBossStr + playersStr
-        
-        return re
+
 
 @dataclass(frozen=True)
 class GAME_SETTINGS:

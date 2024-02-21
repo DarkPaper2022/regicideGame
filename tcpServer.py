@@ -6,10 +6,10 @@ import time
 from myLogger import logger
 from typing import List,Any,Tuple
 from webSystem import WEB
-from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE
+from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,STATUS
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError
-
+from defineTCP_UI import statusToStr
 
 
 
@@ -117,7 +117,7 @@ class TCP_CLIENT:
         if message.dataType == DATATYPE.answerStatus:
             flag, status = message.data
             if flag:
-                messageData = str(status)
+                messageData = statusToStr(status)
             else:
                 messageData = "没开呢，别急\n"
         elif message.dataType == DATATYPE.answerTalking:
