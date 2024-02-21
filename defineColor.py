@@ -12,6 +12,7 @@ class COLOR(Enum):
                 "无"
     
 def cardToNum(card:int) -> int:
+    #num is only about how big it is, it don't care J or 10
     if 0 <= card <= 51:
         preNum = (card % 13 + 1)
         if preNum in [10,11,12]:
