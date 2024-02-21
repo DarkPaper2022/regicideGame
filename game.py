@@ -27,6 +27,7 @@ class BOSS:
         self.atk = self.atk - cnt if self.atk >= cnt else 0
 
 class PLAYER:
+    cards:List[int]
     def __init__(self, num, userName:str):
         self.cards = []
         self.num = num
@@ -220,8 +221,7 @@ class GAME:
 
     def defendRound(self):
         cards = self.ioGetCards()
-        #TODO:失败逻辑混乱
-        if sum(self.currentPlayer.cards) < self.currentBoss.atk:
+        if sum([cardToNum(card) for card in self.currentPlayer.cards]) < self.currentBoss.atk:
             self.fail()
         elif self._defendRoundCheckLegalCards(cards):
             self.currentPlayer.deleteCards(cards)
@@ -244,8 +244,7 @@ class GAME:
 
 
     def _defendRoundCheckLegalCards(self,cards:List[int]) -> bool:
-        #TODO
-        return True
+        return (sum([cardToNum(card) for card in cards]) >= self.currentBoss.atk)
 
 
     def run(self):
