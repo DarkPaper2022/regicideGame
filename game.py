@@ -271,7 +271,8 @@ class GAME:
             except CardError as e:
                 self.ioSendException(self.currentPlayer.num, str(e))
         self.currentPlayer.deleteCards(cards)
-        
+        for card in cards:
+            self.discardHeap.appendleft(card)
         self.ioSendGameTalk(self.currentPlayer.num, "您全防住了\n")
         self.simpleChangePlayer()
         self.currentRound = ROUND.atk
