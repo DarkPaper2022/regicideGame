@@ -48,9 +48,9 @@ def cardToStr(card:int) -> str:
     else:
         num = card % 13 + 1
         numStr =    'A' if (num == 1) else\
-                    'J' if (num == 10) else\
-                    'Q' if (num == 11) else\
-                    'K' if (num == 12) else\
+                    'J' if (num == 11) else\
+                    'Q' if (num == 12) else\
+                    'K' if (num == 13) else\
                     str(num)
         color = COLOR(math.floor(card / 13))
         colorStr = str(color)
