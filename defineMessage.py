@@ -4,6 +4,7 @@ from defineColor import COLOR
 from enum import Enum
 import math
 class DATATYPE(Enum):
+    #TODO:注释对应data的情况
     askStatus = 1       #from client, none message
     askTalking = 2      #from client, none message
     answerStatus = 3    #to client
@@ -20,9 +21,6 @@ class DATATYPE(Enum):
 class MESSAGE:
     player: int
     dataType: DATATYPE
-    """
-    card时，data 应为 List[int]
-    """
     data: Any
 
 @dataclass(frozen=True)
