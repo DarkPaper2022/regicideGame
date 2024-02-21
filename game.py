@@ -411,6 +411,8 @@ class GAME:
             message = self.mixSeperator(l)
             if message.dataType == DATATYPE.speak:
                 self.talkings.insert(message.data)
+                for i in range(self.playerTotalNum):
+                    self.ioSendTalkings(i)
             else:
                 #TODO:bad logic
                 if message.player != self.currentPlayer.num:
