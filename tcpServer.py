@@ -128,6 +128,12 @@ class TCP_CLIENT:
                 nameStr = line.userName
                 talkStr = line.message
                 messageData += (timeStr+" "+nameStr+"说"+"\n\t"+talkStr + "\n")
+        elif message.dataType == DATATYPE.overSignal:
+            isWin:bool = message.data
+            if isWin:
+                messageData = "真棒, 你们打败了魔王\n"
+            else:
+                messageData = "寄, 阁下请重新来过\n"
         elif (message.data == None):
             messageData = ""
         else:
