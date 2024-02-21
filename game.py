@@ -235,6 +235,7 @@ class GAME:
     def defendRound(self):
         if sum([cardToNum(card) for card in self.currentPlayer.cards]) < self.currentBoss.atk:
             self.fail()
+            return
         while True:
             cards = self.ioGetCards()
             try:
