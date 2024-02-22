@@ -9,7 +9,7 @@ from webSystem import WEB
 from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,STATUS
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError
-from defineTCP_UI import cardsToStr,cardToStr,bossToStr
+from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard
 from defineRound import ROUND
 
 
@@ -68,7 +68,7 @@ class TCP_CLIENT:
                 message = self.dataToMessage(data)
                 self.web.playerSendMessage(message,self.playerCookie)
             except MessageFormatError as e:
-                pass
+                self.clientSocket.send("Wrong Format Mesasge: 你在乱输什么啊\n".encode())
             except Exception as e:
                 print(f"Error: {e}")
                 break
@@ -101,7 +101,8 @@ class TCP_CLIENT:
                 if len(l) == 1 or l[1] == b"":
                     messageData = []
                 else:
-                    messageData = [int(card.decode()) for card in l[1].split(b" ")]
+                    #messageData = [int(card.decode()) for card in l[1].split(b" ")]
+                    messageData = [bytesToCard(card.strip()) for card in l[1].split(b" ")]
                 logger.info("A card Message")
             elif dataType == DATATYPE.speak:
                 messageData = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
@@ -110,7 +111,6 @@ class TCP_CLIENT:
             else:
                 messageData = None
         except:
-            self.clientSocket.send("Wrong Format Mesasge: 你在乱输什么啊\n".encode())
             raise MessageFormatError("Fuck you!")
         message = MESSAGE(self.playerIndex, dataType, messageData)
         return message

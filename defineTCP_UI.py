@@ -28,3 +28,26 @@ Boss:
     hp:{boss.hp}
     免疫:{boss.color}
 """
+#strip outside
+def bytesToCard(b:bytes) -> int:
+    s = b.decode()
+    if s[0] in [c.name for c in COLOR]:
+        color = COLOR[s[0]].value
+        sRest = s[1:]
+        num =   1 if sRest == "A" else\
+                11 if sRest == "J" else\
+                12 if sRest == "Q" else\
+                13 if sRest == "K" else\
+                int(sRest) if ( int(sRest) >= 1 and int(sRest) <= 10) else\
+                -1
+        if num == -1:
+            raise ValueError("输入处理出错")
+        else:
+            return color*13 + num - 1
+    else:
+        try:
+            card = int(s)
+            return card
+        except:
+            raise ValueError("输入处理出错")
+        
