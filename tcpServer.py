@@ -179,9 +179,9 @@ class TCP_SERVER:
     cookies:List[uuid.UUID]
     server_socket:socket.socket
     web:WEB
-    def __init__(self, web) -> None:
+    def __init__(self, web, port) -> None:
         self.SERVER_HOST = '0.0.0.0'
-        self.SERVER_PORT = 6666
+        self.SERVER_PORT = port
         self.BUFFER_SIZE = 1024
         self.sever_socket = None
         self.web = web
