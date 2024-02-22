@@ -131,10 +131,12 @@ class GAME:
         else:
             random.shuffle(self.discardHeap)
             discardHeapList = list(self.discardHeap)
+            logger.info(f"红桃功能，这里有{len(discardHeapList)}")
+            logger.info(f"红桃功能，这里加了{len(discardHeapList[:cnt])}")
             self.cardHeap = deque(discardHeapList[:cnt]) + self.cardHeap
-            logger.info(f"红桃功能，这里card是{self.cardHeap}")
-            self.discardHeap = deque(discardHeapList[cnt+1:])
-            #TODO:log
+            logger.info(f"红桃功能，这里剩了{len(discardHeapList[cnt:])}")
+            self.discardHeap = deque(discardHeapList[cnt:])
+            
     #ret: change the state
     def jokerRound(self) -> None:
         self.currentBoss.color = None
