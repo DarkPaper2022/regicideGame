@@ -189,7 +189,7 @@ class GAME:
             else:
                 raise ValueError("Wrong card color")            
         self.atkBoss(cardNum)
-        killed, gameover = self.bossKilledCheck()
+        killed, gameover = self._atkRoundBossKilledCheck()
         if gameover:
             #self.currentPlayer 不用改
             self.currentRound = ROUND.over
@@ -253,7 +253,24 @@ class GAME:
                     return False
                 else:
                     return True
-
+    #不负责用户的切换，仅负责牌堆的更新
+    def _atkRoundBossKilledCheck(self) -> Tuple[bool, bool]:
+        currentBoss:BOSS = self.currentBoss
+        if currentBoss.hp > 0:
+            return (False,False)
+        elif currentBoss.hp == 0:
+            self.cardHeap.append(currentBoss.name)
+        else:
+            self.discardHeap.appendleft(currentBoss.name)
+        self.discardBossHeap.append(currentBoss.name)
+        self.discardHeap += self.atkHeap
+        self.atkHeap.clear()
+        if len(self.bossHeap) == 0:
+            self.congratulations()
+            return (True,True)
+        else:
+            self.currentBoss = self.bossHeap.popleft()
+            return (True,False)
     #ret: change the state
     def defendRound(self):
         if sum([cardToNum(card) for card in self.currentPlayer.cards]) < self.currentBoss.atk:
@@ -278,24 +295,7 @@ class GAME:
         self.simpleChangePlayer()
         self.currentRound = ROUND.atk
         return
-    #不负责用户的切换，仅负责牌堆的更新
-    def bossKilledCheck(self) -> Tuple[bool, bool]:
-        currentBoss:BOSS = self.currentBoss
-        if currentBoss.hp > 0:
-            return (False,False)
-        elif currentBoss.hp == 0:
-            self.cardHeap.append(currentBoss.name)
-        else:
-            self.discardHeap.appendleft(currentBoss.name)
-        self.discardBossHeap.append(currentBoss.name)
-        self.discardHeap += self.atkHeap
-        self.atkHeap.clear()
-        if len(self.bossHeap) == 0:
-            self.congratulations()
-            return (True,True)
-        else:
-            self.currentBoss = self.bossHeap.popleft()
-            return (True,False)
+
 
 
     def _defendRoundCheckLegalCards(self,cards:List[int]) -> bool:
