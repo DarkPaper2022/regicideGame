@@ -77,7 +77,8 @@ class WEB:
     def playerSendMessage(self, message:MESSAGE, cookie:uuid.UUID):
         #cookie check
         self.gameQueue.put(message)
-    
+    #arg:legal or illegal playerName and password
+    #ret:raise AuthError if illegal
     def register(self, playerName:str, password:str):
         """
         password are needed
