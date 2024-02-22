@@ -102,7 +102,7 @@ class TCP_CLIENT:
                     messageData = []
                 else:
                     #messageData = [int(card.decode()) for card in l[1].split(b" ")]
-                    messageData = [bytesToCard(card.strip()) for card in l[1].split(b" ")]
+                    messageData = [bytesToCard(card.strip()) for card in l[1].split()]
                 logger.info("A card Message")
             elif dataType == DATATYPE.speak:
                 messageData = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
