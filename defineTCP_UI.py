@@ -19,7 +19,7 @@ def cardToStr(card:int) -> str:
                     str(num)
         color = COLOR(math.floor(card / 13))
         colorStr = str(color)
-        return colorStr+numStr+f"({str(card)})"
+        return colorStr+numStr+f"({color.name+numStr})"
 def bossToStr(boss:FROZEN_BOSS) -> str:
         return f"""
 Boss:

@@ -1,15 +1,15 @@
 from enum import Enum
 class COLOR(Enum):
     #红桃先于方片,如果key=lambda x:-x.value
-    colorC = 0
-    colorD = 1
-    colorH = 2
-    colorS = 3
+    C = 0
+    D = 1
+    H = 2
+    S = 3
     def __str__(self) -> str:
-        return  "梅花" if (self == COLOR.colorC) else\
-                "黑桃" if (self == COLOR.colorS) else\
-                "方片" if (self == COLOR.colorD) else\
-                "红桃" if (self == COLOR.colorH) else\
+        return  "梅花" if (self == COLOR.C) else\
+                "黑桃" if (self == COLOR.S) else\
+                "方片" if (self == COLOR.D) else\
+                "红桃" if (self == COLOR.H) else\
                 "无"
     
 def cardToNum(card:int) -> int:

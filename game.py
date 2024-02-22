@@ -180,13 +180,13 @@ class GAME:
         for cardColor in cardColors:
             if cardColor == self.currentBoss.color:
                 continue
-            if cardColor == COLOR.colorS:
+            if cardColor == COLOR.S:
                 self.weaken(cardNum)
-            elif cardColor == COLOR.colorD:
+            elif cardColor == COLOR.D:
                 self.getCard_cardHeap(cardNum)
-            elif cardColor == COLOR.colorH:
+            elif cardColor == COLOR.H:
                 self.update_cardHeap(cardNum)
-            elif cardColor == COLOR.colorC:
+            elif cardColor == COLOR.C:
                 self.atkBoss(cardNum)
             else:
                 raise ValueError("Wrong card color")            
