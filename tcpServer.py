@@ -180,7 +180,7 @@ class TCP_SERVER:
     server_socket:socket.socket
     web:WEB
     def __init__(self, web) -> None:
-        self.SERVER_HOST = '127.0.0.1'
+        self.SERVER_HOST = '0.0.0.0'
         self.SERVER_PORT = 6666
         self.BUFFER_SIZE = 1024
         self.sever_socket = None
