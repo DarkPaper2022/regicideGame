@@ -6,7 +6,7 @@ import time
 from myLogger import logger
 from typing import List,Any,Tuple
 from webSystem import WEB
-from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,STATUS
+from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,FROZEN_STATUS_PARTLY
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError
 from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard
@@ -144,7 +144,7 @@ class TCP_CLIENT:
             messageData = str(message.data)
         data:bytes = message.dataType.name.encode() +b"\n"+ messageData.encode()
         return data
-    def _statusToStr(self, status:STATUS) -> str:
+    def _statusToStr(self, status:FROZEN_STATUS_PARTLY) -> str:
         cardHeapLengthStr:str = f"牌堆还剩{status.cardHeapLength}张牌\n"
         discardHeapLengthStr = f"弃牌堆有{status.discardHeapLength}张牌\n"
         defeatedBossesStr = f"您已经打败了{(cardsToStr(status.defeatedBosses))},还有{12 - len(status.defeatedBosses)}个哦\n" \

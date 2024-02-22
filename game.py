@@ -1,7 +1,7 @@
 from collections import deque
 from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
-from defineMessage import MESSAGE,DATATYPE,STATUS,FROZEN_BOSS,GAME_SETTINGS,TALKING_MESSAGE,FROZEN_PLAYER
+from defineMessage import MESSAGE,DATATYPE,FROZEN_STATUS_PARTLY,FROZEN_BOSS,GAME_SETTINGS,TALKING_MESSAGE,FROZEN_PLAYER
 from defineError import CardError
 from defineColor import COLOR,cardToNum
 from defineRound import ROUND
@@ -391,7 +391,7 @@ class GAME:
         if self.startFlag:
             playersLocal = tuple([FROZEN_PLAYER(player.userName,len(player.cards),player.num)
                             for player in self.playerList if player.num != playerIndex])
-            status = STATUS(
+            status = FROZEN_STATUS_PARTLY(
                         disCardHeap=tuple(self.discardHeap),
                         atkCardHeap=tuple(self.atkHeap),
                         currentRound=self.currentRound,

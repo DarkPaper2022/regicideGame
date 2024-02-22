@@ -11,8 +11,20 @@ from queue import Queue as LockQueue
 from collections import deque
 from typing import List,Union
 from myLogger import logger
+from enum import Enum
 
-
+class PLAYER_LEVEL(Enum):
+    illegal = 0
+    normal = 1
+    superUser = 2
+def checkPlayerLevel(player:int) -> PLAYER_LEVEL:
+    #TODO
+    if player >= 0:
+        return PLAYER_LEVEL.normal
+    elif player == -2:
+        return PLAYER_LEVEL.superUser
+    else:
+        raise ValueError("playerLevel")
 @dataclass
 class PLAYER:
     cookie:uuid.UUID
@@ -30,6 +42,9 @@ class WEB:
         self.indexPool = LockQueue()
         for i in range(maxPlayer):
             self.indexPool.put(i)
+        self.suIndexPool = LockQueue()
+        for i in [-1]:
+            self.suIndexPool.put(i)
         """
         binding     playerQueue-playerIndex-cookie-playerName
         cookie      playerName+password = cookie 
@@ -41,7 +56,7 @@ class WEB:
         logger.info("get a message")
         return message
     def gameSendMessage(self, message:MESSAGE):
-        if message.player == -1:
+        if message.player == -2:
             print(message.data)
         else:
             player = self.players[message.player]
@@ -69,8 +84,11 @@ class WEB:
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
         WARNING: PLZ, check should be threading SAFE
         """
-        checkBool:bool = self._check()
-        if checkBool:
+        level:PLAYER_LEVEL = self._check(playerName, password)
+        """        if level == PLAYER_LEVEL.superUser:
+            return(0,uuid.uuid4())TODO
+        el"""
+        if level == PLAYER_LEVEL.normal:
             id = uuid.uuid4()
             playerIndex = self.indexPool.get()
             player = PLAYER(id, playerIndex, LockQueue(), playerName)
@@ -86,9 +104,9 @@ class WEB:
             return (id, playerIndex)
         else:
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
-    def _check(self) -> bool:
+    def _check(self, playerName:str, password:str) -> PLAYER_LEVEL:
         #TODO
-        return True
+        return PLAYER_LEVEL.normal
 
 """class PLAYER_TERMINAL:
     web:WEB

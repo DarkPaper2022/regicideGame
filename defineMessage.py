@@ -18,9 +18,12 @@ class DATATYPE(Enum):
     confirmJoker = 10   #from client
     overSignal = 11     #to client
     gameTalk = 12       #to client                  TODO:no str
+    
 
 @dataclass(frozen=True)
 class MESSAGE:
+    #0 to inf for user, -1 for web, -2 to -100 for SuperUser
+    #-1 used: StartSignalPackage
     player: int
     dataType: DATATYPE
     data: Any
@@ -35,6 +38,7 @@ class FROZEN_BOSS:
 
 @dataclass(frozen=True)
 class FROZEN_PLAYER:
+    #用来给玩家阅读的静态结构 
     playerName:str
     playerHandCardCnt:int
     playerLocation:int
@@ -42,8 +46,9 @@ class FROZEN_PLAYER:
 
 
                     
-@dataclass
-class STATUS:
+@dataclass(frozen=True)
+class FROZEN_STATUS_PARTLY:
+    #用来给玩家阅读的静态结构     
     totalPlayer:int
     yourLocation:int
     currentRound:ROUND
