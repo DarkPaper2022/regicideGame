@@ -28,7 +28,8 @@ Boss:
     hp:{boss.hp}
     免疫:{boss.color}
 """
-#strip outside
+#arg:strip outside
+#ret:legal card
 def bytesToCard(b:bytes) -> int:
     s = b.decode()
     if s[0] in [c.name for c in COLOR]:
@@ -47,7 +48,10 @@ def bytesToCard(b:bytes) -> int:
     else:
         try:
             card = int(s)
-            return card
+            if card < 0 or card > 53:
+                raise ValueError("输入处理出错")
+            else:
+                return card
         except:
             raise ValueError("输入处理出错")
         
