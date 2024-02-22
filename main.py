@@ -15,5 +15,5 @@ except:
 web = WEB(userMax)
 server = tcpServer.TCP_SERVER(web, port)
 server.start()
-Game = game.GAME(userMax, web)
+Game = game.GAME(web)
 Game.run()

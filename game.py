@@ -100,7 +100,7 @@ class GAME:
     discardHeap:Deque[int]
     atkHeap:Deque[int]
     web:WEB
-    def __init__(self, maxPlayer, web):
+    def __init__(self, web):
         self.talkings = TALKING()
         self.startFlag = False
         self.web = web
