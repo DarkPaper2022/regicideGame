@@ -196,10 +196,12 @@ class GAME:
             #self.currentPlayer 不用改
             self.currentRound = ROUND.over
         elif killed:
+            self.ioSendGameTalk(self.currentPlayer.num, "您干死它了,该您的队友干活儿了\n")
             self.simpleChangePlayer()
             self.currentRound = ROUND.atk
             return
         else:
+            self.ioSendGameTalk(self.currentPlayer.num, "您输出拉满！但是该防了现在\n")
             #currentPlayer不变哦
             self.currentRound = ROUND.defend
             return
