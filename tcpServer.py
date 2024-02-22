@@ -16,6 +16,7 @@ from defineRound import ROUND
 
 
 #recv and send NO LOCK
+#只对socket和web的交互有线程问题、而这两个都是线程安全的
 class TCP_CLIENT:
     clientSocket:socket.socket
     clientAddr:Any
