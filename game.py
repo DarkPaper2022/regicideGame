@@ -101,8 +101,6 @@ class GAME:
     atkHeap:Deque[int]
     web:WEB
     def __init__(self, maxPlayer, web):
-        self.maxHandSize = 9 - maxPlayer
-        self.playerTotalNum = maxPlayer
         self.talkings = TALKING()
         self.startFlag = False
         self.web = web
@@ -346,6 +344,10 @@ class GAME:
                 raise ValueError("strange round")
     def startGame(self,settings:GAME_SETTINGS):
         #这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
+        maxPlayer = len(settings.playerNames)
+        self.maxHandSize = 9 - maxPlayer
+        self.playerTotalNum = maxPlayer
+        
         self.playerList = []
         for player_num in range(self.playerTotalNum):
             self.playerList.append(PLAYER(player_num, settings.playerNames[player_num]))
