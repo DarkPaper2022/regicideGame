@@ -10,7 +10,7 @@ class DATATYPE(Enum):
     askTalking = 2      #from client, none message
     answerStatus = 3    #to client
     answerTalking = 4   #to client
-    card = 5            #from client
+    card = 5            #from client                使用: "5#S5 J5"、"5#52" 这样的方式来出牌
     startSignal = 6     #none
     exception = 7       #to client                  TODO:no str
     logInSuccess = 8    #to client          

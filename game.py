@@ -20,13 +20,23 @@ class BOSS:
         self.atk = 10 + 5*((name % 13) - 10)
         self.hp = 2 * self.atk
         self.color = COLOR(math.floor(name / 13))
+        self.tempWeakenAtk = 0                      #暂时存在而未生效的虚弱buff总数
     def final(self):
         return FROZEN_BOSS(self.name,self.atk,self.hp,self.color)
-    def hurt(self,cnt): 
+    def hurt(self, cnt): 
         self.hp = self.hp - cnt
-    def weak(self,cnt):
+    def weak(self, cnt):
         self.atk = self.atk - cnt if self.atk >= cnt else 0
-
+    def sameColorHandler(self, cnt):
+        if self.color == COLOR.S:
+            self.tempWeakenAtk += cnt
+        return
+    def clearify(self):
+        self.color = None
+        self.weak(self.tempWeakenAtk)
+        self.tempWeakenAtk = 0
+        return
+        
 class PLAYER:
     cards:List[int]
     def __init__(self, num, userName:str):
@@ -139,7 +149,6 @@ class GAME:
             
     #ret: change the state
     def jokerRound(self) -> None:
-        self.currentBoss.color = None
         while True:
             playerIndex = self.ioGetJokerNum()
             if playerIndex == self.currentPlayer.num:
@@ -177,8 +186,10 @@ class GAME:
             cardColors:List[COLOR] = list(set([COLOR(math.floor(card / 13)) for card in cards]))    #去重
             cardColors.sort(key=lambda x:-x.value)
             #红桃先于方片
+        #here we get color and num
         for cardColor in cardColors:
             if cardColor == self.currentBoss.color:
+                self.currentBoss.sameColorHandler(cardNum)
                 continue
             if cardColor == COLOR.S:
                 self.weaken(cardNum)
@@ -211,6 +222,7 @@ class GAME:
         for card in cards:
             self.atkHeap.appendleft(card)
         if (len(cards) == 1 and (cards[0] == 53 or cards[0] == 52)):
+            self.currentBoss.clearify()
             self.currentRound = ROUND.jokerTime
             #self.currentPlayer 不变哦 
             return
