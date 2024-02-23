@@ -61,7 +61,7 @@ class TALKING:
         return tuple(self.messages)
 
 
-class GAME:
+class ROOM:
     """
     card        = A B C D   (pop card here, ordered)
     discard     = E F G H   (not ordered)  
@@ -284,6 +284,7 @@ class GAME:
         else:
             self.currentBoss = self.bossHeap.popleft()
             return (True,False)
+
     #ret: change the state
     def defendRound(self):
         if sum([cardToNum(card) for card in self.currentPlayer.cards]) < self.currentBoss.atk:
@@ -308,9 +309,6 @@ class GAME:
         self.simpleChangePlayer()
         self.currentRound = ROUND.atk
         return
-
-
-
     def _defendRoundCheckLegalCards(self,cards:List[int]) -> bool:
         for card in cards:
             if card not in self.currentPlayer.cards:
@@ -483,9 +481,10 @@ class GAME:
     
 
     def mainRead(self) -> MESSAGE:
-        message:MESSAGE = self.web.gameGetMessage()
+        message:MESSAGE = self.web.roomGetMessage()
         logger.info("READ:" + message.dataType.name + str(message.data))
         return message
     def mainSend(self,message:MESSAGE):
         logger.info("SEND:" + message.dataType.name + str(message.data))
-        self.web.gameSendMessage(message)
+        self.web.roomSendMessage(message)
+

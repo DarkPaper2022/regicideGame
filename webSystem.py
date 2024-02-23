@@ -51,13 +51,13 @@ class WEB:
         binding     playerQueue-playerIndex-cookie-playerName
         cookie      playerName+password = cookie 
         """
-    def gameGetMessage(self) -> MESSAGE:
+    def roomGetMessage(self) -> MESSAGE:
         #此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
         logger.info("wanting a meesgae")
         message = self.gameQueue.get()
         logger.info("get a message")
         return message
-    def gameSendMessage(self, message:MESSAGE):
+    def roomSendMessage(self, message:MESSAGE):
         if message.player == -2:
             print(message.data)
         else:
