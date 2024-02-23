@@ -19,6 +19,7 @@ class DATATYPE(Enum):
     overSignal = 11     #to client
     gameTalk = 12       #to client                  TODO:no str
     cookieWrong = 13    #to client
+    confirmPrepare = 14 #from client or from web
     
 
 @dataclass(frozen=True)

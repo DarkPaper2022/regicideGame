@@ -111,13 +111,14 @@ class WEB:
             player = PLAYER(id, playerIndex, LockQueue(), playerName)
             self.players[playerIndex] = player
             player.playerQueue.put(MESSAGE(playerIndex, DATATYPE.logInSuccess, None))
+#            self.gameQueue.put(MESSAGE(playerIndex, DATATYPE.confirmPrepare, playerName))
             if (self.indexPool.empty()):
                 #TODO:no exception the other side
                 l = [player.playerName for player in self.players if player != None]
                 if len(l) != self.maxPlayer:
                     raise PlayerNumError("PlayerNum Wrong, webSystem side caught")
                 self.gameQueue.put(MESSAGE(-1, DATATYPE.startSignal, 
-                                           GAME_SETTINGS(tuple(l))))
+                                        GAME_SETTINGS(tuple(l))))
             self.registerLock.release()
             return (id, playerIndex)
         else:
