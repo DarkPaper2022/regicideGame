@@ -22,7 +22,7 @@ class DATATYPE(Enum):
     confirmPrepare = 14 #from client or from web
     answerRoom = 17     #to client
     createRoom = 18     #from web to Game
-    gameOver = 19       #to room
+    gameOver = 19       #to hall
 
     
 

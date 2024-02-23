@@ -106,6 +106,7 @@ class ROOM:
     web:WEB
     def __init__(self, web:WEB, roomIndex:int):
         self.startFlag = False
+        self.zombieFlag = False
         self.web = web
         self.roomIndex = roomIndex
         self.playerTotalNum = self.web._roomIndexToMaxPlayer(roomIndex)
@@ -502,7 +503,11 @@ class ROOM:
     
 
     def mainRead(self) -> MESSAGE:
-        message:MESSAGE = self.web.roomGetMessage(self.roomIndex)
+        try:    
+            message:MESSAGE = self.web.roomGetMessage(self.roomIndex)
+        except:
+            self.mainSend(MESSAGE(self.roomIndex, -1, DATATYPE.gameOver,None))
+            raise TimeoutError
         logger.info("READ:" + message.dataType.name + str(message.data))
         return message
     def mainSend(self,message:MESSAGE):

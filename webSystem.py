@@ -79,6 +79,7 @@ class WEB:
 
     def roomSendMessage(self, message:MESSAGE):
         #TODO:check it
+        #TODO:room 的终结
         try:
             if message.player == -2:
                 print(message.data)
