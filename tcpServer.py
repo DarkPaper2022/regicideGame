@@ -8,7 +8,7 @@ from typing import List,Any,Tuple,Union
 from webSystem import WEB
 from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START
 from dataclasses import dataclass
-from defineError import AuthError,MessageFormatError,RoomError
+from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError
 from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard
 from defineRound import ROUND
 
@@ -56,7 +56,7 @@ class TCP_CLIENT:
                 username = l[0].decode("utf-8")
                 roomIndex = int(l[2].decode())
                 break
-            except (AuthError,RoomError,TimeoutError) as e:
+            except (AuthError,RoomError,TimeoutError,ServerBusyError) as e:
                 self.clientSocket.send(str(e).encode())
             except Exception as e:
                 self.clientSocket.send("Wrong Format Username and Password: 你在乱输什么啊\n".encode() + str(e).encode())
@@ -178,7 +178,7 @@ class TCP_CLIENT:
             self.roomID = message.data
             messageData = f"""你的房间号是{message.data}\n"""
         elif message.dataType == DATATYPE.logInSuccess:
-            messageData = "你该选择或创建你的房间了"
+            messageData = ""
         elif (message.data == None):
             messageData = ""
         else:

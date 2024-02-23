@@ -114,13 +114,12 @@ class WEB:
             pass
         #TODO:else
     #arg:legal or illegal playerName and password
-    #ret:raise AuthError if illegal, RoomError, TimeOutError
+    #ret:raise AuthError if illegal, RoomError, TimeOutError, ServerBusyError
     #ret:room creating may cause error
     def register(self, playerName:str, password:str, roomIndex:int):
-        try:
-            self.registerLock.acquire(timeout=20)
-        except TimeoutError:
-            raise ServerBusyError("诶一下子登不进去了,要不咱等等?\n")
+        logger.info(f"i wait for lock now{playerName,password,roomIndex}")
+        self.registerLock.acquire(timeout=20)
+        logger.info(f"i get lock now{playerName,password,roomIndex}")
         """
         password are needed
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
@@ -144,6 +143,7 @@ class WEB:
             try:
                 room = self.rooms[roomIndex]
             except:
+                logger.info(f"i get error now{playerName,password,roomIndex}")
                 raise RoomError(f"你在试图进入一个不存在的房间{roomIndex}?\n")
             if room == None:    #WARNING: not threading safe here, but outside is safe, and easy to fix
                 room = WEB_ROOM(lock=threading.Lock(),
