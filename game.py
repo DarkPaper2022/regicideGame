@@ -101,7 +101,6 @@ class GAME:
     atkHeap:Deque[int]
     web:WEB
     def __init__(self, web):
-        self.talkings = TALKING()
         self.startFlag = False
         self.web = web
 
@@ -347,7 +346,8 @@ class GAME:
         maxPlayer = len(settings.playerNames)
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
-        
+        self.talkings = TALKING()
+
         self.playerList = []
         for player_num in range(self.playerTotalNum):
             self.playerList.append(PLAYER(player_num, settings.playerNames[player_num]))
