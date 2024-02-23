@@ -21,7 +21,7 @@ class BOSS:
         self.hp = 2 * self.atk
         self.color = COLOR(math.floor(name / 13))
         self.tempWeakenAtk = 0                      #暂时存在而未生效的虚弱buff总数
-    def final(self):
+    def frozen(self):
         return FROZEN_BOSS(self.name,self.atk,self.hp,self.color)
     def hurt(self, cnt): 
         self.hp = self.hp - cnt
@@ -402,7 +402,7 @@ class GAME:
                         yourLocation = playerIndex,
                         players = playersLocal,
                         yourCards=tuple(self.playerList[playerIndex].cards), 
-                        currentBoss=self.currentBoss.final(),
+                        currentBoss=self.currentBoss.frozen(),
                         cardHeapLength=len(self.cardHeap),
                         defeatedBosses=tuple(self.discardBossHeap),
                         discardHeapLength=len(self.discardHeap),
