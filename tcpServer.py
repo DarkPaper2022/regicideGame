@@ -239,7 +239,7 @@ class TCP_SERVER:
         except:
             self.SERVER_PORT += random.randint(1,200)
             self.server_socket.bind((self.SERVER_HOST, self.SERVER_PORT))
-        self.server_socket.listen(5)
+        self.server_socket.listen(20)
         print(f"Server listening on {self.SERVER_HOST}:{self.SERVER_PORT}")
         while True:
             client_socket, client_address = self.server_socket.accept()
