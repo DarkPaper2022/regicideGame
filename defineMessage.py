@@ -18,6 +18,7 @@ class DATATYPE(Enum):
     confirmJoker = 10   #from client
     overSignal = 11     #to client
     gameTalk = 12       #to client                  TODO:no str
+    cookieWrong = 13    #to client
     
 
 @dataclass(frozen=True)

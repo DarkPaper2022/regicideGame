@@ -69,16 +69,21 @@ class WEB:
                 player.playerQueue.put(message)
         return
     def playerGetMessage(self, playerIndex:int, cookie:uuid.UUID)->MESSAGE:
-        #cookie check
         player = self.players[playerIndex]
         if player == None:
-            return MESSAGE(-1,DATATYPE(-1),None)
+            return MESSAGE(-1,DATATYPE.cookieWrong,None)
             #TODO
         else:
-            return player.playerQueue.get()
+            if player.cookie == cookie:
+                #WARNING: 这里有时间差,注意是否有错位风险
+                return player.playerQueue.get()
+            else:
+                return MESSAGE(-1,DATATYPE.cookieWrong,None)
     def playerSendMessage(self, message:MESSAGE, cookie:uuid.UUID):
-        #cookie check
-        self.gameQueue.put(message)
+        player = self.players[message.player]
+        if player!=None and player.cookie == cookie:
+            self.gameQueue.put(message)
+        #TODO:else
     #arg:legal or illegal playerName and password
     #ret:raise AuthError if illegal
     def register(self, playerName:str, password:str):
@@ -96,8 +101,11 @@ class WEB:
         elif level == PLAYER_LEVEL.normal:
             for player in self.players:
                 if player != None and player.playerName == playerName:
+                    index = player.playerIndex
+                    newID = uuid.uuid4()
+                    player.cookie = newID
                     self.registerLock.release()
-                    return (player.cookie, player.playerIndex)
+                    return (newID, index)
             id = uuid.uuid4()
             playerIndex = self.indexPool.get()
             player = PLAYER(id, playerIndex, LockQueue(), playerName)
