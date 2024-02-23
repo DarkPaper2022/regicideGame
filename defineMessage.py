@@ -20,12 +20,18 @@ class DATATYPE(Enum):
     gameTalk = 12       #to client                  TODO:no str
     cookieWrong = 13    #to client
     confirmPrepare = 14 #from client or from web
+    answerRoom = 17     #to client
+    createRoom = 18     #from web to Game
+
     
 
 @dataclass(frozen=True)
 class MESSAGE:
-    #0 to inf for user, -1 for web, -2 to -100 for SuperUser
-    #-1 used: StartSignalPackage
+    #-1 for no room or for hall
+    #0 to inf for normal room
+    room: int
+    #0 to inf for normal user, -1 for webSystem, -2 for SuperUser
+    #-1 used: StartSignalPackage, cookieWrong  
     player: int
     dataType: DATATYPE
     data: Any

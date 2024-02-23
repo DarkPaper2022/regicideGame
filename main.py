@@ -1,5 +1,5 @@
 from webSystem import WEB
-import game
+import room
 import asyncio
 import tcpServer
 import sys
@@ -15,5 +15,5 @@ except:
 web = WEB(userMax)
 server = tcpServer.TCP_SERVER(web, port)
 server.start()
-Game = game.ROOM(web)
-Game.run()
+Game = room.ROOM(web)
+Game.roomThreadingFunc()

@@ -5,9 +5,10 @@ import os
 import subprocess
 import uuid
 import threading
+import math
 from dataclasses import dataclass
 from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS
-from defineError import AuthError,PlayerNumError
+from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError
 from queue import Queue as LockQueue
 from collections import deque
 from typing import List,Union
@@ -27,26 +28,41 @@ def checkPlayerLevel(player:int) -> PLAYER_LEVEL:
     else:
         raise ValueError("playerLevel")
 @dataclass
-class PLAYER:
+class WEB_PLAYER:
     cookie:uuid.UUID
     playerIndex:int
     playerQueue:LockQueue
     playerName:str
+    playerRoom:int
 
-
+#线程安全了现在
+@dataclass
+class WEB_ROOM:
+    lock:threading.Lock
+    roomID:int
+    playerIndexs:List[int]
+    roomQueue:LockQueue
+    maxPlayer:int
 class WEB:
-    players:List[Union[PLAYER,None]]
-    def __init__(self,maxPlayer:int) -> None:
+    players:List[Union[WEB_PLAYER,None]]
+    rooms:List[Union[WEB_ROOM,None]]
+    def __init__(self,maxPlayer:int, maxRoom) -> None:
         self.registerLock = threading.Lock()
         self.maxPlayer = maxPlayer
+        self.maxRoom = maxRoom
         self.gameQueue = LockQueue()
-        self.players = [None]*maxPlayer
+        self.players = [None]*maxPlayer #maxplayer 很大
+        self.rooms = [None]*maxRoom
         self.indexPool = LockQueue()
+        
         for i in range(maxPlayer):
             self.indexPool.put(i)
         self.suIndexPool = LockQueue()
-        for i in [-1]:
+        for i in [-2]:
             self.suIndexPool.put(i)
+        self.roomPool = LockQueue()
+        for i in range(maxRoom):
+            self.roomPool.put(i)
         """
         binding     playerQueue-playerIndex-cookie-playerName
         cookie      playerName+password = cookie 
@@ -71,23 +87,28 @@ class WEB:
     def playerGetMessage(self, playerIndex:int, cookie:uuid.UUID)->MESSAGE:
         player = self.players[playerIndex]
         if player == None:
-            return MESSAGE(-1,DATATYPE.cookieWrong,None)
+            #WARNING:这里的message不是从queue里取出来的哦
+            return MESSAGE(-1,playerIndex,DATATYPE.cookieWrong,None)
             #TODO
         else:
             if player.cookie == cookie:
                 #WARNING: 这里有时间差,注意是否有错位风险
                 return player.playerQueue.get()
             else:
-                return MESSAGE(-1,DATATYPE.cookieWrong,None)
+                return MESSAGE(-1,playerIndex,DATATYPE.cookieWrong,None)
     def playerSendMessage(self, message:MESSAGE, cookie:uuid.UUID):
         player = self.players[message.player]
         if player!=None and player.cookie == cookie:
-            self.gameQueue.put(message)
+            self.rooms[player.]
         #TODO:else
     #arg:legal or illegal playerName and password
-    #ret:raise AuthError if illegal
-    def register(self, playerName:str, password:str):
-        self.registerLock.acquire()
+    #ret:raise AuthError if illegal, 
+    #ret:room creating may cause error
+    def register(self, playerName:str, password:str, roomIndex:int):
+        try:
+            self.registerLock.acquire(timeout=20)
+        except TimeoutError:
+            raise ServerBusyError("诶一下子登不进去了,要不咱等等?\n")
         """
         password are needed
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
@@ -108,10 +129,25 @@ class WEB:
                     return (newID, index)
             id = uuid.uuid4()
             playerIndex = self.indexPool.get()
-            player = PLAYER(id, playerIndex, LockQueue(), playerName)
+            try:
+                room = self.rooms[roomIndex]
+            except:
+                raise RoomError(f"你在试图进入一个不存在的房间{roomIndex}?\n")
+            if room == None:    #WARNING: not threading safe here, but outside is safe, and easy to fix
+                room = WEB_ROOM(lock=threading.Lock(),
+                                roomID=roomIndex, 
+                                playerIndexs = [playerIndex], 
+                                roomQueue=LockQueue(), 
+                                maxPlayer= self._roomIndexToMaxPlayer(roomIndex=roomIndex))
+            else:
+                if len(room.playerIndexs) < room.maxPlayer:
+                    room.playerIndexs.append(playerIndex)
+                else:
+                    raise RoomError(f"{roomIndex}号房间满了\n")
+            player = WEB_PLAYER(id, playerIndex, LockQueue(), playerName, playerRoom = roomIndex)
             self.players[playerIndex] = player
-            player.playerQueue.put(MESSAGE(playerIndex, DATATYPE.logInSuccess, None))
-#            self.gameQueue.put(MESSAGE(playerIndex, DATATYPE.confirmPrepare, playerName))
+            player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None))
+#           self.gameQueue.put(MESSAGE(playerIndex, DATATYPE.confirmPrepare, playerName))
             if (self.indexPool.empty()):
                 #TODO:no exception the other side
                 l = [player.playerName for player in self.players if player != None]
@@ -128,6 +164,14 @@ class WEB:
     def _check(self, playerName:str, password:str) -> PLAYER_LEVEL:
         #TODO
         return PLAYER_LEVEL.normal
+
+
+    def _roomIndexToMaxPlayer(self,roomIndex:int)->int:
+        if (roomIndex >= 0 and roomIndex < self.maxRoom):
+            return math.floor(roomIndex/100) + 2
+        else:
+            logger.error(f"这里炸了,{roomIndex}被送进来了")
+            return 2
 
 """class PLAYER_TERMINAL:
     web:WEB

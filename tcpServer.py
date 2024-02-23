@@ -4,7 +4,7 @@ import uuid
 import random
 import time
 from myLogger import logger
-from typing import List,Any,Tuple
+from typing import List,Any,Tuple,Union
 from webSystem import WEB
 from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,FROZEN_STATUS_PARTLY
 from dataclasses import dataclass
@@ -24,12 +24,14 @@ class TCP_CLIENT:
     playerCookie:uuid.UUID
     userName:str    #be careful, once initialized it should never be changed 
     web:WEB
+    roomID:int
     def __init__(self, clientSocket:socket.socket, clientAddr, web, timeOutSetting:int) -> None:
         self.clientAddr = clientAddr
         self.clientSocket = clientSocket
         self.web = web
         self.overFlag = False
         self.timeOutSetting = timeOutSetting
+        self.roomID = -1
     def start(self):
         authThread = threading.Thread(target=self.authThread)
         authThread.start()
@@ -39,7 +41,7 @@ class TCP_CLIENT:
         print(f"Accepted connection from {self.clientAddr}")
         username = ""
         while True:
-            self.clientSocket.send(b"Username and Password, plz")
+            self.clientSocket.send(b"Username and Password, plz\n")
             data = self.clientSocket.recv(1024)
             if not data:
                 self.clientSocket.close()
@@ -47,7 +49,10 @@ class TCP_CLIENT:
                 return
             l = data.strip().split(b" ")
             try:
-                self.playerCookie, self.playerIndex = self.web.register(playerName=l[0].decode("utf-8"), password=l[1].decode("utf-8"))
+                self.playerCookie, self.playerIndex = self.web.register(
+                    playerName=l[0].decode("utf-8"),
+                    password=l[1].decode("utf-8"),
+                    roomIndex=int(l[2].decode()))
                 username = l[0].decode("utf-8")
                 break
             except AuthError as e:
@@ -63,7 +68,7 @@ class TCP_CLIENT:
         return
     #recv From  netcat
     def recvThreadFunc(self):
-        #认为到这里我们拿到了一个正常的cookie和playerIndex
+        #认为到这里我们拿到了一个正常的cookie和playerIndex,但是没有合适的room
         while True:
             try:
                 data = self.clientSocket.recv(1024)
@@ -137,15 +142,18 @@ class TCP_CLIENT:
                 messageData = None
         except:
             raise MessageFormatError("Fuck you!")
-        message = MESSAGE(self.playerIndex, dataType, messageData)
+        message = MESSAGE(self.roomID,self.playerIndex, dataType, messageData)
         return message
+    #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> bytes:
+        if message.room != self.roomID:
+            return "奇怪的信号?\n".encode()
         if message.dataType == DATATYPE.answerStatus:
             flag, status = message.data
             if flag:
                 messageData = self._statusToStr(status)
             else:
-                messageData = "没开呢，别急\n"
+                messageData = f"你的房间号是{self.roomID},没开呢，别急\n"
         elif message.dataType == DATATYPE.answerTalking:
             messageData = ""
             talkings:Tuple[TALKING_MESSAGE,...] = message.data
@@ -164,6 +172,11 @@ class TCP_CLIENT:
                 messageData = "寄, 阁下请重新来过\n"
         elif message.dataType == DATATYPE.cookieWrong:
             messageData = "你被顶号了,要不要顶回来试试?\n"
+        elif message.dataType == DATATYPE.answerRoom:
+            self.roomID = message.data
+            messageData = f"""你的房间号是{message.data}\n"""
+        elif message.dataType == DATATYPE.logInSuccess:
+            messageData = "你该选择或创建你的房间了"
         elif (message.data == None):
             messageData = ""
         else:
