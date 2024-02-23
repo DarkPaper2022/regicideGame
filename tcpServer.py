@@ -24,10 +24,12 @@ class TCP_CLIENT:
     playerCookie:uuid.UUID
     userName:str    #be careful, once initialized it should never be changed 
     web:WEB
-    def __init__(self, clientSocket, clientAddr, web) -> None:
+    def __init__(self, clientSocket:socket.socket, clientAddr, web, timeOutSetting:int) -> None:
         self.clientAddr = clientAddr
         self.clientSocket = clientSocket
         self.web = web
+        self.overFlag = False
+        self.timeOutSetting = timeOutSetting
     def start(self):
         authThread = threading.Thread(target=self.authThread)
         authThread.start()
@@ -53,6 +55,7 @@ class TCP_CLIENT:
             except Exception as e:
                 self.clientSocket.send("Wrong Format Username and Password: 你在乱输什么啊\n".encode())
         self.userName = username
+        self.clientSocket.settimeout(self.timeOutSetting)
         recvThread = threading.Thread(target=self.recvThreadFunc)
         sendThread = threading.Thread(target=self.sendThreadFunc)
         recvThread.start()
@@ -68,16 +71,25 @@ class TCP_CLIENT:
                     break
                 message = self.dataToMessage(data)
                 self.web.playerSendMessage(message,self.playerCookie)
+            except socket.timeout:
+                if self.overFlag == False:
+                    logger.info("recvFromnetcatThread, timeout continue")
+                    pass
+                else:
+                    logger.info("recvFromnetcatThread, timeout Over")
+                    break
             except MessageFormatError as e:
                 self.clientSocket.send("Wrong Format Mesasge: 你在乱输什么啊\n".encode())
             except Exception as e:
-                print(f"Error: {e}")
+                logger.info("recvFromnetcatThread, exception Over")
                 break
         try:
+            self.overFlag = True
             self.clientSocket.close()
             print(f"Connection with {self.clientAddr} closed.")
+            return
         except:
-            pass
+            return
     #send To netcat
     def sendThreadFunc(self):
         while True:
@@ -85,16 +97,26 @@ class TCP_CLIENT:
             data = self.messageToData(message)
             try:
                 self.clientSocket.send(data)
+            except socket.timeout:
+                if self.overFlag == False:
+                    logger.info("sendTonetcatThread, timeout Continue")
+                    pass
+                else:
+                    logger.info("sendTonetcatThread, timeout Over")
+                    break
             except Exception as e:
-                print(f"Error: {e}")
+                logger.info("sendTonetcatThread, exception Over")
                 break
             if message.dataType == DATATYPE.cookieWrong:
+                logger.info("sendTonetcatThread, cookie Over")
                 break
         try:
+            self.overFlag = True
             self.clientSocket.close()
             print(f"Connection with {self.clientAddr} closed.")
+            return
         except:
-            pass
+            return
     # error MessageFormatError if bytes are illegal
     def dataToMessage(self, data:bytes) -> MESSAGE:
         try:
@@ -205,6 +227,6 @@ class TCP_SERVER:
         while True:
             client_socket, client_address = self.server_socket.accept()
             #可能在标识自己身份的时候出错,交由子线程处理，socket也由子线程来释放
-            tcpClient = TCP_CLIENT(client_socket, client_address, self.web)
+            tcpClient = TCP_CLIENT(client_socket, client_address, self.web, timeOutSetting=300)
             tcpClient.start()
         server_socket.close()
