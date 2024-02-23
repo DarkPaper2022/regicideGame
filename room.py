@@ -419,7 +419,7 @@ class ROOM:
         else:
             l = self.playerList
             status = FROZEN_STATUS_BEFORE_START(tuple([player.userName for player in l]), self.playerTotalNum)
-            state = (self.startFlag, FROZEN_STATUS_BEFORE_START)
+            state = (self.startFlag, status)
         retMessage:MESSAGE = MESSAGE(room=self.roomIndex, player=playerIndex, dataType=DATATYPE.answerStatus, data=state)
         self.mainSend(retMessage)
     def ioSendTalkings(self, playerIndex:int):
