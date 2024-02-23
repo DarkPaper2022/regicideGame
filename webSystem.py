@@ -122,7 +122,7 @@ class WEB:
     #ret:room creating may cause error
     def register(self, playerName:str, password:str, roomIndex:int):
         logger.info(f"i wait for lock now{playerName,password,roomIndex}")
-        self.registerLock.acquire(timeout=20)
+        self.registerLock.acquire(timeout=3)
         logger.info(f"i get lock now{playerName,password,roomIndex}")
         """
         password are needed
@@ -147,6 +147,7 @@ class WEB:
             try:
                 room = self.rooms[roomIndex]
             except:
+                self.registerLock.release()
                 logger.info(f"i get error now{playerName,password,roomIndex}")
                 raise RoomError(f"你在试图进入一个不存在的房间{roomIndex}?\n")
             if room == None:    #WARNING: not threading safe here, but outside is safe, and easy to fix
@@ -164,6 +165,7 @@ class WEB:
                     room.lock.release()
                 else:
                     room.lock.release()
+                    self.registerLock.release()
                     raise RoomError(f"{roomIndex}号房间满了\n")
             player = WEB_PLAYER(id, playerIndex, LockQueue(), playerName, playerRoom = roomIndex)
             self.players[playerIndex] = player
