@@ -74,14 +74,17 @@ class WEB:
         #此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
         room =self.rooms[roomIndex] 
         if room != None:
-            message = room.roomQueue.get()
+            message = room.roomQueue.get(timeout=300)
         return message
 
     def roomSendMessage(self, message:MESSAGE):
         #TODO:check it
         #TODO:room 的终结
         try:
-            if message.player == -2:
+            if message.player == -1:
+                room = self.rooms[message.room]
+                room = None
+            elif message.player == -2:
                 print(message.data)
             else:
                 player = self.players[message.player]
@@ -100,7 +103,7 @@ class WEB:
             #TODO
         else:
             if player.cookie == cookie:
-                #WARNING: 这里有时间差,注意是否有错位风险
+                #WARNING:这里有时间差,注意是否有错位风险
                 return player.playerQueue.get()
             else:
                 return MESSAGE(-1,playerIndex,DATATYPE.cookieWrong,None)

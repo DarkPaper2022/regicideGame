@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import random
 import threading
 import math
+import sys
 from webSystem import WEB
 
 
@@ -506,8 +507,9 @@ class ROOM:
         try:    
             message:MESSAGE = self.web.roomGetMessage(self.roomIndex)
         except:
-            self.mainSend(MESSAGE(self.roomIndex, -1, DATATYPE.gameOver,None))
-            raise TimeoutError
+            self.mainSend(MESSAGE(self.roomIndex, player=-1, dataType= DATATYPE.gameOver, data=None))
+            logger.info(f"ROOM{self.roomIndex}关闭了")
+            sys.exit()
         logger.info("READ:" + message.dataType.name + str(message.data))
         return message
     def mainSend(self,message:MESSAGE):
