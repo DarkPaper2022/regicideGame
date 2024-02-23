@@ -50,7 +50,7 @@ class WEB:
         self.registerLock = threading.Lock()
         self.maxPlayer = maxPlayer
         self.maxRoom = maxRoom
-        self.gameQueue = LockQueue()
+        self.hallQueue = LockQueue()
         self.players = [None]*maxPlayer #maxplayer 很大
         self.rooms = [None]*maxRoom
         self.indexPool = LockQueue()
@@ -67,23 +67,30 @@ class WEB:
         binding     playerQueue-playerIndex-cookie-playerName
         cookie      playerName+password = cookie 
         """
-    def roomGetMessage(self) -> MESSAGE:
-        #此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
-        logger.info("wanting a meesgae")
-        message = self.gameQueue.get()
-        logger.info("get a message")
+    def hallGetMessage(self) -> MESSAGE:
+        message = self.hallQueue.get()
         return message
+    def roomGetMessage(self, roomIndex:int) -> MESSAGE:
+        #此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
+        room =self.rooms[roomIndex] 
+        if room != None:
+            message = room.roomQueue.get()
+        return message
+
     def roomSendMessage(self, message:MESSAGE):
-        if message.player == -2:
-            print(message.data)
-        else:
-            player = self.players[message.player]
-            if player == None:
-                pass
-                #TODO
+        #TODO:check it
+        try:
+            if message.player == -2:
+                print(message.data)
             else:
-                player.playerQueue.put(message)
-        return
+                player = self.players[message.player]
+                if player != None:
+                    room = self.rooms[player.playerRoom]
+                    if room!=None:
+                        player.playerQueue.put(message)
+            return
+        except:
+            return
     def playerGetMessage(self, playerIndex:int, cookie:uuid.UUID)->MESSAGE:
         player = self.players[playerIndex]
         if player == None:
@@ -98,11 +105,16 @@ class WEB:
                 return MESSAGE(-1,playerIndex,DATATYPE.cookieWrong,None)
     def playerSendMessage(self, message:MESSAGE, cookie:uuid.UUID):
         player = self.players[message.player]
-        if player!=None and player.cookie == cookie:
-            self.rooms[player.]
+        try:
+            if player != None and player.cookie == cookie:
+                room = self.rooms[player.playerRoom]
+                if room != None:
+                    room.roomQueue.put(message)
+        except:
+            pass
         #TODO:else
     #arg:legal or illegal playerName and password
-    #ret:raise AuthError if illegal, 
+    #ret:raise AuthError if illegal, RoomError
     #ret:room creating may cause error
     def register(self, playerName:str, password:str, roomIndex:int):
         try:
@@ -139,22 +151,20 @@ class WEB:
                                 playerIndexs = [playerIndex], 
                                 roomQueue=LockQueue(), 
                                 maxPlayer= self._roomIndexToMaxPlayer(roomIndex=roomIndex))
+                self.rooms[roomIndex] = room
+                self.hallQueue.put(MESSAGE(-1, -1, DATATYPE.createRoom, roomIndex))
             else:
+                room.lock.acquire()
                 if len(room.playerIndexs) < room.maxPlayer:
                     room.playerIndexs.append(playerIndex)
+                    room.lock.release()
                 else:
+                    room.lock.release()
                     raise RoomError(f"{roomIndex}号房间满了\n")
             player = WEB_PLAYER(id, playerIndex, LockQueue(), playerName, playerRoom = roomIndex)
             self.players[playerIndex] = player
             player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None))
-#           self.gameQueue.put(MESSAGE(playerIndex, DATATYPE.confirmPrepare, playerName))
-            if (self.indexPool.empty()):
-                #TODO:no exception the other side
-                l = [player.playerName for player in self.players if player != None]
-                if len(l) != self.maxPlayer:
-                    raise PlayerNumError("PlayerNum Wrong, webSystem side caught")
-                self.gameQueue.put(MESSAGE(-1, DATATYPE.startSignal, 
-                                        GAME_SETTINGS(tuple(l))))
+            room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName))
             self.registerLock.release()
             return (id, playerIndex)
         else:

@@ -22,6 +22,7 @@ class DATATYPE(Enum):
     confirmPrepare = 14 #from client or from web
     answerRoom = 17     #to client
     createRoom = 18     #from web to Game
+    gameOver = 19       #to room
 
     
 
@@ -71,6 +72,10 @@ class FROZEN_STATUS_PARTLY:
     players:Tuple[FROZEN_PLAYER,...]
     elsedata: Any
 
+@dataclass(frozen=True)
+class FROZEN_STATUS_BEFORE_START:
+    currentPlayers:Tuple[str,...]
+    totalPlayerNum:int
 
 @dataclass(frozen=True)
 class GAME_SETTINGS:

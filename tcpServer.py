@@ -54,12 +54,14 @@ class TCP_CLIENT:
                     password=l[1].decode("utf-8"),
                     roomIndex=int(l[2].decode()))
                 username = l[0].decode("utf-8")
+                roomIndex = int(l[2].decode())
                 break
             except AuthError as e:
                 self.clientSocket.send(str(e).encode())
             except Exception as e:
                 self.clientSocket.send("Wrong Format Username and Password: 你在乱输什么啊\n".encode())
         self.userName = username
+        self.roomID = roomIndex
         self.clientSocket.settimeout(self.timeOutSetting)
         recvThread = threading.Thread(target=self.recvThreadFunc)
         sendThread = threading.Thread(target=self.sendThreadFunc)
@@ -147,7 +149,7 @@ class TCP_CLIENT:
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> bytes:
         if message.room != self.roomID:
-            return "奇怪的信号?\n".encode()
+            return f"奇怪的信号?\n".encode()
         if message.dataType == DATATYPE.answerStatus:
             flag, status = message.data
             if flag:

@@ -1,5 +1,6 @@
 from webSystem import WEB
 import room
+from roomBuilder import rommBuilder
 import asyncio
 import tcpServer
 import sys
@@ -8,12 +9,9 @@ try:
     port = int(sys.argv[1])
 except:
     port = 6666
-try:
-    userMax = int(sys.argv[2])
-except:
-    userMax = 2
-web = WEB(userMax)
+UserMax,RoomMax = 100,40
+web = WEB(UserMax,RoomMax)
 server = tcpServer.TCP_SERVER(web, port)
 server.start()
-Game = room.ROOM(web)
-Game.roomThreadingFunc()
+hall = rommBuilder(web)
+hall.start()

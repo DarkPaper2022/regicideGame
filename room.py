@@ -1,7 +1,8 @@
 from collections import deque
 from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
-from defineMessage import MESSAGE,DATATYPE,FROZEN_STATUS_PARTLY,FROZEN_BOSS,GAME_SETTINGS,TALKING_MESSAGE,FROZEN_PLAYER
+from defineMessage import MESSAGE,DATATYPE,FROZEN_STATUS_PARTLY,\
+FROZEN_BOSS,TALKING_MESSAGE,FROZEN_PLAYER,FROZEN_STATUS_BEFORE_START
 from defineError import CardError
 from defineColor import COLOR,cardToNum
 from defineRound import ROUND
@@ -47,7 +48,8 @@ class PLAYER:
     def deleteCards(self,cards:List[int]):
         for card in cards:
             self.cards.remove(card)
-
+    def newGame(self):
+        self.cards = []
 class TALKING:
     messages:Deque[TALKING_MESSAGE]
     def __init__(self) -> None:
@@ -97,14 +99,16 @@ class ROOM:
     currentRound:ROUND
     discardBossHeap:Deque[int]
     currentBoss:BOSS
+    currentPlayer:PLAYER
     playerList:List[PLAYER]
     discardHeap:Deque[int]
     atkHeap:Deque[int]
     web:WEB
-    def __init__(self, web, roomIndex:int):
+    def __init__(self, web:WEB, roomIndex:int):
         self.startFlag = False
         self.web = web
         self.roomIndex = roomIndex
+        self.playerTotalNum = self.web._roomIndexToMaxPlayer(roomIndex)
     def getCard_cardHeap(self, cnt):
         notEmptyPlayerIndex = self.currentPlayer.num
         notEmptyPlayer = [i for i in range(self.playerTotalNum)]
@@ -319,17 +323,19 @@ class ROOM:
         return (sum([cardToNum(card) for card in cards]) >= self.currentBoss.atk)
 
     #TODO:rename it after
-    def run_(self):
+    def run(self):
         roomThread = threading.Thread(target= self.roomThreadingFunc)
         roomThread.start()
         return
 
     def roomThreadingFunc(self):
-        settings = self.ioGetStartSignal()
-        self.start(settings)
-    def start(self,settings:GAME_SETTINGS):
-        self.startGame(settings)
-        bossKilled = False
+        self.playerList = []
+        logger.info("playListHere")
+        self.ioGetPlayerRegister()
+        while True:
+            self.start()
+    def start(self):
+        self.startGame()
         while True:
             if self.currentRound == ROUND.over:
                 return
@@ -345,16 +351,14 @@ class ROOM:
                 self.jokerRound()
             else:
                 raise ValueError("strange round")
-    def startGame(self,settings:GAME_SETTINGS):
+    def startGame(self):
         #这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
-        maxPlayer = len(settings.playerNames)
+        maxPlayer = self.playerTotalNum
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
         self.talkings = TALKING()
 
-        self.playerList = []
-        for player_num in range(self.playerTotalNum):
-            self.playerList.append(PLAYER(player_num, settings.playerNames[player_num]))
+
         self.currentPlayer = self.playerList[0]
 
 
@@ -413,7 +417,9 @@ class ROOM:
                         elsedata=0)
             state = (self.startFlag, status)
         else:
-            state = (self.startFlag, None)
+            l = self.playerList
+            status = FROZEN_STATUS_BEFORE_START(tuple([player.userName for player in l]), self.playerTotalNum)
+            state = (self.startFlag, FROZEN_STATUS_BEFORE_START)
         retMessage:MESSAGE = MESSAGE(room=self.roomIndex, player=playerIndex, dataType=DATATYPE.answerStatus, data=state)
         self.mainSend(retMessage)
     def ioSendTalkings(self, playerIndex:int):
@@ -461,9 +467,18 @@ class ROOM:
                 continue
             else:
                 return message       
-    def ioGetStartSignal(self) -> GAME_SETTINGS:
-        message = self.mixSeperator([(-1,DATATYPE.startSignal)])
-        return message.data
+    #not math function
+    def ioGetPlayerRegister(self) -> None:
+        i = 0
+        numList = []
+        while i <= self.playerTotalNum - 1:
+            message = self.dataTypeSeprator(DATATYPE.confirmPrepare)
+            if message.player not in numList:
+                player = PLAYER(webSystemID=message.player, userName= message.data, num = i)
+                self.playerList.append(player)
+                numList.append(player.webSystemID)
+                i += 1
+        return
     def ioGetCards(self) -> List[int]:
         while True:
             messgae = self.mixSeperator([(self.currentPlayer.num, DATATYPE.card)])
@@ -487,7 +502,7 @@ class ROOM:
     
 
     def mainRead(self) -> MESSAGE:
-        message:MESSAGE = self.web.roomGetMessage()
+        message:MESSAGE = self.web.roomGetMessage(self.roomIndex)
         logger.info("READ:" + message.dataType.name + str(message.data))
         return message
     def mainSend(self,message:MESSAGE):
