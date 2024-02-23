@@ -56,10 +56,10 @@ class TCP_CLIENT:
                 username = l[0].decode("utf-8")
                 roomIndex = int(l[2].decode())
                 break
-            except AuthError or RoomError or TimeoutError as e:
+            except (AuthError,RoomError,TimeoutError) as e:
                 self.clientSocket.send(str(e).encode())
             except Exception as e:
-                self.clientSocket.send("Wrong Format Username and Password: 你在乱输什么啊\n".encode())
+                self.clientSocket.send("Wrong Format Username and Password: 你在乱输什么啊\n".encode() + str(e).encode())
         self.userName = username
         self.roomID = roomIndex
         self.clientSocket.settimeout(self.timeOutSetting)

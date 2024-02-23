@@ -114,7 +114,7 @@ class WEB:
             pass
         #TODO:else
     #arg:legal or illegal playerName and password
-    #ret:raise AuthError if illegal, RoomError
+    #ret:raise AuthError if illegal, RoomError, TimeOutError
     #ret:room creating may cause error
     def register(self, playerName:str, password:str, roomIndex:int):
         try:
