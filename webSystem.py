@@ -4,6 +4,7 @@ import websockets
 import os
 import subprocess
 import uuid
+import threading
 from dataclasses import dataclass
 from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS
 from defineError import AuthError,PlayerNumError
@@ -36,6 +37,7 @@ class PLAYER:
 class WEB:
     players:List[Union[PLAYER,None]]
     def __init__(self,maxPlayer:int) -> None:
+        self.registerLock = threading.Lock()
         self.maxPlayer = maxPlayer
         self.gameQueue = LockQueue()
         self.players = [None]*maxPlayer
@@ -80,18 +82,23 @@ class WEB:
     #arg:legal or illegal playerName and password
     #ret:raise AuthError if illegal
     def register(self, playerName:str, password:str):
+        self.registerLock.acquire()
         """
         password are needed
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
         WARNING: PLZ, check should be threading SAFE
         """
         level:PLAYER_LEVEL = self._check(playerName, password)
-        """        if level == PLAYER_LEVEL.superUser:
-            return(0,uuid.uuid4())TODO
-        el"""
-        if level == PLAYER_LEVEL.normal:
+        if level == PLAYER_LEVEL.superUser:
+            #TODO
+            self.registerLock.release()
+            raise AuthError("Super User?")
+        elif level == PLAYER_LEVEL.normal:
             id = uuid.uuid4()
             playerIndex = self.indexPool.get()
+            for player in self.players:
+                if player != None and player.playerName == playerName:
+                    return (player.cookie, player.playerIndex)
             player = PLAYER(id, playerIndex, LockQueue(), playerName)
             self.players[playerIndex] = player
             player.playerQueue.put(MESSAGE(playerIndex, DATATYPE.logInSuccess, None))
@@ -102,9 +109,12 @@ class WEB:
                     raise PlayerNumError("PlayerNum Wrong, webSystem side caught")
                 self.gameQueue.put(MESSAGE(-1, DATATYPE.startSignal, 
                                            GAME_SETTINGS(tuple(l))))
+            self.registerLock.release()
             return (id, playerIndex)
         else:
+            self.registerLock.release()
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
+    #Only checked in register, lock in register
     def _check(self, playerName:str, password:str) -> PLAYER_LEVEL:
         #TODO
         return PLAYER_LEVEL.normal
