@@ -71,6 +71,7 @@ class TCP_CLIENT:
     #recv From  netcat
     def recvThreadFunc(self):
         #认为到这里我们拿到了一个正常的cookie和playerIndex,但是没有合适的room
+        timeOutCnt = 0
         while True:
             try:
                 data = self.clientSocket.recv(1024)
@@ -80,10 +81,10 @@ class TCP_CLIENT:
                 self.web.playerSendMessage(message,self.playerCookie)
             except socket.timeout:
                 if self.overFlag == False:
-                    logger.info("recvFromnetcatThread, timeout continue")
-                    pass
+                    timeOutCnt += 1
+                    if timeOutCnt == 3:
+                        self.overFlag = True
                 else:
-                    logger.info("recvFromnetcatThread, timeout Over")
                     break
             except MessageFormatError as e:
                 self.clientSocket.send("Wrong Format Mesasge: 你在乱输什么啊\n".encode())
