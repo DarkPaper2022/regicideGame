@@ -94,11 +94,12 @@ class WEB:
             self.registerLock.release()
             raise AuthError("Super User?")
         elif level == PLAYER_LEVEL.normal:
-            id = uuid.uuid4()
-            playerIndex = self.indexPool.get()
             for player in self.players:
                 if player != None and player.playerName == playerName:
+                    self.registerLock.release()
                     return (player.cookie, player.playerIndex)
+            id = uuid.uuid4()
+            playerIndex = self.indexPool.get()
             player = PLAYER(id, playerIndex, LockQueue(), playerName)
             self.players[playerIndex] = player
             player.playerQueue.put(MESSAGE(playerIndex, DATATYPE.logInSuccess, None))
