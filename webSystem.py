@@ -136,7 +136,7 @@ class WEB:
             raise AuthError("Super User?")
         elif level == PLAYER_LEVEL.normal:
             for player in self.players:
-                if player != None and player.playerName == playerName:
+                if player != None and player.playerName == playerName and player.playerRoom == roomIndex:
                     index = player.playerIndex
                     newID = uuid.uuid4()
                     player.cookie = newID
