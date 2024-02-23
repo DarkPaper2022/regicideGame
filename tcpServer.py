@@ -6,7 +6,7 @@ import time
 from myLogger import logger
 from typing import List,Any,Tuple,Union
 from webSystem import WEB
-from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,FROZEN_STATUS_PARTLY
+from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError
 from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard
@@ -148,14 +148,14 @@ class TCP_CLIENT:
         return message
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> bytes:
-        if message.room != self.roomID:
+        if message.room != self.roomID and message.room != -1:
             return f"奇怪的信号?\n".encode()
         if message.dataType == DATATYPE.answerStatus:
             flag, status = message.data
             if flag:
                 messageData = self._statusToStr(status)
             else:
-                messageData = f"你的房间号是{self.roomID},没开呢，别急\n"
+                messageData = self._beforeStatusToStr(status)
         elif message.dataType == DATATYPE.answerTalking:
             messageData = ""
             talkings:Tuple[TALKING_MESSAGE,...] = message.data
@@ -215,7 +215,8 @@ class TCP_CLIENT:
         currentBossStr = bossToStr(status.currentBoss)
         re:str = cardHeapLengthStr + discardHeapLengthStr + disCardHeapStr + atkCardHeapStr + defeatedBossesStr + playersStr + currentPlayerAndRoundStr + yourCardsStr + currentBossStr 
         return re
-
+    def _beforeStatusToStr(self, status:FROZEN_STATUS_BEFORE_START) -> str:
+        return f"你的房间号是{self.roomID},现在房里只有{','.join(status.currentPlayers)},一共{len(status.currentPlayers)}/{status.totalPlayerNum}人,没开呢，别急\n"
 
 class TCP_SERVER:
     cookies:List[uuid.UUID]
