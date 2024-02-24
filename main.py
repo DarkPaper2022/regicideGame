@@ -5,7 +5,7 @@ import asyncio
 import tcpServer
 import sys
 
-try:
+try:    
     port = int(sys.argv[1])
 except:
     port = 6000
