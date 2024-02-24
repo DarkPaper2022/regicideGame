@@ -241,6 +241,7 @@ class TCP_SERVER:
                 break
             except:
                 time.sleep(20)
+                logger.info("端口拿不到")
                 cnt += 1
                 if cnt == 10:
                     logger.error("端口怎么死活拿不到呢呢呢")
