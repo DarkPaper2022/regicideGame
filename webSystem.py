@@ -209,7 +209,8 @@ class WEB:
         if len(room.playerIndexs) == room.maxPlayer:
             raise RoomError("满啦\n")
         else:
-            newRoom = WEB_ROOM(room.lock, roomIndex, room.playerIndexs + [playerIndex], room.roomQueue, room.maxPlayer)
+            newIndexs =  list(set(room.playerIndexs + [playerIndex]))
+            newRoom = WEB_ROOM(room.lock, roomIndex, newIndexs, room.roomQueue, room.maxPlayer)
             return newRoom
     
     
