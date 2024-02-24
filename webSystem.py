@@ -7,7 +7,7 @@ import uuid
 import threading
 import math
 from dataclasses import dataclass
-from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS
+from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS,playerWebSystemID
 from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
 from queue import Queue as LockQueue
 from collections import deque
@@ -19,14 +19,7 @@ class PLAYER_LEVEL(Enum):
     illegal = 0
     normal = 1
     superUser = 2
-def checkPlayerLevel(player:int) -> PLAYER_LEVEL:
-    #TODO
-    if player >= 0:
-        return PLAYER_LEVEL.normal
-    elif player == -2:
-        return PLAYER_LEVEL.superUser
-    else:
-        raise ValueError("playerLevel")
+
 @dataclass
 class WEB_PLAYER:
     #player is equal to a username,
@@ -36,7 +29,7 @@ class WEB_PLAYER:
     #we should let the old room know, 
     #so we need to change the room and send exception when the game is getting message, timeout or roomWrong  
     cookie:uuid.UUID
-    playerIndex:int
+    playerIndex:playerWebSystemID
     playerQueue:LockQueue
     playerName:str
     #可能持有一个糟糕的room,room方短线了,会给予用户很强的反馈
@@ -106,7 +99,7 @@ class WEB:
             return
         except:
             return
-    def playerGetMessage(self, playerIndex:int, cookie:uuid.UUID)->MESSAGE:
+    def playerGetMessage(self, playerIndex:playerWebSystemID, cookie:uuid.UUID)->MESSAGE:
         player = self.players[playerIndex]
         if player == None:
             #WARNING:这里的message不是从queue里取出来的哦
@@ -131,7 +124,7 @@ class WEB:
     #arg:legal or illegal playerName and password
     #ret:raise RegisterError, AuthError
     #ret:room creating may cause error
-    def register(self, playerName:str, password:str, roomIndex:int) -> Tuple[uuid.UUID, int]:
+    def register(self, playerName:str, password:str, roomIndex:int) -> Tuple[uuid.UUID, playerWebSystemID]:
         logger.info(f"i wait for lock now{playerName,password,roomIndex}")
         try:
             self.registerLock.acquire(timeout=3)
@@ -165,13 +158,14 @@ class WEB:
                 newRoomFlag = (room == None)
                 if newRoomFlag:
                     room = self._newRoom(roomIndex, playerIndex)    
-                    self.hallQueue.put(MESSAGE(-1, -1, DATATYPE.createRoom, roomIndex)) #all error passed
                 else:
                     room,userChangeRoomFlag = self._changeRoom(roomIndex, playerIndex)    #room error
 
                 self.players[playerIndex] = player
                 self.rooms[roomIndex] = room
                 player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None)) # type: ignore
+                if newRoomFlag:
+                    self.hallQueue.put(MESSAGE(-1, playerWebSystemID(-1), DATATYPE.createRoom, roomIndex))
                 if userChangeRoomFlag:
                     room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
                 self.registerLock.release()
@@ -187,12 +181,12 @@ class WEB:
     
     #arg:playerName is checked by password 
     #ret:-1 for no player
-    def _checkFreshNewPlayer(self, playerName)->int:
+    def _checkFreshNewPlayer(self, playerName)->playerWebSystemID:
         for player in self.players:
             if player != None and player.playerName == playerName:
                 return player.playerIndex
-        return -1
-    def _newPlayer(self, playerIndex:int, playerName:str, playerRoom:int) -> WEB_PLAYER:
+        return playerWebSystemID(-1)
+    def _newPlayer(self, playerIndex:playerWebSystemID, playerName:str, playerRoom:int) -> WEB_PLAYER:
         player = self.players[playerIndex]
         if player != None:
             player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logOtherPlace, data=None))

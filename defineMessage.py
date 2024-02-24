@@ -1,9 +1,13 @@
 from dataclasses import dataclass
-from typing import Any,List,Tuple,Union
+from typing import Any,List,Tuple,Union,NewType
 from defineColor import COLOR
 from defineRound import ROUND
 from enum import Enum
 import math
+
+playerWebSystemID = NewType("playerWebSystemID",int) 
+playerRoomLocation = NewType("playerRoomLocation",int) 
+
 class DATATYPE(Enum):
     #TODO:注释对应data的情况
     askStatus = 1       #from client, none message
@@ -34,7 +38,7 @@ class MESSAGE:
     room: int
     #0 to inf for normal user, -1 for webSystem, -2 for SuperUser, -3 for self
     #-1 used: StartSignalPackage, cookieWrong  
-    player: int
+    player: playerWebSystemID
     dataType: DATATYPE
     data: Any
 
@@ -51,7 +55,7 @@ class FROZEN_PLAYER:
     #用来给玩家阅读的静态结构 
     playerName:str
     playerHandCardCnt:int
-    playerLocation:int
+    playerLocation:playerRoomLocation
 
 
 
@@ -60,9 +64,9 @@ class FROZEN_PLAYER:
 class FROZEN_STATUS_PARTLY:
     #用来给玩家阅读的静态结构     
     totalPlayer:int
-    yourLocation:int
+    yourLocation:playerRoomLocation
     currentRound:ROUND
-    currentPlayerIndex:int
+    currentPlayerLocation:playerRoomLocation
     yourCards:Tuple[int,...]
     cardHeapLength:int
     discardHeapLength:int

@@ -6,7 +6,8 @@ import time
 from myLogger import logger
 from typing import List,Any,Tuple,Union
 from webSystem import WEB
-from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START
+from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,\
+    FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START,playerWebSystemID
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError,RegisterFailedError
 from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard
@@ -20,7 +21,7 @@ from defineRound import ROUND
 class TCP_CLIENT:
     clientSocket:socket.socket
     clientAddr:Any
-    playerIndex:int
+    playerIndex:playerWebSystemID
     playerCookie:uuid.UUID
     userName:str    #be careful, once initialized it should never be changed 
     web:WEB
@@ -191,8 +192,8 @@ class TCP_CLIENT:
         discardHeapLengthStr = f"弃牌堆有{status.discardHeapLength}张牌\n"
         defeatedBossesStr = f"您已经打败了{(cardsToStr(status.defeatedBosses))},还有{12 - len(status.defeatedBosses)}个哦\n" \
                             if len(status.defeatedBosses) != 0 else "还有12个boss要打哦\n"
-        currentPlayerStr = "该怎么搞由您说了算\n" if status.currentPlayerIndex == self.playerIndex else\
-                            f"""该怎么搞由您的{status.currentPlayerIndex}号位队友说了算\n"""
+        currentPlayerStr = "该怎么搞由您说了算\n" if status.currentPlayerLocation == self.playerIndex else\
+                            f"""该怎么搞由您的{status.currentPlayerLocation}号位队友说了算\n"""
         currentRoundStr =   ("现在是攻击轮" if status.currentRound == ROUND.atk else\
                             "现在是防御轮" if status.currentRound == ROUND.defend else\
                             "现在joker生效了" if status.currentRound == ROUND.jokerTime else "现在是一个奇怪的轮次, 你不应该看见我的")        

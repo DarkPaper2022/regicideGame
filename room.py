@@ -2,7 +2,7 @@ from collections import deque
 from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
 from defineMessage import MESSAGE,DATATYPE,FROZEN_STATUS_PARTLY,\
-FROZEN_BOSS,TALKING_MESSAGE,FROZEN_PLAYER,FROZEN_STATUS_BEFORE_START
+FROZEN_BOSS,TALKING_MESSAGE,FROZEN_PLAYER,FROZEN_STATUS_BEFORE_START,playerWebSystemID,playerRoomLocation
 from defineError import CardError
 from defineColor import COLOR,cardToNum
 from defineRound import ROUND
@@ -41,9 +41,11 @@ class BOSS:
         
 class PLAYER:
     cards:List[int]
-    def __init__(self, num, userName:str, webSystemID):
+    location:playerRoomLocation
+    webSystemID:playerWebSystemID
+    def __init__(self, location, userName:str, webSystemID):
         self.cards = []
-        self.num = num
+        self.location = location
         self.userName = userName
         self.webSystemID = webSystemID
     def deleteCards(self,cards:List[int]):
@@ -74,6 +76,8 @@ class ROOM:
     num = func()
     color = COLOR(math.floor(card / 13))
     name = num + color * 13 - 1
+    location    既代表数组中索引，又表明轮次关系
+    webSystemID
     """
     """
     在某些时刻，game可以响应一个请求，在其它时刻则不行
@@ -115,7 +119,7 @@ class ROOM:
         self.playerTotalNum = self.web._roomIndexToMaxPlayer(roomIndex)
         self.talkings = TALKING()
     def getCard_cardHeap(self, cnt):
-        notEmptyPlayerIndex = self.currentPlayer.num
+        notEmptyPlayerIndex = self.currentPlayer.location
         notEmptyPlayer = [i for i in range(self.playerTotalNum)]
         #player     0 1 3
         #index      0 1 2
@@ -148,23 +152,20 @@ class ROOM:
         else:
             random.shuffle(self.discardHeap)
             discardHeapList = list(self.discardHeap)
-            logger.info(f"红桃功能，这里有{len(discardHeapList)}")
-            logger.info(f"红桃功能，这里加了{len(discardHeapList[:cnt])}")
             self.cardHeap = deque(discardHeapList[:cnt]) + self.cardHeap
-            logger.info(f"红桃功能，这里剩了{len(discardHeapList[cnt:])}")
             self.discardHeap = deque(discardHeapList[cnt:])
             
     #ret: change the state
     def jokerRound(self) -> None:
         while True:
-            playerIndex = self.ioGetJokerNum()
-            if playerIndex == self.currentPlayer.num:
-                self.ioSendException(self.currentPlayer.num, "不要joker给自己！")
+            location = self.ioGetJokerNum()
+            if location == self.currentPlayer.location:
+                self.ioSendException(self.currentPlayer.webSystemID, "不要joker给自己！")
                 continue
-            elif playerIndex >= self.playerTotalNum or playerIndex < 0:
-                self.ioSendException(self.currentPlayer.num, "有人在乱搞")
+            elif location >= self.playerTotalNum or location < 0:
+                self.ioSendException(self.currentPlayer.webSystemID, "有人在乱搞")
             else:
-                self.currentPlayer = self.playerList[playerIndex]
+                self.currentPlayer = self.playerList[location]
                 self.currentRound = ROUND.atk
                 return
 
@@ -177,9 +178,9 @@ class ROOM:
                 if check:
                     break
                 else:
-                    self.ioSendException(self.currentPlayer.num, "你小子乱出牌？看规则书吧你！\n")
+                    self.ioSendException(self.currentPlayer.webSystemID, "你小子乱出牌？看规则书吧你！\n")
             except CardError as e:
-                self.ioSendException(self.currentPlayer.num, str(e))
+                self.ioSendException(self.currentPlayer.webSystemID, str(e))
         self._atkRoundHandleLegalCards(cards)       #here change state
         return
     #ret change the state
@@ -214,12 +215,12 @@ class ROOM:
             #self.currentPlayer 不用改
             self.currentRound = ROUND.over
         elif killed:
-            self.ioSendGameTalk(self.currentPlayer.num, "您干死它了,该您的队友干活儿了\n")
+            self.ioSendGameTalk(self.currentPlayer.webSystemID, "您干死它了,该您的队友干活儿了\n")
             self.simpleChangePlayer()
             self.currentRound = ROUND.atk
             return
         else:
-            self.ioSendGameTalk(self.currentPlayer.num, "您输出拉满！但是该防了现在\n")
+            self.ioSendGameTalk(self.currentPlayer.webSystemID, "您输出拉满！但是该防了现在\n")
             #currentPlayer不变哦
             self.currentRound = ROUND.defend
             return
@@ -309,13 +310,13 @@ class ROOM:
                 if check:
                     break
                 else:
-                    self.ioSendException(self.currentPlayer.num, "你小子乱弃牌？看规则书吧你！\n")
+                    self.ioSendException(self.currentPlayer.webSystemID, "你小子乱弃牌？看规则书吧你！\n")
             except CardError as e:
-                self.ioSendException(self.currentPlayer.num, str(e))
+                self.ioSendException(self.currentPlayer.webSystemID, str(e))
         self.currentPlayer.deleteCards(cards)
         for card in cards:
             self.discardHeap.appendleft(card)
-        self.ioSendGameTalk(self.currentPlayer.num, "您全防住了\n")
+        self.ioSendGameTalk(self.currentPlayer.webSystemID, "您全防住了\n")
         self.simpleChangePlayer()
         self.currentRound = ROUND.atk
         return
@@ -345,14 +346,14 @@ class ROOM:
             if self.currentRound == ROUND.over:
                 return
             elif self.currentRound == ROUND.atk:
-                self.ioSendStatus(self.currentPlayer.num)
+                self.ioSendStatus(self.currentPlayer.location)
                 self.atkRound()
             elif self.currentRound == ROUND.defend:
-                self.ioSendStatus(self.currentPlayer.num)
+                self.ioSendStatus(self.currentPlayer.location)
                 self.defendRound()
             elif self.currentRound == ROUND.jokerTime:
                 for i in range(self.playerTotalNum):
-                    self.ioSendStatus(i)
+                    self.ioSendStatus(playerRoomLocation(i))
                 self.jokerRound()
             else:
                 raise ValueError("strange round")
@@ -391,7 +392,7 @@ class ROOM:
 
     
     def simpleChangePlayer(self) -> None:     
-        self.currentPlayer = self.playerList[(self.currentPlayer.num + 1) % self.playerTotalNum]
+        self.currentPlayer = self.playerList[(self.currentPlayer.location + 1) % self.playerTotalNum]
         return
 
     def congratulations(self):
@@ -400,22 +401,27 @@ class ROOM:
         self.ioSendOverSignal(False)
 
 
+    def _webSystemID_toPlayerLocation(self, webSystemID:playerWebSystemID)->playerRoomLocation:
+        for player in self.playerList:
+            if player.webSystemID == webSystemID:
+                return player.location
+        logger.error(f"什么鬼ID{webSystemID}")
+        raise ValueError(f"什么鬼ID{webSystemID}")
 
 
-
-    def ioSendStatus(self, playerIndex:int):
+    def ioSendStatus(self, playerLocation:playerRoomLocation):
         if self.startFlag:
-            playersLocal = tuple([FROZEN_PLAYER(player.userName,len(player.cards),player.num)
-                            for player in self.playerList if player.num != playerIndex])
+            playersLocal = tuple([FROZEN_PLAYER(player.userName,len(player.cards),player.location)
+                            for player in self.playerList if player.location != playerLocation])
             status = FROZEN_STATUS_PARTLY(
                         disCardHeap=tuple(self.discardHeap),
                         atkCardHeap=tuple(self.atkHeap),
                         currentRound=self.currentRound,
-                        currentPlayerIndex= self.currentPlayer.num,
+                        currentPlayerLocation= self.currentPlayer.location,
                         totalPlayer = self.playerTotalNum,
-                        yourLocation = playerIndex,
+                        yourLocation = playerLocation,
                         players = playersLocal,
-                        yourCards=tuple(self.playerList[playerIndex].cards), 
+                        yourCards=tuple(self.playerList[playerLocation].cards), 
                         currentBoss=self.currentBoss.frozen(),
                         cardHeapLength=len(self.cardHeap),
                         defeatedBosses=tuple(self.discardBossHeap),
@@ -426,21 +432,24 @@ class ROOM:
             l = self.playerList
             status = FROZEN_STATUS_BEFORE_START(tuple([player.userName for player in l]), self.playerTotalNum)
             state = (self.startFlag, status)
-        retMessage:MESSAGE = MESSAGE(room=self.roomIndex, player=playerIndex, dataType=DATATYPE.answerStatus, data=state)
+        retMessage:MESSAGE = MESSAGE(room=self.roomIndex, 
+                                     player=self.playerList[playerLocation].webSystemID, 
+                                     dataType=DATATYPE.answerStatus, 
+                                     data=state)
         self.mainSend(retMessage)
-    def ioSendTalkings(self, playerIndex:int):
+    def ioSendTalkings(self, webSystemID:playerWebSystemID):
         talking = self.talkings.get()
-        retMessage:MESSAGE = MESSAGE(self.roomIndex,player=playerIndex, dataType=DATATYPE.answerTalking, data=talking)
+        retMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.answerTalking, data=talking)
         self.mainSend(retMessage)
-    def ioSendException(self, playerIndex:int, exceptStr:str):
-        exceptMessage:MESSAGE = MESSAGE(self.roomIndex,player=playerIndex, dataType=DATATYPE.exception, data=exceptStr)
+    def ioSendException(self, webSystemID:playerWebSystemID, exceptStr:str):
+        exceptMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.exception, data=exceptStr)
         self.mainSend(exceptMessage) 
-    def ioSendGameTalk(self, playerIndex:int, gameTalkStr:str):
-        talkMessage:MESSAGE = MESSAGE(self.roomIndex,player=playerIndex, dataType=DATATYPE.gameTalk, data=gameTalkStr)
+    def ioSendGameTalk(self, webSystemID:playerWebSystemID, gameTalkStr:str):
+        talkMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.gameTalk, data=gameTalkStr)
         self.mainSend(talkMessage) 
     def ioSendOverSignal(self, isWin:bool):
-        for i in range(self.playerTotalNum):
-            overMessage:MESSAGE = MESSAGE(self.roomIndex,i, DATATYPE.overSignal, isWin)
+        for player in self.playerList:
+            overMessage:MESSAGE = MESSAGE(self.roomIndex,player.webSystemID, DATATYPE.overSignal, isWin)
             self.mainSend(overMessage)
         return
     #ret:保证一定返回合适类型的信息
@@ -448,7 +457,7 @@ class ROOM:
         while True:
             message = self.mainRead()
             if message.dataType == DATATYPE.askStatus:
-                self.ioSendStatus(message.player)
+                self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
                 continue
             elif message.dataType == DATATYPE.askTalking:
                 self.ioSendTalkings(message.player)
@@ -459,11 +468,11 @@ class ROOM:
             else:
                 return message
     #ret:保证一定返回合适类型、由合适人发来的消息
-    def mixSeperator(self, expected:List[Tuple[int,DATATYPE]]):
+    def mixSeperator(self, expected:List[Tuple[playerRoomLocation,DATATYPE]]):
         while True:
             message = self.mainRead()
             if message.dataType == DATATYPE.askStatus:
-                self.ioSendStatus(message.player)
+                self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
                 continue
             elif message.dataType == DATATYPE.askTalking:
                 self.ioSendTalkings(message.player)
@@ -480,28 +489,28 @@ class ROOM:
         while i <= self.playerTotalNum - 1:
             message = self.dataTypeSeprator(DATATYPE.confirmPrepare)
             if message.player not in numList:
-                player = PLAYER(webSystemID=message.player, userName= message.data, num = i)
+                player = PLAYER(webSystemID=message.player, userName= message.data, location = i)
                 self.playerList.append(player)
                 numList.append(player.webSystemID)
                 i += 1
         return
     def ioGetCards(self) -> List[int]:
         while True:
-            messgae = self.mixSeperator([(self.currentPlayer.num, DATATYPE.card)])
+            messgae = self.mixSeperator([(self.currentPlayer.location, DATATYPE.card)])
             try:
                 return messgae.data
             except:
                 self.ioSendException(messgae.player, "卡牌格式错误")
                 continue
-    def ioGetJokerNum(self) -> int:
+    def ioGetJokerNum(self) -> playerRoomLocation:
         while True:
-            l:List[Tuple[int,DATATYPE]] = [(i,DATATYPE.speak) for i in range(4)] 
-            l = l + [(self.currentPlayer.num,DATATYPE.confirmJoker)]
+            l:List[Tuple[playerRoomLocation,DATATYPE]] = [(playerRoomLocation(i),DATATYPE.speak) for i in range(self.playerTotalNum)] 
+            l = l + [(self.currentPlayer.location,DATATYPE.confirmJoker)]
             message = self.mixSeperator(l)
             if message.dataType == DATATYPE.speak:
                 self.talkings.insert(message.data)
                 for i in range(self.playerTotalNum):
-                    self.ioSendTalkings(i)
+                    self.ioSendTalkings(self.playerList[i].webSystemID)
             else:
                 #TODO:bad logic
                 return message.data
@@ -511,7 +520,7 @@ class ROOM:
         try:    
             message:MESSAGE = self.web.roomGetMessage(self.roomIndex)
         except:
-            self.mainSend(MESSAGE(self.roomIndex, player=-1, dataType= DATATYPE.gameOver, data=None))
+            self.mainSend(MESSAGE(self.roomIndex, player=playerWebSystemID(-1), dataType= DATATYPE.gameOver, data=None))
             logger.info(f"ROOM{self.roomIndex}正常关闭了")
             sys.exit()
         logger.info("READ:" + message.dataType.name + str(message.data))
