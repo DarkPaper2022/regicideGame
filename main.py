@@ -8,7 +8,7 @@ import sys
 try:
     port = int(sys.argv[1])
 except:
-    port = 6666
+    port = 6000
 UserMax,RoomMax = 100,100
 web = WEB(UserMax,RoomMax)
 server = tcpServer.TCP_SERVER(web, port)
