@@ -115,7 +115,7 @@ class TCP_CLIENT:
             except Exception as e:
                 logger.info("sendTonetcatThread, exception Over")
                 break
-            if message.dataType == DATATYPE.cookieWrong:
+            if message.dataType == DATATYPE.cookieWrong or message.dataType == DATATYPE.logOtherPlace:
                 logger.info("sendTonetcatThread, cookie Over")
                 break
         try:
@@ -173,7 +173,7 @@ class TCP_CLIENT:
                 messageData = "真棒, 你们打败了魔王\n"
             else:
                 messageData = "寄, 阁下请重新来过\n"
-        elif message.dataType == DATATYPE.cookieWrong:
+        elif message.dataType == DATATYPE.cookieWrong or message.dataType == DATATYPE.logOtherPlace:
             messageData = "你被顶号了,要不要顶回来试试?\n"
         elif message.dataType == DATATYPE.answerRoom:
             self.roomID = message.data

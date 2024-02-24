@@ -23,6 +23,7 @@ class DATATYPE(Enum):
     answerRoom = 17     #to client
     createRoom = 18     #from web to Game
     gameOver = 19       #to hall
+    logOtherPlace = 20  #to client
 
     
 

@@ -84,9 +84,10 @@ class WEB:
         return message
     def roomGetMessage(self, roomIndex:int) -> MESSAGE:
         #此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
+        #这不是线程安全的, 这不好
         room =self.rooms[roomIndex] 
         if room != None:
-            message = room.roomQueue.get(timeout=300)
+                message = room.roomQueue.get(timeout=300)
         return message
     def roomSendMessage(self, message:MESSAGE):
         #TODO:check it
@@ -133,8 +134,12 @@ class WEB:
     #ret:room creating may cause error
     def register(self, playerName:str, password:str, roomIndex:int) -> Tuple[uuid.UUID, int]:
         logger.info(f"i wait for lock now{playerName,password,roomIndex}")
-        self.registerLock.acquire(timeout=3)
-        logger.info(f"i get lock now{playerName,password,roomIndex}")
+        try:
+            self.registerLock.acquire(timeout=3)
+            logger.info(f"i get lock now{playerName,password,roomIndex}")
+        except:
+            logger.error(f"no lock now{playerName,password,roomIndex}")
+            raise TimeoutError
         """
         password are needed
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
@@ -165,9 +170,13 @@ class WEB:
                 self.rooms[roomIndex] = room
                 player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None)) # type: ignore
                 room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
+                self.registerLock.release()
                 return re
-            except:
+            except Exception as e:
+                self.registerLock.release()
+                logger.error(str(e))
                 raise RegisterFailedError("注册失败了\n")
+                
         else:
             self.registerLock.release()
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
@@ -180,8 +189,9 @@ class WEB:
                 return player.playerIndex
         return -1
     def _newPlayer(self, playerIndex:int, playerName:str, playerRoom:int) -> WEB_PLAYER:
-        if self.players[playerIndex] != None:
-            raise ValueError("这地方有人呐\n")
+        player = self.players[playerIndex]
+        if player != None:
+            player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logOtherPlace, data=None))
         cookie = uuid.uuid4()
         player = WEB_PLAYER(cookie=cookie, playerIndex=playerIndex, playerQueue=LockQueue(), playerName=playerName, playerRoom= playerRoom)
         return player

@@ -111,6 +111,7 @@ class ROOM:
         self.web = web
         self.roomIndex = roomIndex
         self.playerTotalNum = self.web._roomIndexToMaxPlayer(roomIndex)
+        self.talkings = TALKING()
     def getCard_cardHeap(self, cnt):
         notEmptyPlayerIndex = self.currentPlayer.num
         notEmptyPlayer = [i for i in range(self.playerTotalNum)]
@@ -358,7 +359,7 @@ class ROOM:
         maxPlayer = self.playerTotalNum
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
-        self.talkings = TALKING()
+        
 
 
         self.currentPlayer = self.playerList[0]
