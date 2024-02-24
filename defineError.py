@@ -28,6 +28,12 @@ class ServerBusyError(Exception):
     def __str__(self):
         return f"SeverBusyError: {self.args[0]}"
 
+class RegisterFailedError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+    def __str__(self):
+        return f"RegisterFailedError: {self.args[0]}"   
+
 class RoomError(Exception):
     def __init__(self, message):
         super().__init__(message)

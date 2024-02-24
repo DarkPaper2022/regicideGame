@@ -8,10 +8,10 @@ import threading
 import math
 from dataclasses import dataclass
 from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS
-from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError
+from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
 from queue import Queue as LockQueue
 from collections import deque
-from typing import List,Union
+from typing import List,Union,Tuple
 from myLogger import logger
 from enum import Enum
 
@@ -29,10 +29,17 @@ def checkPlayerLevel(player:int) -> PLAYER_LEVEL:
         raise ValueError("playerLevel")
 @dataclass
 class WEB_PLAYER:
+    #player is equal to a username,
+    #if someone want to use the same player to play in the same room, 
+    #we should get the old player and change its cookie, keep its index
+    #if someone want to player in other room
+    #we should let the old room know, 
+    #so we need to change the room and send exception when the game is getting message, timeout or roomWrong  
     cookie:uuid.UUID
     playerIndex:int
     playerQueue:LockQueue
     playerName:str
+    #可能持有一个糟糕的room,room方短线了,会给予用户很强的反馈
     playerRoom:int
 
 #线程安全了现在
@@ -40,6 +47,7 @@ class WEB_PLAYER:
 class WEB_ROOM:
     lock:threading.Lock
     roomID:int
+    #可能持有一个拒绝一切消息的playerIndex,出于断线和change room,只需放平心态,静候即可
     playerIndexs:List[int]
     roomQueue:LockQueue
     maxPlayer:int
@@ -53,10 +61,10 @@ class WEB:
         self.hallQueue = LockQueue()
         self.players = [None]*maxPlayer #maxplayer 很大
         self.rooms = [None]*maxRoom
-        self.indexPool = LockQueue()
-        
+
+        self.playerIndexPool = LockQueue()
         for i in range(maxPlayer):
-            self.indexPool.put(i)
+            self.playerIndexPool.put(i)
         self.suIndexPool = LockQueue()
         for i in [-2]:
             self.suIndexPool.put(i)
@@ -68,7 +76,11 @@ class WEB:
         cookie      playerName+password = cookie 
         """
     def hallGetMessage(self) -> MESSAGE:
-        message = self.hallQueue.get()
+        message:MESSAGE = self.hallQueue.get()
+        if message.dataType == DATATYPE.gameOver:
+            self.registerLock.acquire()
+            self.rooms[message.room] = None
+            self.registerLock.release()
         return message
     def roomGetMessage(self, roomIndex:int) -> MESSAGE:
         #此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
@@ -76,21 +88,20 @@ class WEB:
         if room != None:
             message = room.roomQueue.get(timeout=300)
         return message
-
     def roomSendMessage(self, message:MESSAGE):
         #TODO:check it
         #TODO:room 的终结
         try:
             if message.player == -1:
-                room = self.rooms[message.room]
-                room = None
+                playerRoom = self.rooms[message.room]
+                playerRoom = None
             elif message.player == -2:
                 print(message.data)
             else:
                 player = self.players[message.player]
                 if player != None:
-                    room = self.rooms[player.playerRoom]
-                    if room!=None:
+                    playerRoom = self.rooms[player.playerRoom]
+                    if playerRoom!=None and playerRoom.roomID == message.room:
                         player.playerQueue.put(message)
             return
         except:
@@ -118,9 +129,9 @@ class WEB:
             pass
         #TODO:else
     #arg:legal or illegal playerName and password
-    #ret:raise AuthError if illegal, RoomError, TimeOutError, ServerBusyError
+    #ret:raise RegisterError, AuthError
     #ret:room creating may cause error
-    def register(self, playerName:str, password:str, roomIndex:int):
+    def register(self, playerName:str, password:str, roomIndex:int) -> Tuple[uuid.UUID, int]:
         logger.info(f"i wait for lock now{playerName,password,roomIndex}")
         self.registerLock.acquire(timeout=3)
         logger.info(f"i get lock now{playerName,password,roomIndex}")
@@ -135,47 +146,72 @@ class WEB:
             self.registerLock.release()
             raise AuthError("Super User?")
         elif level == PLAYER_LEVEL.normal:
-            for player in self.players:
-                if player != None and player.playerName == playerName and player.playerRoom == roomIndex:
-                    index = player.playerIndex
-                    newID = uuid.uuid4()
-                    player.cookie = newID
-                    self.registerLock.release()
-                    return (newID, index)
-            id = uuid.uuid4()
-            playerIndex = self.indexPool.get()
             try:
-                room = self.rooms[roomIndex]
-            except:
-                self.registerLock.release()
-                logger.info(f"i get error now{playerName,password,roomIndex}")
-                raise RoomError(f"你在试图进入一个不存在的房间{roomIndex}?\n")
-            if room == None:    #WARNING: not threading safe here, but outside is safe, and easy to fix
-                room = WEB_ROOM(lock=threading.Lock(),
-                                roomID=roomIndex, 
-                                playerIndexs = [playerIndex], 
-                                roomQueue=LockQueue(), 
-                                maxPlayer= self._roomIndexToMaxPlayer(roomIndex=roomIndex))
-                self.rooms[roomIndex] = room
-                self.hallQueue.put(MESSAGE(-1, -1, DATATYPE.createRoom, roomIndex))
-            else:
-                room.lock.acquire()
-                if len(room.playerIndexs) < room.maxPlayer:
-                    room.playerIndexs.append(playerIndex)
-                    room.lock.release()
+                playerIndex = self._checkFreshNewPlayer(playerName)
+                if playerIndex == -1:
+                    playerIndex = self.playerIndexPool.get()
+                player = self._newPlayer(playerIndex, playerName, roomIndex)
+                re = (player.cookie, playerIndex)
+                
+                room = self.rooms[roomIndex]    #index error
+                if room == None:
+                    #all error passed
+                    room = self._newRoom(roomIndex, playerIndex)    
+                    self.hallQueue.put(MESSAGE(-1, -1, DATATYPE.createRoom, roomIndex))
                 else:
-                    room.lock.release()
-                    self.registerLock.release()
-                    raise RoomError(f"{roomIndex}号房间满了\n")
-            player = WEB_PLAYER(id, playerIndex, LockQueue(), playerName, playerRoom = roomIndex)
-            self.players[playerIndex] = player
-            player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None))
-            room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName))
-            self.registerLock.release()
-            return (id, playerIndex)
+                    room = self._changeRoom(roomIndex, playerIndex)    #room error
+
+                
+                player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None)) # type: ignore
+                room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
+                return re
+            except:
+                raise RegisterFailedError("注册失败了\n")
         else:
             self.registerLock.release()
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
+    
+    #arg:playerName is checked by password 
+    #ret:-1 for no player
+    def _checkFreshNewPlayer(self, playerName)->int:
+        for player in self.players:
+            if player != None and player.playerName == playerName:
+                return player.playerIndex
+        return -1
+    def _newPlayer(self, playerIndex:int, playerName:str, playerRoom:int) -> WEB_PLAYER:
+        if self.players[playerIndex] != None:
+            raise ValueError("这地方有人呐\n")
+        cookie = uuid.uuid4()
+        player = WEB_PLAYER(cookie=cookie, playerIndex=playerIndex, playerQueue=LockQueue(), playerName=playerName, playerRoom= playerRoom)
+        return player
+
+
+    def _newRoom(self, roomIndex, firstPlayerIndex)->WEB_ROOM:
+        room = WEB_ROOM(lock=threading.Lock(),
+                        roomID=roomIndex,
+                        playerIndexs=[firstPlayerIndex],
+                        roomQueue=LockQueue(),
+                        maxPlayer=self._roomIndexToMaxPlayer(roomIndex))
+        return room
+    def _changeRoom(self, roomIndex, playerIndex)->WEB_ROOM:
+        room = self.rooms[roomIndex]
+        if len(room.playerIndexs) == room.maxPlayer:
+            raise RoomError("满啦\n")
+        else:
+            newRoom = WEB_ROOM(room.lock, roomIndex, room.playerIndexs + [playerIndex], room.roomQueue, room.maxPlayer)
+            return newRoom
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #Only checked in register, lock in register
     def _check(self, playerName:str, password:str) -> PLAYER_LEVEL:
         #TODO

@@ -508,7 +508,7 @@ class ROOM:
             message:MESSAGE = self.web.roomGetMessage(self.roomIndex)
         except:
             self.mainSend(MESSAGE(self.roomIndex, player=-1, dataType= DATATYPE.gameOver, data=None))
-            logger.info(f"ROOM{self.roomIndex}关闭了")
+            logger.info(f"ROOM{self.roomIndex}正常关闭了")
             sys.exit()
         logger.info("READ:" + message.dataType.name + str(message.data))
         return message
