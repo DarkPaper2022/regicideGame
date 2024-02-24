@@ -161,7 +161,8 @@ class WEB:
                 else:
                     room = self._changeRoom(roomIndex, playerIndex)    #room error
 
-                
+                self.players[playerIndex] = player
+                self.rooms[roomIndex] = room
                 player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None)) # type: ignore
                 room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
                 return re
