@@ -239,7 +239,9 @@ class WEB:
 
     def _roomIndexToMaxPlayer(self,roomIndex:int)->int:
         if (roomIndex >= 0 and roomIndex < self.maxRoom):
-            return math.floor(roomIndex/100) + 2
+            re = math.floor(roomIndex/100) + 2 
+            re = re if (re in [2,3,4]) else 2
+            return re
         else:
             logger.error(f"这里炸了,{roomIndex}被送进来了")
             return 2
