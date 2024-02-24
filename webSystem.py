@@ -94,8 +94,7 @@ class WEB:
         #TODO:room 的终结
         try:
             if message.player == -1:
-                playerRoom = self.rooms[message.room]
-                playerRoom = None
+                self.hallQueue.put(message)
             elif message.player == -2:
                 print(message.data)
             else:
