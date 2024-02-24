@@ -158,17 +158,20 @@ class WEB:
                 player = self._newPlayer(playerIndex, playerName, roomIndex)
                 re = (player.cookie, playerIndex)
                 
+                userChangeRoomFlag = True
                 room = self.rooms[roomIndex]    #index error
-                if room == None:
+                newRoomFlag = (room == None)
+                if newRoomFlag:
                     room = self._newRoom(roomIndex, playerIndex)    
                     self.hallQueue.put(MESSAGE(-1, -1, DATATYPE.createRoom, roomIndex)) #all error passed
                 else:
-                    room = self._changeRoom(roomIndex, playerIndex)    #room error
+                    room,userChangeRoomFlag = self._changeRoom(roomIndex, playerIndex)    #room error
 
                 self.players[playerIndex] = player
                 self.rooms[roomIndex] = room
                 player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None)) # type: ignore
-                room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
+                if userChangeRoomFlag:
+                    room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
                 self.registerLock.release()
                 return re
             except Exception as e:
@@ -203,14 +206,19 @@ class WEB:
                         roomQueue=LockQueue(),
                         maxPlayer=self._roomIndexToMaxPlayer(roomIndex))
         return room
-    def _changeRoom(self, roomIndex, playerIndex)->WEB_ROOM:
+    def _changeRoom(self, roomIndex, playerIndex)->Tuple[WEB_ROOM, bool]:
         room = self.rooms[roomIndex]
         newIndexs =  list(set(room.playerIndexs + [playerIndex]))
+        userChangeRoomFlag = True
+        for ind in room.playerIndexs:
+            if ind == playerIndex:
+                userChangeRoomFlag = False
+                break
         if len(newIndexs) > room.maxPlayer:
             raise RoomError("满了\n")
         else:
             newRoom = WEB_ROOM(room.lock, roomIndex, newIndexs, room.roomQueue, room.maxPlayer)
-        return newRoom
+        return (newRoom,userChangeRoomFlag)
     
     
     

@@ -63,7 +63,9 @@ class TALKING:
             self.messages.appendleft(message)
     def get(self) -> Tuple[TALKING_MESSAGE,...]:
         return tuple(self.messages)
-
+    def clear(self)->None:
+        self.messages.clear()
+        return
 
 class ROOM:
     """
@@ -360,10 +362,11 @@ class ROOM:
         self.maxHandSize = 9 - maxPlayer
         self.playerTotalNum = maxPlayer
         
-
+        self.talkings.clear()
 
         self.currentPlayer = self.playerList[0]
-
+        for player in self.playerList:
+            player.newGame()
 
         self.bossHeap = deque()
         for num in [10,11,12]:

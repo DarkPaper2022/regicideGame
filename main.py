@@ -9,7 +9,7 @@ try:
     port = int(sys.argv[1])
 except:
     port = 6000
-UserMax,RoomMax = 100,100
+UserMax,RoomMax = 100,1000
 web = WEB(UserMax,RoomMax)
 server = tcpServer.TCP_SERVER(web, port)
 server.start()
