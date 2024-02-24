@@ -205,12 +205,12 @@ class WEB:
         return room
     def _changeRoom(self, roomIndex, playerIndex)->WEB_ROOM:
         room = self.rooms[roomIndex]
-        if len(room.playerIndexs) == room.maxPlayer:
-            raise RoomError("满啦\n")
+        newIndexs =  list(set(room.playerIndexs + [playerIndex]))
+        if len(newIndexs > room.maxPlayer):
+            raise RoomError("满了\n")
         else:
-            newIndexs =  list(set(room.playerIndexs + [playerIndex]))
             newRoom = WEB_ROOM(room.lock, roomIndex, newIndexs, room.roomQueue, room.maxPlayer)
-            return newRoom
+        return newRoom
     
     
     
