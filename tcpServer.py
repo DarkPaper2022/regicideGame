@@ -234,12 +234,18 @@ class TCP_SERVER:
         serverThread.start()
     def serverThreadFunc(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.server_socket.bind((self.SERVER_HOST, self.SERVER_PORT))
-        except:
-            self.SERVER_PORT += random.randint(1,200)
-            self.server_socket.bind((self.SERVER_HOST, self.SERVER_PORT))
-        self.server_socket.listen(20)
+        cnt = 0
+        while True:
+            try:
+                self.server_socket.bind((self.SERVER_HOST, self.SERVER_PORT))
+                break
+            except:
+                time.sleep(20)
+                cnt += 1
+                if cnt == 10:
+                    logger.error("端口怎么死活拿不到呢呢呢")
+                    return
+        self.server_socket.listen(40)
         print(f"Server listening on {self.SERVER_HOST}:{self.SERVER_PORT}")
         while True:
             client_socket, client_address = self.server_socket.accept()
