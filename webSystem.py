@@ -159,7 +159,10 @@ class WEB:
                 re = (player.cookie, playerIndex)
                 
                 userChangeRoomFlag = True
-                room = self.rooms[roomIndex]    #index error
+                if roomIndex >= 0 and roomIndex <=self.maxRoom:     
+                    room = self.rooms[roomIndex]    #index error
+                else:
+                    raise IndexError("错误的房间喵喵")
                 newRoomFlag = (room == None)
                 if newRoomFlag:
                     room = self._newRoom(roomIndex, playerIndex)    
