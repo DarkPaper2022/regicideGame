@@ -160,9 +160,8 @@ class WEB:
                 
                 room = self.rooms[roomIndex]    #index error
                 if room == None:
-                    #all error passed
                     room = self._newRoom(roomIndex, playerIndex)    
-                    self.hallQueue.put(MESSAGE(-1, -1, DATATYPE.createRoom, roomIndex))
+                    self.hallQueue.put(MESSAGE(-1, -1, DATATYPE.createRoom, roomIndex)) #all error passed
                 else:
                     room = self._changeRoom(roomIndex, playerIndex)    #room error
 
