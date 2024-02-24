@@ -166,7 +166,7 @@ cython_debug/
 temp/
 
 # something
-data/
+private/
 
 #log
 *.log
