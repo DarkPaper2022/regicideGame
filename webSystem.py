@@ -44,6 +44,7 @@ class WEB_ROOM:
     playerIndexs:List[int]
     roomQueue:LockQueue
     maxPlayer:int
+
 class WEB:
     players:List[Union[WEB_PLAYER,None]]
     rooms:List[Union[WEB_ROOM,None]]
