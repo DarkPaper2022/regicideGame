@@ -14,6 +14,7 @@ from collections import deque
 from typing import List,Union,Tuple
 from myLogger import logger
 from enum import Enum
+from private.DarkPaperMySQL import sqlSystem as sqlSystem
 
 class PLAYER_LEVEL(Enum):
     illegal = 0
@@ -55,7 +56,7 @@ class WEB:
         self.hallQueue = LockQueue()
         self.players = [None]*maxPlayer #maxplayer 很大
         self.rooms = [None]*maxRoom
-
+        self.sqlSystem = sqlSystem()
         self.playerIndexPool = LockQueue()
         for i in range(maxPlayer):
             self.playerIndexPool.put(i)
@@ -138,7 +139,7 @@ class WEB:
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
         WARNING: PLZ, check should be threading SAFE
         """
-        level:PLAYER_LEVEL = self._check(playerName, password)
+        systemID,level = self._check(playerName, password)
         if level == PLAYER_LEVEL.superUser:
             #TODO
             self.registerLock.release()
@@ -229,9 +230,13 @@ class WEB:
     
     
     #Only checked in register, lock in register
-    def _check(self, playerName:str, password:str) -> PLAYER_LEVEL:
-        #TODO
-        return PLAYER_LEVEL.normal
+    def _check(self, playerName:str, password:str) -> Tuple[int, PLAYER_LEVEL]:
+        try:
+            re = self.sqlSystem.checkPassword(playerName, password)
+            return (re, PLAYER_LEVEL.normal)
+        except:
+            return (-1,PLAYER_LEVEL.illegal)
+        
 
 
     def _roomIndexToMaxPlayer(self,roomIndex:int)->int:
