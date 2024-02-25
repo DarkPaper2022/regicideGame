@@ -14,7 +14,7 @@ from collections import deque
 from typing import List,Union,Tuple
 from myLogger import logger
 from enum import Enum
-from private.DarkPaperMySQL import sqlSystem as sqlSystem
+from DarkPaperMySQL import sqlSystem as sqlSystem
 
 class PLAYER_LEVEL(Enum):
     illegal = 0
