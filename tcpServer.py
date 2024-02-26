@@ -13,7 +13,7 @@ from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError,R
 from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard
 from defineRound import ROUND
 
-
+UI_HEIGHT = 10
 
 
 #recv and send NO LOCK
@@ -42,7 +42,7 @@ class TCP_CLIENT:
         print(f"Accepted connection from {self.clientAddr}")
         username = ""
         while True:
-            self.clientSocket.send(b"Username and Password, plz\n")
+            self.clientSocket.send(UI_HEIGHT*b"\n" + b"Username and Password, plz\n")
             data = self.clientSocket.recv(1024)
             if not data:
                 self.clientSocket.close()
@@ -66,9 +66,9 @@ class TCP_CLIENT:
                     roomIndex = int(l[2].decode())
                     break
             except (AuthError,RegisterFailedError,TimeoutError) as e:
-                self.clientSocket.send(str(e).encode())
+                self.clientSocket.send((UI_HEIGHT*"\n"+str(e)+"\n").encode())
             except Exception as e:
-                self.clientSocket.send("Wrong Format Username and Password: 你在乱输什么啊\n".encode() + str(e).encode())
+                self.clientSocket.send((UI_HEIGHT*"\n"+"Wrong Format Username and Password: 你在乱输什么啊\n").encode() + str(e).encode())
         self.userName = username
         self.roomID = roomIndex
         self.clientSocket.settimeout(self.timeOutSetting)
@@ -96,7 +96,7 @@ class TCP_CLIENT:
                 else:
                     break
             except MessageFormatError as e:
-                self.clientSocket.send("Wrong Format Mesasge: 你在乱输什么啊\n".encode())
+                self.clientSocket.send((UI_HEIGHT*"\n"+"Wrong Format Mesasge: 你在乱输什么啊\n").encode())
             except Exception as e:
                 logger.info("recvFromnetcatThread, exception Over")
                 break
@@ -111,7 +111,7 @@ class TCP_CLIENT:
     def sendThreadFunc(self):
         while True:
             message = self.web.playerGetMessage(self.playerIndex, self.playerCookie)
-            data = self.messageToData(message)
+            data =UI_HEIGHT*b"\n" + self.messageToData(message)
             try:
                 self.clientSocket.send(data)
             except socket.timeout:
