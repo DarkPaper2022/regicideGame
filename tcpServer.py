@@ -13,7 +13,7 @@ from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError,R
 from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard
 from defineRound import ROUND
 
-UI_HEIGHT = 10
+UI_HEIGHT = 30
 
 
 #recv and send NO LOCK
@@ -42,7 +42,7 @@ class TCP_CLIENT:
         print(f"Accepted connection from {self.clientAddr}")
         username = ""
         while True:
-            self.clientSocket.send(UI_HEIGHT*b"\n" + b"Username and Password, plz\n")
+            self.clientSocket.send(0*b"\n" + b"Username and Password, plz\n")
             data = self.clientSocket.recv(1024)
             if not data:
                 self.clientSocket.close()
