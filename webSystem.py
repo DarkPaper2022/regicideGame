@@ -6,6 +6,7 @@ import subprocess
 import uuid
 import threading
 import math
+import re
 from dataclasses import dataclass
 from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS,playerWebSystemID
 from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
@@ -146,9 +147,7 @@ class WEB:
             raise AuthError("Super User?")
         elif level == PLAYER_LEVEL.normal:
             try:
-                playerIndex = self._checkFreshNewPlayer(playerName)
-                if playerIndex == -1:
-                    playerIndex = self.playerIndexPool.get()
+                playerIndex = systemID
                 player = self._newPlayer(playerIndex, playerName, roomIndex)
                 re = (player.cookie, playerIndex)
                 
@@ -180,7 +179,12 @@ class WEB:
         else:
             self.registerLock.release()
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
-    
+
+    #raise Error
+    def registerInSqlSsystem(self,playerName:str, password:str):
+        self.sqlSystem.userRegister(playerName,password)
+
+
     #arg:playerName is checked by password 
     #ret:-1 for no player
     def _checkFreshNewPlayer(self, playerName)->playerWebSystemID:
@@ -230,12 +234,12 @@ class WEB:
     
     
     #Only checked in register, lock in register
-    def _check(self, playerName:str, password:str) -> Tuple[int, PLAYER_LEVEL]:
+    def _check(self, playerName:str, password:str) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
         try:
             re = self.sqlSystem.checkPassword(playerName, password)
             return (re, PLAYER_LEVEL.normal)
         except:
-            return (-1,PLAYER_LEVEL.illegal)
+            return (playerWebSystemID(-1),PLAYER_LEVEL.illegal)
         
 
 

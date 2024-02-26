@@ -48,15 +48,23 @@ class TCP_CLIENT:
                 self.clientSocket.close()
                 print(f"Connection with {self.clientAddr} closed.")
                 return
+            
+            index = data.find(b"#")
+            if index != -1:
+                data = data[index:]
             l = data.strip().split(b" ")
             try:
-                self.playerCookie, self.playerIndex = self.web.register(
-                    playerName=l[0].decode("utf-8"),
-                    password=l[1].decode("utf-8"),
-                    roomIndex=int(l[2].decode()))
-                username = l[0].decode("utf-8")
-                roomIndex = int(l[2].decode())
-                break
+                if index != -1:
+                    self.web.registerInSqlSsystem(playerName=l[0].decode("utf-8"),
+                                                  password=l[1].decode("utf-8"))
+                else:
+                    self.playerCookie, self.playerIndex = self.web.register(
+                        playerName=l[0].decode("utf-8"),
+                        password=l[1].decode("utf-8"),
+                        roomIndex=int(l[2].decode()))
+                    username = l[0].decode("utf-8")
+                    roomIndex = int(l[2].decode())
+                    break
             except (AuthError,RegisterFailedError,TimeoutError) as e:
                 self.clientSocket.send(str(e).encode())
             except Exception as e:

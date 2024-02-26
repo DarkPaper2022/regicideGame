@@ -1,23 +1,26 @@
 from typing import Tuple
 import mysql.connector
+import re
 from defineError import AuthError
+from defineMessage import playerWebSystemID
 import configparser
 config = configparser.ConfigParser()
 config.read('private/config')
 
-host     = config["database"]["host"]          
-user     = config["database"]["user"]          
-password = config["database"]["password"]          
-database = config["database"]["database"]          
+host     =      config["database"]["host"]          
+sqlUser  =      config["database"]["user"]          
+sqlPassword =   config["database"]["password"]          
+database =      config["database"]["database"]          
 
 class sqlSystem:
     def __init__(self) -> None:
         self.connection = mysql.connector.connect(
                             host=host,
-                            user=user,
-                            password=password,
+                            user=sqlUser,
+                            password=sqlPassword,
                             database=database)
-    def checkPassword(self, userName:str, password:str) -> int:
+    #raise error
+    def checkPassword(self, userName:str, password:str) -> playerWebSystemID:
         cursor = self.connection.cursor()
         cursor.execute('SELECT id FROM accounts WHERE username=%s AND password=%s', 
                    (userName,password))
@@ -39,6 +42,24 @@ class sqlSystem:
         cursor.execute(sql, (userName,))
         self.connection.commit()
         cursor.close()
+    #check inside, error inside
+    def userRegister(self,userName:str, password:str):
+        pattern = r'^[a-zA-Z0-9_]{6,16}$'
+        if re.match(pattern, userName) and re.match(pattern, password):
+            cursor = self.connection.cursor()
+            cursor.execute('SELECT id FROM accounts WHERE username=%s', 
+                   (userName,))
+            result = cursor.fetchall()
+            if len(result) != 0:
+                cursor.close()
+                raise AuthError("有号就登,别注册了搁着儿")
+            else:
+                cursor.execute( "INSERT INTO accounts (username, password) VALUES (%s, %s);",(userName, password))
+                self.connection.commit()
+                cursor.close()
+                return
+        else:
+            raise AuthError("不是什么东西都可以作用户名和密码哦")
     def end(self):
         self.connection.close()
         
@@ -50,6 +71,6 @@ class sqlSystem:
 if __name__ == "__main__":
     s = sqlSystem()
     #s.adminRegister("darkpaper","114514")
-    re = s.checkPassword("darkpaper","114514")
-    print(re)
+    ree = s.checkPassword("darkpaper","114514")
+    print(ree)
     s.end()
