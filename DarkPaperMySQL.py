@@ -8,7 +8,8 @@ import configparser
 config = configparser.ConfigParser()
 config.read('private/config')
 
-host     =      config["database"]["host"]          
+host     =      config["database"]["host"]
+sqlport=        config["database"]["port"]
 sqlUser  =      config["database"]["user"]          
 sqlPassword =   config["database"]["password"]          
 database =      config["database"]["database"]          
@@ -17,6 +18,7 @@ class sqlSystem:
     def __init__(self) -> None:
         self.connection = mysql.connector.connect(
                             host=host,
+                            port=sqlport,
                             user=sqlUser,
                             password=sqlPassword,
                             database=database)
