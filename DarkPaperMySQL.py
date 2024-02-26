@@ -2,6 +2,7 @@ from typing import Tuple
 import mysql.connector
 import re
 from defineError import AuthError
+from myLogger import logger
 from defineMessage import playerWebSystemID
 import configparser
 config = configparser.ConfigParser()
@@ -59,6 +60,7 @@ class sqlSystem:
                 cursor.close()
                 return
         else:
+            logger.error(f"{userName},{password}正则炸了")
             raise AuthError("不是什么东西都可以作用户名和密码哦")
     def end(self):
         self.connection.close()

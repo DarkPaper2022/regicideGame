@@ -51,7 +51,7 @@ class TCP_CLIENT:
             
             index = data.find(b"#")
             if index != -1:
-                data = data[index:]
+                data = data[index+1:]
             l = data.strip().split(b" ")
             try:
                 if index != -1:
