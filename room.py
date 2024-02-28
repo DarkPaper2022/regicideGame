@@ -346,10 +346,12 @@ class ROOM:
             if self.currentRound == ROUND.over:
                 return
             elif self.currentRound == ROUND.atk:
-                self.ioSendStatus(self.currentPlayer.location)
+                for i in range(self.playerTotalNum):
+                    self.ioSendStatus(playerRoomLocation(i))
                 self.atkRound()
             elif self.currentRound == ROUND.defend:
-                self.ioSendStatus(self.currentPlayer.location)
+                for i in range(self.playerTotalNum):
+                    self.ioSendStatus(playerRoomLocation(i))
                 self.defendRound()
             elif self.currentRound == ROUND.jokerTime:
                 for i in range(self.playerTotalNum):
