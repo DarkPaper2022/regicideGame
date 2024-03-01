@@ -9,7 +9,7 @@ from defineRound import ROUND
 from myLogger import logger
 from dataclasses import dataclass
 import random
-import threading
+import asyncio
 import math
 import sys
 from webSystem import WEB
@@ -156,9 +156,9 @@ class ROOM:
             self.discardHeap = deque(discardHeapList[cnt:])
             
     #ret: change the state
-    def jokerRound(self) -> None:
+    async def jokerRound(self) -> None:
         while True:
-            location = self.ioGetJokerNum()
+            location = await self.ioGetJokerNum()
             if location == self.currentPlayer.location:
                 self.ioSendException(self.currentPlayer.webSystemID, "不要joker给自己！")
                 continue
@@ -170,9 +170,9 @@ class ROOM:
                 return
 
     #ret: change the state
-    def atkRound(self) -> None:
+    async def atkRound(self) -> None:
         while True:
-            cards = self.ioGetCards()
+            cards = await self.ioGetCards()
             try:
                 check = self._atkRoundCheckLegalCards(cards)
                 if check:
@@ -297,14 +297,14 @@ class ROOM:
             return (True,False)
 
     #ret: change the state
-    def defendRound(self):
+    async def defendRound(self):
         if sum([cardToNum(card) for card in self.currentPlayer.cards]) < self.currentBoss.atk:
             self.fail()
             #self.currentPlayer 不用改
             self.currentRound = ROUND.over
             return
         while True:
-            cards = self.ioGetCards()
+            cards = await self.ioGetCards()
             try:
                 check = self._defendRoundCheckLegalCards(cards)
                 if check:
@@ -330,17 +330,17 @@ class ROOM:
 
     #TODO:rename it after
     def run(self):
-        roomThread = threading.Thread(target= self.roomThreadingFunc)
-        roomThread.start()
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.roomThreadingFunc())
         return
 
-    def roomThreadingFunc(self):
+    async def roomThreadingFunc(self):
         self.playerList = []
         logger.info("playListHere")
-        self.ioGetPlayerRegister()
+        await self.ioGetPlayerRegister()
         while True:
-            self.start()
-    def start(self):
+            await self.start()
+    async def start(self):
         self.startGame()
         while True:
             if self.currentRound == ROUND.over:
@@ -348,15 +348,15 @@ class ROOM:
             elif self.currentRound == ROUND.atk:
                 for i in range(self.playerTotalNum):
                     self.ioSendStatus(playerRoomLocation(i))
-                self.atkRound()
+                await self.atkRound()
             elif self.currentRound == ROUND.defend:
                 for i in range(self.playerTotalNum):
                     self.ioSendStatus(playerRoomLocation(i))
-                self.defendRound()
+                await self.defendRound()
             elif self.currentRound == ROUND.jokerTime:
                 for i in range(self.playerTotalNum):
                     self.ioSendStatus(playerRoomLocation(i))
-                self.jokerRound()
+                await self.jokerRound()
             else:
                 raise ValueError("strange round")
     def startGame(self):
@@ -455,9 +455,9 @@ class ROOM:
             self.mainSend(overMessage)
         return
     #ret:保证一定返回合适类型的信息
-    def dataTypeSeprator(self, expected:DATATYPE):
+    async def dataTypeSeprator(self, expected:DATATYPE):
         while True:
-            message = self.mainRead()
+            message = await self.mainRead()
             if message.dataType == DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
                 continue
@@ -470,9 +470,9 @@ class ROOM:
             else:
                 return message
     #ret:保证一定返回合适类型、由合适人发来的消息
-    def mixSeperator(self, expected:List[Tuple[playerRoomLocation,DATATYPE]]):
+    async def mixSeperator(self, expected:List[Tuple[playerRoomLocation,DATATYPE]]):
         while True:
-            message = self.mainRead()
+            message = await self.mainRead()
             if message.dataType == DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
                 continue
@@ -485,30 +485,30 @@ class ROOM:
             else:
                 return message       
     #not math function
-    def ioGetPlayerRegister(self) -> None:
+    async def ioGetPlayerRegister(self) -> None:
         i = 0
         numList = []
         while i <= self.playerTotalNum - 1:
-            message = self.dataTypeSeprator(DATATYPE.confirmPrepare)
+            message = await self.dataTypeSeprator(DATATYPE.confirmPrepare)
             if message.player not in numList:
                 player = PLAYER(webSystemID=message.player, userName= message.data, location = i)
                 self.playerList.append(player)
                 numList.append(player.webSystemID)
                 i += 1
         return
-    def ioGetCards(self) -> List[int]:
+    async def ioGetCards(self) -> List[int]:
         while True:
-            messgae = self.mixSeperator([(self.currentPlayer.location, DATATYPE.card)])
+            messgae = await self.mixSeperator([(self.currentPlayer.location, DATATYPE.card)])
             try:
                 return messgae.data
             except:
                 self.ioSendException(messgae.player, "卡牌格式错误")
                 continue
-    def ioGetJokerNum(self) -> playerRoomLocation:
+    async def ioGetJokerNum(self) -> playerRoomLocation:
         while True:
             l:List[Tuple[playerRoomLocation,DATATYPE]] = [(playerRoomLocation(i),DATATYPE.speak) for i in range(self.playerTotalNum)] 
             l = l + [(self.currentPlayer.location,DATATYPE.confirmJoker)]
-            message = self.mixSeperator(l)
+            message = await self.mixSeperator(l)
             if message.dataType == DATATYPE.speak:
                 self.talkings.insert(message.data)
                 for i in range(self.playerTotalNum):
@@ -518,9 +518,9 @@ class ROOM:
                 return message.data
     
 
-    def mainRead(self) -> MESSAGE:
+    async def mainRead(self) -> MESSAGE:
         try:    
-            message:MESSAGE = self.web.roomGetMessage(self.roomIndex)
+            message:MESSAGE = await self.web.roomGetMessage(self.roomIndex)
         except:
             self.mainSend(MESSAGE(self.roomIndex, player=playerWebSystemID(-1), dataType= DATATYPE.gameOver, data=None))
             logger.info(f"ROOM{self.roomIndex}正常关闭了")

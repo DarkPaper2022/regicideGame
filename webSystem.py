@@ -113,13 +113,10 @@ class WEB:
                 return MESSAGE(-1,playerIndex,DATATYPE.cookieWrong,None)
     def playerSendMessage(self, message:MESSAGE, cookie:uuid.UUID):
         player = self.players[message.player]
-        try:
-            if player != None and player.cookie == cookie:
-                room = self.rooms[player.playerRoom]
-                if room != None:
-                    room.roomQueue.put(message)
-        except:
-            pass
+        if player != None and player.cookie == cookie:
+            room = self.rooms[player.playerRoom]
+            if room != None:
+                room.roomQueue.put(message)
         #TODO:else
 
     #arg:legal or illegal playerName and password

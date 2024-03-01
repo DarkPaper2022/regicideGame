@@ -1,5 +1,5 @@
 import webSystem
-import threading
+import asyncio
 from defineMessage import MESSAGE,DATATYPE
 from room import ROOM
 class rommBuilder:
@@ -7,12 +7,12 @@ class rommBuilder:
     def __init__(self, web) -> None:
         self.web = web
     def start(self)->None:
-        th = threading.Thread(target=self.hallThreadFunc)
-        th.start()
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.hallThreadFunc())
         return
-    def hallThreadFunc(self):
+    async def hallThreadFunc(self):
         while True:
-            message:MESSAGE = self.web.hallGetMessage()
+            message:MESSAGE = await self.web.hallGetMessage()
             if message.dataType == DATATYPE.createRoom:
                 room = ROOM(self.web, message.data)
                 room.run()
