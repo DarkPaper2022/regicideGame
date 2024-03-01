@@ -50,7 +50,6 @@ class WEB:
     players:List[Union[WEB_PLAYER,None]]
     rooms:List[Union[WEB_ROOM,None]]
     def __init__(self,maxPlayer:int, maxRoom) -> None:
-        self.listLock = threading.Lock()
         self.maxPlayer = maxPlayer
         self.maxRoom = maxRoom
         self.hallQueue = LockQueue()
@@ -70,20 +69,18 @@ class WEB:
         binding     playerQueue-playerIndex-cookie-playerName
         cookie      playerName+password = cookie 
         """
-    def hallGetMessage(self) -> MESSAGE:
-        message:MESSAGE = self.hallQueue.get()
+    async def hallGetMessage(self) -> MESSAGE:
+        message:MESSAGE = await self.hallQueue.get()
         if message.dataType == DATATYPE.gameOver:
-            self.listLock.acquire()
             room = self.rooms[message.room]
             self.rooms[message.room] = None
-            self.listLock.release()
         return message
-    def roomGetMessage(self, roomIndex:int) -> MESSAGE:
+    async def roomGetMessage(self, roomIndex:int) -> MESSAGE:
         #此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
         #这不是线程安全的, 这不好
         room =self.rooms[roomIndex] 
         if room != None:
-                message = room.roomQueue.get(timeout=300)
+                message = await room.roomQueue.get(timeout=300)
         return message
     def roomSendMessage(self, message:MESSAGE):
         #TODO:check it
@@ -102,7 +99,7 @@ class WEB:
             return
         except:
             return
-    def playerGetMessage(self, playerIndex:playerWebSystemID, cookie:uuid.UUID)->MESSAGE:
+    async def playerGetMessage(self, playerIndex:playerWebSystemID, cookie:uuid.UUID)->MESSAGE:
         player = self.players[playerIndex]
         if player == None:
             #WARNING:这里的message不是从queue里取出来的哦
@@ -111,7 +108,7 @@ class WEB:
         else:
             if player.cookie == cookie:
                 #WARNING:这里有时间差,注意是否有错位风险
-                return player.playerQueue.get()
+                return await player.playerQueue.get()
             else:
                 return MESSAGE(-1,playerIndex,DATATYPE.cookieWrong,None)
     def playerSendMessage(self, message:MESSAGE, cookie:uuid.UUID):
@@ -130,12 +127,6 @@ class WEB:
     #ret:room creating may cause error
     def playerLogInRoom(self, playerName:str, password:str, roomIndex:int) -> Tuple[uuid.UUID, playerWebSystemID]:
         logger.info(f"i wait for lock now{playerName,password,roomIndex}")
-        try:
-            self.listLock.acquire(timeout=3)
-            logger.info(f"i get lock now{playerName,password,roomIndex}")
-        except:
-            logger.error(f"no lock now{playerName,password,roomIndex}")
-            raise TimeoutError
         """
         password are needed
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
@@ -144,7 +135,6 @@ class WEB:
         systemID,level = self._check(playerName, password)
         if level == PLAYER_LEVEL.superUser:
             #TODO
-            self.listLock.release()
             raise AuthError("Super User?")
         elif level == PLAYER_LEVEL.normal:
             try:
@@ -170,15 +160,12 @@ class WEB:
                     self.hallQueue.put(MESSAGE(-1, playerWebSystemID(-1), DATATYPE.createRoom, roomIndex))
                 if userChangeRoomFlag:
                     room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
-                self.listLock.release()
                 return re
             except Exception as e:
-                self.listLock.release()
                 logger.error(str(e))
                 raise RegisterFailedError("注册失败了\n")
                 
         else:
-            self.listLock.release()
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
 
     #raise Error

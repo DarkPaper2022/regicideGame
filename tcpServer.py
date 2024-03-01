@@ -2,6 +2,7 @@ import socket
 import threading
 import uuid
 import random
+import asyncio
 import time
 from myLogger import logger
 from typing import List,Any,Tuple,Union
@@ -38,12 +39,13 @@ class TCP_CLIENT:
         authThread.start()
         return
     #and it will start the other two thread, the children will release the socket on their own
-    def authThread(self):
+    async def authThread(self):
+        loop = asyncio.get_event_loop()
         print(f"Accepted connection from {self.clientAddr}")
         username = ""
         while True:
             self.clientSocket.send(0*b"\n" + b"Username and Password, plz\n")
-            data = self.clientSocket.recv(1024)
+            data = await loop.sock_recv(self.clientSocket, 1024)
             if not data:
                 self.clientSocket.close()
                 print(f"Connection with {self.clientAddr} closed.")
@@ -72,18 +74,18 @@ class TCP_CLIENT:
         self.userName = username
         self.roomID = roomIndex
         self.clientSocket.settimeout(self.timeOutSetting)
-        recvThread = threading.Thread(target=self.recvThreadFunc)
-        sendThread = threading.Thread(target=self.sendThreadFunc)
-        recvThread.start()
-        sendThread.start()
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.recvThreadFunc())
+        loop.create_task(self.sendThreadFunc())
         return
     #recv From  netcat
-    def recvThreadFunc(self):
+    async def recvThreadFunc(self):
         #认为到这里我们拿到了一个正常的cookie和playerIndex,但是没有合适的room
+        loop = asyncio.get_event_loop()
         timeOutCnt = 0
         while True:
             try:
-                data = self.clientSocket.recv(1024)
+                data = await loop.sock_recv(self.clientSocket, 1024)
                 if not data:
                     break
                 message = self.dataToMessage(data)
@@ -108,9 +110,9 @@ class TCP_CLIENT:
         except:
             return
     #send To netcat
-    def sendThreadFunc(self):
+    async def sendThreadFunc(self):
         while True:
-            message = self.web.playerGetMessage(self.playerIndex, self.playerCookie)
+            message = await self.web.playerGetMessage(self.playerIndex, self.playerCookie)
             data =UI_HEIGHT*b"\n" + self.messageToData(message)
             try:
                 self.clientSocket.send(data)
