@@ -31,6 +31,7 @@ class sqlSystem:
         if len(rows) == 1:
             return rows[0][0]   # type: ignore
         else:
+            logger.info(f"错误的密码?\n{rows}")
             raise AuthError("密码乱输?")
         cursor.close()
     def adminRegister(self,userName:str, password:str):
