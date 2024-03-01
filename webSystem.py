@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass
 from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS,playerWebSystemID
 from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
-from queue import Queue as LockQueue
+from asyncio import Queue as LockQueue
 from collections import deque
 from typing import List,Union,Tuple
 from myLogger import logger
@@ -55,15 +55,6 @@ class WEB:
         self.players = [None]*maxPlayer #maxplayer 很大
         self.rooms = [None]*maxRoom
         self.sqlSystem = sqlSystem()
-        self.playerIndexPool = LockQueue()
-        for i in range(maxPlayer):
-            self.playerIndexPool.put(i)
-        self.suIndexPool = LockQueue()
-        for i in [-2]:
-            self.suIndexPool.put(i)
-        self.roomPool = LockQueue()
-        for i in range(maxRoom):
-            self.roomPool.put(i)
         """
         binding     playerQueue-playerIndex-cookie-playerName
         cookie      playerName+password = cookie 
@@ -79,14 +70,14 @@ class WEB:
         #这不是线程安全的, 这不好
         room =self.rooms[roomIndex] 
         if room != None:
-                message = await room.roomQueue.get(timeout=300)
+                message = await room.roomQueue.get()
         return message
     def roomSendMessage(self, message:MESSAGE):
         #TODO:check it
         #TODO:room 的终结
         try:
             if message.player == -1:
-                self.hallQueue.put(message)
+                self.hallQueue.put_nowait(message)
             elif message.player == -2:
                 print(message.data)
             else:
@@ -94,7 +85,7 @@ class WEB:
                 if player != None:
                     playerRoom = self.rooms[player.playerRoom]
                     if playerRoom!=None and playerRoom.roomID == message.room:
-                        player.playerQueue.put(message)
+                        player.playerQueue.put_nowait(message)
             return
         except:
             return
@@ -115,7 +106,7 @@ class WEB:
         if player != None and player.cookie == cookie:
             room = self.rooms[player.playerRoom]
             if room != None:
-                room.roomQueue.put(message)
+                room.roomQueue.put_nowait(message)
         #TODO:else
 
     #arg:legal or illegal playerName and password
@@ -153,7 +144,7 @@ class WEB:
                 self.rooms[roomIndex] = room
                 player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None)) # type: ignore
                 if newRoomFlag:
-                    self.hallQueue.put(MESSAGE(-1, playerWebSystemID(-1), DATATYPE.createRoom, roomIndex))
+                    self.hallQueue.put_nowait(MESSAGE(-1, playerWebSystemID(-1), DATATYPE.createRoom, roomIndex))
                 if userChangeRoomFlag:
                     room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
                 return re
@@ -181,7 +172,7 @@ class WEB:
     def _newPlayer(self, playerIndex:playerWebSystemID, playerName:str, playerRoom:int) -> WEB_PLAYER:
         player = self.players[playerIndex]
         if player != None:
-            player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logOtherPlace, data=None))
+            player.playerQueue.put_nowait(MESSAGE(-1, playerIndex, DATATYPE.logOtherPlace, data=None))
         cookie = uuid.uuid4()
         player = WEB_PLAYER(cookie=cookie, playerIndex=playerIndex, playerQueue=LockQueue(), playerName=playerName, playerRoom= playerRoom)
         return player

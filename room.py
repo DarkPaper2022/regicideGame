@@ -329,9 +329,9 @@ class ROOM:
         return (sum([cardToNum(card) for card in cards]) >= self.currentBoss.atk)
 
     #TODO:rename it after
-    def run(self):
+    async def run(self):
         loop = asyncio.get_event_loop()
-        loop.create_task(self.roomThreadingFunc())
+        await self.roomThreadingFunc()
         return
 
     async def roomThreadingFunc(self):

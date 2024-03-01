@@ -8,12 +8,14 @@ import sys
 try:    
     port = int(sys.argv[1])
 except:
-    port = 6000
+    port = 6007
 UserMax,RoomMax = 100,1000
 web = WEB(UserMax,RoomMax)
-server = tcpServer.TCP_SERVER(web, port)
-server.start()
-hall = rommBuilder(web)
-hall.start()
 loop = asyncio.get_event_loop()
-loop.run_forever()
+server = tcpServer.TCP_SERVER(web, port, loop)
+hall = rommBuilder(web)
+async def main():
+    await server.start()
+    await hall.start()
+    return None
+loop.run_until_complete(main())

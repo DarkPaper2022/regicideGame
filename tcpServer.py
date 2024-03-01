@@ -26,25 +26,23 @@ class TCP_CLIENT:
     userName:str    #be careful, once initialized it should never be changed 
     web:WEB
     roomID:int
-    def __init__(self, clientSocket:socket.socket, clientAddr, web, timeOutSetting:int) -> None:
+    def __init__(self, clientSocket:socket.socket, clientAddr, web, timeOutSetting:int, loop:asyncio.AbstractEventLoop) -> None:
         self.clientAddr = clientAddr
         self.clientSocket = clientSocket
         self.web = web
         self.overFlag = False
         self.timeOutSetting = timeOutSetting
         self.roomID = -1
-    def start(self):
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.authThread())
-        return
-    #and it will start the other two thread, the children will release the socket on their own
+        self.loop = loop
+        self.tasks = set()
+    async def start(self):
+        await self.authThread()
     async def authThread(self):
-        loop = asyncio.get_event_loop()
         print(f"Accepted connection from {self.clientAddr}")
         username = ""
         while True:
             self.clientSocket.send(0*b"\n" + b"Username and Password, plz\n")
-            data = await loop.sock_recv(self.clientSocket, 1024)
+            data = await self.loop.sock_recv(self.clientSocket, 1024)
             if not data:
                 self.clientSocket.close()
                 print(f"Connection with {self.clientAddr} closed.")
@@ -73,18 +71,17 @@ class TCP_CLIENT:
         self.userName = username
         self.roomID = roomIndex
         self.clientSocket.settimeout(self.timeOutSetting)
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.recvThreadFunc())
-        loop.create_task(self.sendThreadFunc())
+        rec = asyncio.create_task(self.recvThreadFunc())
+        asyncio.create_task(self.sendThreadFunc())
+        await rec
         return
     #recv From  netcat
     async def recvThreadFunc(self):
         #认为到这里我们拿到了一个正常的cookie和playerIndex,但是没有合适的room
-        loop = asyncio.get_event_loop()
         timeOutCnt = 0
         while True:
             try:
-                data = await loop.sock_recv(self.clientSocket, 1024)
+                data = await self.loop.sock_recv(self.clientSocket, 1024)
                 if not data:
                     break
                 message = self.dataToMessage(data)
@@ -233,17 +230,16 @@ class TCP_SERVER:
     cookies:List[uuid.UUID]
     server_socket:socket.socket
     web:WEB
-    def __init__(self, web, port) -> None:
+    def __init__(self, web, port, loop) -> None:
         self.SERVER_HOST = '0.0.0.0'
         self.SERVER_PORT = port
         self.BUFFER_SIZE = 1024
         self.sever_socket = None
         self.web = web
-    def start(self):
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.serverThreadFunc())
+        self.loop = loop
+    async def start(self):
+        await self.serverThreadFunc()
     async def serverThreadFunc(self):
-        loop = asyncio.get_event_loop()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         cnt = 0
         while True:
@@ -260,8 +256,9 @@ class TCP_SERVER:
         self.server_socket.listen(40)
         print(f"Server listening on {self.SERVER_HOST}:{self.SERVER_PORT}")
         while True:
-            client_socket, client_address = await loop.sock_accept(self.server_socket)
+            client_socket, client_address = await self.loop.sock_accept(self.server_socket)
             #可能在标识自己身份的时候出错,交由子线程处理，socket也由子线程来释放
-            tcpClient = TCP_CLIENT(client_socket, client_address, self.web, timeOutSetting=300)
-            tcpClient.start()
+            tcpClient = TCP_CLIENT(client_socket, client_address, self.web, timeOutSetting=300, loop=self.loop)
+            await tcpClient.start()
+        
         server_socket.close()
