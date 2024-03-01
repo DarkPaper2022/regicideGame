@@ -1,5 +1,4 @@
 import socket
-import threading
 import uuid
 import random
 import asyncio
@@ -35,8 +34,8 @@ class TCP_CLIENT:
         self.timeOutSetting = timeOutSetting
         self.roomID = -1
     def start(self):
-        authThread = threading.Thread(target=self.authThread)
-        authThread.start()
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.authThread())
         return
     #and it will start the other two thread, the children will release the socket on their own
     async def authThread(self):

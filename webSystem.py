@@ -4,7 +4,6 @@ import websockets
 import os
 import subprocess
 import uuid
-import threading
 import math
 import re
 from dataclasses import dataclass
