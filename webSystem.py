@@ -71,20 +71,17 @@ class WEB:
     def roomSendMessage(self, message:MESSAGE):
         #TODO:check it
         #TODO:room 的终结
-        try:
-            if message.player == -1:
-                self.hallQueue.put_nowait(message)
-            elif message.player == -2:
-                print(message.data)
-            else:
-                player = self.players[message.player]
-                if player != None:
-                    playerRoom = self.rooms[player.playerRoom]
-                    if playerRoom!=None and playerRoom.roomID == message.room:
-                        player.playerQueue.put_nowait(message)
-            return
-        except:
-            return
+        if message.player == -1:
+            self.hallQueue.put_nowait(message)
+        elif message.player == -2:
+            print(message.data)
+        else:
+            player = self.players[message.player]
+            if player != None:
+                playerRoom = self.rooms[player.playerRoom]
+                if playerRoom!=None and playerRoom.roomID == message.room:
+                    player.playerQueue.put_nowait(message)
+        return
     async def playerGetMessage(self, playerIndex:playerWebSystemID, cookie:uuid.UUID)->MESSAGE:
         player = self.players[playerIndex]
         if player == None:

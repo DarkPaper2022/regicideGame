@@ -28,6 +28,5 @@ hall = rommBuilder(web)
 async def main():
     s = asyncio.create_task(server.serverThreadFunc())
     h = asyncio.create_task(hall.start())
-    log = logggggg("main")
-    await asyncio.gather(s, h, log ,return_exceptions=False) 
+    await asyncio.gather(s, h ,return_exceptions=False) 
 loop.run_until_complete(main())
