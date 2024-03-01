@@ -1,11 +1,16 @@
 ## getState
-[get] /regicide/api/userID/state
-
-## findEmptyRoom
-[get] /regicide/api/userID/create
-
-## joinRoom
-[post] /regicide/api/userID/join
+[get] /regicide/api/player/userID/state
 
 ## cards
-[POST] /regicide/api/userID
+[POST] /regicide/api/player/userID/cards
+
+
+## register
+
+
+## findEmptyRoom
+[get] /regicide/api/user/userID
+
+## joinRoom
+[post] /regicide/api/user/userID
+

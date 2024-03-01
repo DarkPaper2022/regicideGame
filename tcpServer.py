@@ -55,10 +55,10 @@ class TCP_CLIENT:
             l = data.strip().split(b" ")
             try:
                 if index != -1:
-                    self.web.registerInSqlSsystem(playerName=l[0].decode("utf-8"),
+                    self.web.userRegister(playerName=l[0].decode("utf-8"),
                                                   password=l[1].decode("utf-8"))
                 else:
-                    self.playerCookie, self.playerIndex = self.web.register(
+                    self.playerCookie, self.playerIndex = self.web.playerLogInRoom(
                         playerName=l[0].decode("utf-8"),
                         password=l[1].decode("utf-8"),
                         roomIndex=int(l[2].decode()))
