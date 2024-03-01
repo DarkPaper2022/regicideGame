@@ -243,7 +243,8 @@ class TCP_SERVER:
     def start(self):
         serverThread = threading.Thread(target=self.serverThreadFunc)
         serverThread.start()
-    def serverThreadFunc(self):
+    async def serverThreadFunc(self):
+        loop = asyncio.get_event_loop()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         cnt = 0
         while True:
@@ -260,7 +261,7 @@ class TCP_SERVER:
         self.server_socket.listen(40)
         print(f"Server listening on {self.SERVER_HOST}:{self.SERVER_PORT}")
         while True:
-            client_socket, client_address = self.server_socket.accept()
+            client_socket, client_address = await loop.sock_accept(self.server_socket)
             #可能在标识自己身份的时候出错,交由子线程处理，socket也由子线程来释放
             tcpClient = TCP_CLIENT(client_socket, client_address, self.web, timeOutSetting=300)
             tcpClient.start()
