@@ -521,8 +521,9 @@ class ROOM:
     async def mainRead(self) -> MESSAGE:
         try:    
             message:MESSAGE = await self.web.roomGetMessage(self.roomIndex)
-        except:
+        except Exception as e:
             self.mainSend(MESSAGE(self.roomIndex, player=playerWebSystemID(-1), dataType= DATATYPE.gameOver, data=None))
+            logger.debug(f"{e}")
             logger.info(f"ROOM{self.roomIndex}正常关闭了")
             sys.exit()
         logger.info("READ:" + message.dataType.name + str(message.data))

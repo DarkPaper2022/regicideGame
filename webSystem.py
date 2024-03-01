@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass
 from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS,playerWebSystemID
 from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
-from asyncio import Queue as LockQueue
+from myLockQueue import myLockQueue as LockQueue
 from collections import deque
 from typing import List,Union,Tuple
 from myLogger import logger
@@ -61,13 +61,9 @@ class WEB:
         """
     async def hallGetMessage(self) -> MESSAGE:
         message:MESSAGE = await self.hallQueue.get()
-        if message.dataType == DATATYPE.gameOver:
-            room = self.rooms[message.room]
-            self.rooms[message.room] = None
         return message
     async def roomGetMessage(self, roomIndex:int) -> MESSAGE:
         #此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
-        #这不是线程安全的, 这不好
         room =self.rooms[roomIndex] 
         if room != None:
                 message = await room.roomQueue.get()
@@ -97,7 +93,6 @@ class WEB:
             #TODO
         else:
             if player.cookie == cookie:
-                #WARNING:这里有时间差,注意是否有错位风险
                 return await player.playerQueue.get()
             else:
                 return MESSAGE(-1,playerIndex,DATATYPE.cookieWrong,None)
@@ -113,7 +108,6 @@ class WEB:
     #ret:raise RegisterError, AuthError
     #ret:room creating may cause error
     def playerLogInRoom(self, playerName:str, password:str, roomIndex:int) -> Tuple[uuid.UUID, playerWebSystemID]:
-        logger.info(f"i wait for lock now{playerName,password,roomIndex}")
         """
         password are needed
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
@@ -142,11 +136,11 @@ class WEB:
 
                 self.players[playerIndex] = player
                 self.rooms[roomIndex] = room
-                player.playerQueue.put(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None)) # type: ignore
+                player.playerQueue.put_nowait(MESSAGE(-1, playerIndex, DATATYPE.logInSuccess, None)) # type: ignore
                 if newRoomFlag:
                     self.hallQueue.put_nowait(MESSAGE(-1, playerWebSystemID(-1), DATATYPE.createRoom, roomIndex))
                 if userChangeRoomFlag:
-                    room.roomQueue.put(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
+                    room.roomQueue.put_nowait(MESSAGE(room.roomID, playerIndex, DATATYPE.confirmPrepare, playerName)) # type: ignore
                 return re
             except Exception as e:
                 logger.error(str(e))
@@ -159,7 +153,13 @@ class WEB:
     def userRegister(self,playerName:str, password:str):
         self.sqlSystem.userRegister(playerName,password)
     def roomRemove(self,roomIndex:int) -> None:
-        pass
+        room = self.rooms[roomIndex]
+        if room == None:
+            logger.error(f"淦这个房怎么没关就没了")
+            return
+        for playerIndex in room.playerIndexs:
+            self.players[playerIndex] = None
+
     def userLogOut(self,playerIndex:playerWebSystemID, cookie:uuid.UUID):
         pass
     #arg:playerName is checked by password 
@@ -209,7 +209,7 @@ class WEB:
     
     
     
-    #Only checked in register, lock in register
+    #Only checked in register
     def _check(self, playerName:str, password:str) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
         try:
             re = self.sqlSystem.checkPassword(playerName, password)
