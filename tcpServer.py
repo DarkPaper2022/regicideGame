@@ -241,8 +241,8 @@ class TCP_SERVER:
         self.sever_socket = None
         self.web = web
     def start(self):
-        serverThread = threading.Thread(target=self.serverThreadFunc)
-        serverThread.start()
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.serverThreadFunc())
     async def serverThreadFunc(self):
         loop = asyncio.get_event_loop()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
