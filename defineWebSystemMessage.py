@@ -16,7 +16,7 @@ class PLAYER_LEVEL(Enum):
 class WEB_SYSTEM_DATATYPE(Enum):
     askStatus = 1       #from client, none message 
     answerStatus = 3    #to client
-    createRoom = 18     #from web to Game
+    createRoom = 18     #from web to Hall to start a func
     cookieWrong = 13    #to client
     logInSuccess = 8    #to client          
     confirmPrepare = 14 #from client or from web
