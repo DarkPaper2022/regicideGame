@@ -29,13 +29,17 @@ class DATATYPE(Enum):
     gameOver = 19       #to hall
     logOtherPlace = 20  #to client
 
-    
+class PLAYER_LEVEL(Enum):
+    illegal = 0
+    normal = 1
+    superUser = 2    
 
 @dataclass(frozen=True)
 class MESSAGE:
     #-1 for no room or for hall
     #0 to inf for normal room
     room: int
+
     #0 to inf for normal user, -1 for webSystem, -2 for SuperUser, -3 for self
     #-1 used: StartSignalPackage, cookieWrong  
     player: playerWebSystemID

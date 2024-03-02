@@ -1,13 +1,7 @@
-import socket
-import asyncio
-import websockets
-import os
-import subprocess
 import uuid
 import math
-import re
 from dataclasses import dataclass
-from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS,playerWebSystemID
+from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS,playerWebSystemID,PLAYER_LEVEL
 from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
 from myLockQueue import myLockQueue as LockQueue
 from collections import deque
@@ -16,10 +10,7 @@ from myLogger import logger
 from enum import Enum
 from DarkPaperMySQL import sqlSystem as sqlSystem
 
-class PLAYER_LEVEL(Enum):
-    illegal = 0
-    normal = 1
-    superUser = 2
+
 
 @dataclass
 class WEB_PLAYER:
@@ -29,12 +20,16 @@ class WEB_PLAYER:
     #if someone want to player in other room
     #we should let the old room know, 
     #so we need to change the room and send exception when the game is getting message, timeout or roomWrong  
-    cookie:uuid.UUID
+    
     playerIndex:playerWebSystemID
     playerQueue:LockQueue
     playerName:str
-    #可能持有一个糟糕的room,room方短线了,会给予用户很强的反馈
     playerRoom:int
+    playerLevel:PLAYER_LEVEL
+    playerCookie:uuid.UUID          
+    #different room, different player cookie
+    #可能持有一个糟糕的room,room方短线了,会给予用户很强的反馈
+    
 
 @dataclass
 class WEB_ROOM:
@@ -88,13 +83,13 @@ class WEB:
             return MESSAGE(-1,playerIndex,DATATYPE.cookieWrong,None)
             #TODO
         else:
-            if player.cookie == cookie:
+            if player.playerCookie == cookie:
                 return await player.playerQueue.get()
             else:
                 return MESSAGE(-1,playerIndex,DATATYPE.cookieWrong,None)
     def playerSendMessage(self, message:MESSAGE, cookie:uuid.UUID):
         player = self.players[message.player]
-        if player != None and player.cookie == cookie:
+        if player != None and player.playerCookie == cookie:
             room = self.rooms[player.playerRoom]
             if room != None:
                 room.roomQueue.put_nowait(message)
@@ -111,7 +106,7 @@ class WEB:
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
         WARNING: PLZ, check should be threading SAFE
         """
-        systemID,level = self._check(playerName, password)
+        systemID,level = self._checkPassword(playerName, password)
         if level == PLAYER_LEVEL.superUser:
             #TODO
             raise AuthError("Super User?")
@@ -119,7 +114,7 @@ class WEB:
             try:
                 playerIndex = systemID
                 player = self._newPlayer(playerIndex, playerName, roomIndex)
-                re = (player.cookie, playerIndex)
+                re = (player.playerCookie, playerIndex)
                 
                 userChangeRoomFlag = True
                 if roomIndex >= 0 and roomIndex <=self.maxRoom:     
@@ -146,7 +141,8 @@ class WEB:
                 
         else:
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
-
+    def userLogInHall(self, playerName:str, password:str) -> Tuple[uuid.UUID, playerWebSystemID]:# type:ignore
+        pass    
     #raise Error
     def userRegister(self,playerName:str, password:str):
         self.sqlSystem.userRegister(playerName,password)
@@ -172,7 +168,7 @@ class WEB:
         if player != None:
             player.playerQueue.put_nowait(MESSAGE(-1, playerIndex, DATATYPE.logOtherPlace, data=None))
         cookie = uuid.uuid4()
-        player = WEB_PLAYER(cookie=cookie, playerIndex=playerIndex, playerQueue=LockQueue(), playerName=playerName, playerRoom= playerRoom)
+        player = WEB_PLAYER(playerCookie=cookie, playerIndex=playerIndex, playerQueue=LockQueue(), playerName=playerName, playerRoom= playerRoom, playerLevel= PLAYER_LEVEL.normal)
         return player
         
 
@@ -194,29 +190,21 @@ class WEB:
             raise RoomError("满了\n")
         else:
             newRoom = WEB_ROOM(roomIndex, newIndexs, room.roomQueue, room.maxPlayer)
-        return (newRoom,userChangeRoomFlag)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        return (newRoom,userChangeRoomFlag)    
     #Only checked in register
-    def _check(self, playerName:str, password:str) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
+    def _checkPassword(self, playerName:str, password:str) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
         try:
             re = self.sqlSystem.checkPassword(playerName, password)
-            return (re, PLAYER_LEVEL.normal)
+            return re
         except:
             return (playerWebSystemID(-1),PLAYER_LEVEL.illegal)
-        
-
-
+    def _checkOldCookie(self,playerIndex:playerWebSystemID , oldCookie:uuid.UUID)->PLAYER_LEVEL:
+        p = self.players[playerIndex]
+        if p == None:
+            return PLAYER_LEVEL.illegal
+        else:
+            level = p.playerLevel if p.playerCookie==oldCookie else PLAYER_LEVEL.illegal
+            return level
     def _roomIndexToMaxPlayer(self,roomIndex:int)->int:
         if (roomIndex >= 0 and roomIndex < self.maxRoom):
             re = math.floor(roomIndex/100) + 2 
