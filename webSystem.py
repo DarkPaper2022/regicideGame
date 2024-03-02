@@ -36,7 +36,6 @@ class WEB_PLAYER:
     #可能持有一个糟糕的room,room方短线了,会给予用户很强的反馈
     playerRoom:int
 
-#线程安全了现在
 @dataclass
 class WEB_ROOM:
     roomID:int
@@ -99,6 +98,8 @@ class WEB:
             room = self.rooms[player.playerRoom]
             if room != None:
                 room.roomQueue.put_nowait(message)
+            else:
+                self.hallQueue.put_nowait(message)
         #TODO:else
 
     #arg:legal or illegal playerName and password
