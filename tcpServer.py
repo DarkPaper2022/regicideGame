@@ -134,7 +134,11 @@ class TCP_CLIENT:
     def dataToMessage(self, data:bytes) -> MESSAGE:
         try:
             l = [line.strip() for line in data.strip().split(b'#')]
-            dataType = REGICIDE_DATATYPE(int(l[0].decode()))
+            try:
+                dataType = REGICIDE_DATATYPE(int(l[0].decode()))
+            except:
+                dataType = WEB_SYSTEM_DATATYPE(int(l[0].decode()))
+                
             if dataType == REGICIDE_DATATYPE.card:
                 if len(l) == 1 or l[1] == b"":
                     messageData = []
