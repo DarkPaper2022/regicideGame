@@ -15,12 +15,7 @@ from defineRound import ROUND
 
 UI_HEIGHT = 30
 
-async def logggggg(yes):
-    cnt = 0
-    while True:
-        cnt += 1
-        print(f"cnt   {yes}")
-        await asyncio.sleep(2)
+
 #recv and send NO LOCK
 #只对socket和web的交互有线程问题、而这两个都是线程安全的
 class TCP_CLIENT:
