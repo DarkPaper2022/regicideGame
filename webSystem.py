@@ -141,7 +141,7 @@ class WEB:
                 
         else:
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
-    def userLogInHall(self, playerName:str, password:str) -> Tuple[uuid.UUID, playerWebSystemID]:# type:ignore
+    def playerLogInHall(self, playerName:str, password:str) -> Tuple[uuid.UUID, playerWebSystemID]:# type:ignore
         pass    
     #raise Error
     def userRegister(self,playerName:str, password:str):
