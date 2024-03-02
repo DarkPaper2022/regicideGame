@@ -6,8 +6,9 @@ import time
 from myLogger import logger
 from typing import List,Any,Tuple,Union
 from webSystem import WEB
-from defineRegicideMessage import MESSAGE,REGICIDE_DATATYPE,TALKING_MESSAGE,\
-    FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START,playerWebSystemID
+from defineRegicideMessage import REGICIDE_DATATYPE,TALKING_MESSAGE,\
+    FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START
+from defineWebSystemMessage import MESSAGE, playerWebSystemID
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError,RegisterFailedError
 from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard

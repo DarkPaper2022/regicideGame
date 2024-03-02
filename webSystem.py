@@ -1,7 +1,8 @@
 import uuid
 import math
 from dataclasses import dataclass
-from defineRegicideMessage import MESSAGE,REGICIDE_DATATYPE,GAME_SETTINGS,playerWebSystemID,PLAYER_LEVEL
+from defineRegicideMessage import REGICIDE_DATATYPE,GAME_SETTINGS
+from defineWebSystemMessage import MESSAGE, playerWebSystemID,PLAYER_LEVEL
 from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
 from myLockQueue import myLockQueue as LockQueue
 from collections import deque

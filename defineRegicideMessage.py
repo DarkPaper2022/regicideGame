@@ -5,8 +5,8 @@ from defineRound import ROUND
 from enum import Enum
 import math
 
-playerWebSystemID = NewType("playerWebSystemID",int) 
 playerRoomLocation = NewType("playerRoomLocation",int) 
+
 
 class REGICIDE_DATATYPE(Enum):
     #TODO:注释对应data的情况
@@ -30,23 +30,9 @@ class REGICIDE_DATATYPE(Enum):
     gameOver = 19       #to hall
     logOtherPlace = 20  #to client
 
-class PLAYER_LEVEL(Enum):
-    illegal = 0
-    normal = 1
-    superUser = 2    
 
-@dataclass(frozen=False)
-class MESSAGE:
-    #-1 for no room or for hall
-    #0 to inf for normal room
-    room: int
 
-    #0 to inf for normal user, -1 for webSystem, -2 for SuperUser, -3 for self
-    #-1 used: StartSignalPackage, cookieWrong  
-    player: playerWebSystemID
-    dataType: REGICIDE_DATATYPE
-    roomData: Any
-    webData: Any
+
 
 
 @dataclass(frozen=True)

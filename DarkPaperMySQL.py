@@ -3,7 +3,7 @@ import mysql.connector
 import re
 from defineError import AuthError
 from myLogger import logger
-from defineRegicideMessage import playerWebSystemID,PLAYER_LEVEL
+from defineWebSystemMessage import playerWebSystemID,PLAYER_LEVEL
 import configparser
 config = configparser.ConfigParser()
 config.read('private/config')
