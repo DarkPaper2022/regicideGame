@@ -14,5 +14,5 @@ class rommBuilder:
         while True:
             message:MESSAGE = await self.web.hallGetMessage()
             if message.dataType == DATATYPE.createRoom:
-                room = ROOM(self.web, message.data)
+                room = ROOM(self.web, message.roomData)
                 await room.run()

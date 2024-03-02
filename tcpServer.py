@@ -149,21 +149,21 @@ class TCP_CLIENT:
                 messageData = None
         except:
             raise MessageFormatError("Fuck you!")
-        message = MESSAGE(self.roomID,self.playerIndex, dataType, messageData)
+        message = MESSAGE(self.roomID,self.playerIndex, dataType, messageData, None)
         return message
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> bytes:
         if message.room != self.roomID and message.room != -1:
             return f"奇怪的信号?\n".encode()
         if message.dataType == DATATYPE.answerStatus:
-            flag, status = message.data
+            flag, status = message.roomData
             if flag:
                 messageData = self._statusToStr(status)
             else:
                 messageData = self._beforeStatusToStr(status)
         elif message.dataType == DATATYPE.answerTalking:
             messageData = ""
-            talkings:Tuple[TALKING_MESSAGE,...] = message.data
+            talkings:Tuple[TALKING_MESSAGE,...] = message.roomData
             if len(talkings) == 0:
                 messageData += "还没人说话呢,等joker了再说吧"
             for line in talkings:
@@ -172,7 +172,7 @@ class TCP_CLIENT:
                 talkStr = line.message
                 messageData = (timeStr+" "+nameStr+"说"+"\n\t"+talkStr + "\n") + messageData
         elif message.dataType == DATATYPE.overSignal:
-            isWin:bool = message.data
+            isWin:bool = message.roomData
             if isWin:
                 messageData = "真棒, 你们打败了魔王\n"
             else:
@@ -180,14 +180,14 @@ class TCP_CLIENT:
         elif message.dataType == DATATYPE.cookieWrong or message.dataType == DATATYPE.logOtherPlace:
             messageData = "你被顶号了,要不要顶回来试试?\n"
         elif message.dataType == DATATYPE.answerRoom:
-            self.roomID = message.data
-            messageData = f"""你的房间号是{message.data}\n"""
+            self.roomID = message.roomData
+            messageData = f"""你的房间号是{message.roomData}\n"""
         elif message.dataType == DATATYPE.logInSuccess:
             messageData = ""
-        elif (message.data == None):
+        elif (message.roomData == None):
             messageData = ""
         else:
-            messageData = str(message.data)
+            messageData = str(message.roomData)
         data:bytes = message.dataType.name.encode() +b"\n"+ messageData.encode()
         return data
     def _statusToStr(self, status:FROZEN_STATUS_PARTLY) -> str:

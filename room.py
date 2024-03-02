@@ -330,7 +330,6 @@ class ROOM:
 
     #TODO:rename it after
     async def run(self):
-        loop = asyncio.get_event_loop()
         await self.roomThreadingFunc()
         return
 
@@ -437,21 +436,22 @@ class ROOM:
         retMessage:MESSAGE = MESSAGE(room=self.roomIndex, 
                                      player=self.playerList[playerLocation].webSystemID, 
                                      dataType=DATATYPE.answerStatus, 
-                                     data=state)
+                                     roomData=state,
+                                     webData=None)
         self.mainSend(retMessage)
     def ioSendTalkings(self, webSystemID:playerWebSystemID):
         talking = self.talkings.get()
-        retMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.answerTalking, data=talking)
+        retMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.answerTalking, roomData=talking, webData=None)
         self.mainSend(retMessage)
     def ioSendException(self, webSystemID:playerWebSystemID, exceptStr:str):
-        exceptMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.exception, data=exceptStr)
+        exceptMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.exception, roomData=exceptStr, webData=None)
         self.mainSend(exceptMessage) 
     def ioSendGameTalk(self, webSystemID:playerWebSystemID, gameTalkStr:str):
-        talkMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.gameTalk, data=gameTalkStr)
+        talkMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.gameTalk, roomData=gameTalkStr, webData=None)
         self.mainSend(talkMessage) 
     def ioSendOverSignal(self, isWin:bool):
         for player in self.playerList:
-            overMessage:MESSAGE = MESSAGE(self.roomIndex,player.webSystemID, DATATYPE.overSignal, isWin)
+            overMessage:MESSAGE = MESSAGE(self.roomIndex,player.webSystemID, DATATYPE.overSignal, isWin, None)
             self.mainSend(overMessage)
         return
     #ret:保证一定返回合适类型的信息
@@ -491,7 +491,7 @@ class ROOM:
         while i <= self.playerTotalNum - 1:
             message = await self.dataTypeSeprator(DATATYPE.confirmPrepare)
             if message.player not in numList:
-                player = PLAYER(webSystemID=message.player, userName= message.data, location = i)
+                player = PLAYER(webSystemID=message.player, userName= message.roomData, location = i)
                 self.playerList.append(player)
                 numList.append(player.webSystemID)
                 i += 1
@@ -500,7 +500,7 @@ class ROOM:
         while True:
             messgae = await self.mixSeperator([(self.currentPlayer.location, DATATYPE.card)])
             try:
-                return messgae.data
+                return messgae.roomData
             except:
                 self.ioSendException(messgae.player, "卡牌格式错误")
                 continue
@@ -510,25 +510,25 @@ class ROOM:
             l = l + [(self.currentPlayer.location,DATATYPE.confirmJoker)]
             message = await self.mixSeperator(l)
             if message.dataType == DATATYPE.speak:
-                self.talkings.insert(message.data)
+                self.talkings.insert(message.roomData)
                 for i in range(self.playerTotalNum):
                     self.ioSendTalkings(self.playerList[i].webSystemID)
             else:
                 #TODO:bad logic
-                return message.data
+                return message.roomData
     
 
     async def mainRead(self) -> MESSAGE:
         try:    
             message:MESSAGE = await self.web.roomGetMessage(self.roomIndex)
         except Exception as e:
-            self.mainSend(MESSAGE(self.roomIndex, player=playerWebSystemID(-1), dataType= DATATYPE.gameOver, data=None))
+            self.mainSend(MESSAGE(self.roomIndex, player=playerWebSystemID(-1), dataType= DATATYPE.gameOver, roomData=None, webData=None))
             logger.debug(f"{e}")
             logger.info(f"ROOM{self.roomIndex}正常关闭了")
             sys.exit()
-        logger.info("READ:" + message.dataType.name + str(message.data))
+        logger.info("READ:" + message.dataType.name + str(message.roomData))
         return message
     def mainSend(self,message:MESSAGE):
-        logger.info("SEND:" + message.dataType.name + str(message.data))
+        logger.info("SEND:" + message.dataType.name + str(message.roomData))
         self.web.roomSendMessage(message)
 

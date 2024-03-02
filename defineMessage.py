@@ -44,7 +44,9 @@ class MESSAGE:
     #-1 used: StartSignalPackage, cookieWrong  
     player: playerWebSystemID
     dataType: DATATYPE
-    data: Any
+    roomData: Any
+    webData: Any
+
 
 @dataclass(frozen=True)
 class FROZEN_BOSS:
