@@ -1,7 +1,7 @@
 from collections import deque
 from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
-from defineRegicideMessage import MESSAGE,DATATYPE,FROZEN_STATUS_PARTLY,\
+from defineRegicideMessage import MESSAGE,REGICIDE_DATATYPE,FROZEN_STATUS_PARTLY,\
 FROZEN_BOSS,TALKING_MESSAGE,FROZEN_PLAYER,FROZEN_STATUS_BEFORE_START,playerWebSystemID,playerRoomLocation
 from defineError import CardError
 from defineColor import COLOR,cardToNum
@@ -435,33 +435,33 @@ class ROOM:
             state = (self.startFlag, status)
         retMessage:MESSAGE = MESSAGE(room=self.roomIndex, 
                                      player=self.playerList[playerLocation].webSystemID, 
-                                     dataType=DATATYPE.answerStatus, 
+                                     dataType=REGICIDE_DATATYPE.answerStatus, 
                                      roomData=state,
                                      webData=None)
         self.mainSend(retMessage)
     def ioSendTalkings(self, webSystemID:playerWebSystemID):
         talking = self.talkings.get()
-        retMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.answerTalking, roomData=talking, webData=None)
+        retMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=REGICIDE_DATATYPE.answerTalking, roomData=talking, webData=None)
         self.mainSend(retMessage)
     def ioSendException(self, webSystemID:playerWebSystemID, exceptStr:str):
-        exceptMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.exception, roomData=exceptStr, webData=None)
+        exceptMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=REGICIDE_DATATYPE.exception, roomData=exceptStr, webData=None)
         self.mainSend(exceptMessage) 
     def ioSendGameTalk(self, webSystemID:playerWebSystemID, gameTalkStr:str):
-        talkMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=DATATYPE.gameTalk, roomData=gameTalkStr, webData=None)
+        talkMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=REGICIDE_DATATYPE.gameTalk, roomData=gameTalkStr, webData=None)
         self.mainSend(talkMessage) 
     def ioSendOverSignal(self, isWin:bool):
         for player in self.playerList:
-            overMessage:MESSAGE = MESSAGE(self.roomIndex,player.webSystemID, DATATYPE.overSignal, isWin, None)
+            overMessage:MESSAGE = MESSAGE(self.roomIndex,player.webSystemID, REGICIDE_DATATYPE.overSignal, isWin, None)
             self.mainSend(overMessage)
         return
     #ret:保证一定返回合适类型的信息
-    async def dataTypeSeprator(self, expected:DATATYPE):
+    async def dataTypeSeprator(self, expected:REGICIDE_DATATYPE):
         while True:
             message = await self.mainRead()
-            if message.dataType == DATATYPE.askStatus:
+            if message.dataType == REGICIDE_DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
                 continue
-            elif message.dataType == DATATYPE.askTalking:
+            elif message.dataType == REGICIDE_DATATYPE.askTalking:
                 self.ioSendTalkings(message.player)
                 continue
             elif message.dataType != expected:
@@ -470,13 +470,13 @@ class ROOM:
             else:
                 return message
     #ret:保证一定返回合适类型、由合适人发来的消息
-    async def mixSeperator(self, expected:List[Tuple[playerRoomLocation,DATATYPE]]):
+    async def mixSeperator(self, expected:List[Tuple[playerRoomLocation,REGICIDE_DATATYPE]]):
         while True:
             message = await self.mainRead()
-            if message.dataType == DATATYPE.askStatus:
+            if message.dataType == REGICIDE_DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
                 continue
-            elif message.dataType == DATATYPE.askTalking:
+            elif message.dataType == REGICIDE_DATATYPE.askTalking:
                 self.ioSendTalkings(message.player)
                 continue
             elif (message.player, message.dataType) not in expected:
@@ -489,7 +489,7 @@ class ROOM:
         i = 0
         numList = []
         while i <= self.playerTotalNum - 1:
-            message = await self.dataTypeSeprator(DATATYPE.confirmPrepare)
+            message = await self.dataTypeSeprator(REGICIDE_DATATYPE.confirmPrepare)
             if message.player not in numList:
                 player = PLAYER(webSystemID=message.player, userName= message.roomData, location = i)
                 self.playerList.append(player)
@@ -498,7 +498,7 @@ class ROOM:
         return
     async def ioGetCards(self) -> List[int]:
         while True:
-            messgae = await self.mixSeperator([(self.currentPlayer.location, DATATYPE.card)])
+            messgae = await self.mixSeperator([(self.currentPlayer.location, REGICIDE_DATATYPE.card)])
             try:
                 return messgae.roomData
             except:
@@ -506,10 +506,10 @@ class ROOM:
                 continue
     async def ioGetJokerNum(self) -> playerRoomLocation:
         while True:
-            l:List[Tuple[playerRoomLocation,DATATYPE]] = [(playerRoomLocation(i),DATATYPE.speak) for i in range(self.playerTotalNum)] 
-            l = l + [(self.currentPlayer.location,DATATYPE.confirmJoker)]
+            l:List[Tuple[playerRoomLocation,REGICIDE_DATATYPE]] = [(playerRoomLocation(i),REGICIDE_DATATYPE.speak) for i in range(self.playerTotalNum)] 
+            l = l + [(self.currentPlayer.location,REGICIDE_DATATYPE.confirmJoker)]
             message = await self.mixSeperator(l)
-            if message.dataType == DATATYPE.speak:
+            if message.dataType == REGICIDE_DATATYPE.speak:
                 self.talkings.insert(message.roomData)
                 for i in range(self.playerTotalNum):
                     self.ioSendTalkings(self.playerList[i].webSystemID)
@@ -522,7 +522,7 @@ class ROOM:
         try:    
             message:MESSAGE = await self.web.roomGetMessage(self.roomIndex)
         except Exception as e:
-            self.mainSend(MESSAGE(self.roomIndex, player=playerWebSystemID(-1), dataType= DATATYPE.gameOver, roomData=None, webData=None))
+            self.mainSend(MESSAGE(self.roomIndex, player=playerWebSystemID(-1), dataType= REGICIDE_DATATYPE.gameOver, roomData=None, webData=None))
             logger.debug(f"{e}")
             logger.info(f"ROOM{self.roomIndex}正常关闭了")
             sys.exit()

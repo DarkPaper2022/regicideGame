@@ -6,7 +6,7 @@ import time
 from myLogger import logger
 from typing import List,Any,Tuple,Union
 from webSystem import WEB
-from defineRegicideMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,\
+from defineRegicideMessage import MESSAGE,REGICIDE_DATATYPE,TALKING_MESSAGE,\
     FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START,playerWebSystemID
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError,RegisterFailedError
@@ -121,7 +121,7 @@ class TCP_CLIENT:
             except Exception as e:
                 logger.info("sendTonetcatThread, exception Over")
                 break
-            if message.dataType == DATATYPE.cookieWrong or message.dataType == DATATYPE.logOtherPlace:
+            if message.dataType == REGICIDE_DATATYPE.cookieWrong or message.dataType == REGICIDE_DATATYPE.logOtherPlace:
                 logger.info("sendTonetcatThread, cookie Over")
                 break
         try:
@@ -133,17 +133,17 @@ class TCP_CLIENT:
     def dataToMessage(self, data:bytes) -> MESSAGE:
         try:
             l = [line.strip() for line in data.strip().split(b'#')]
-            dataType = DATATYPE(int(l[0].decode()))
-            if dataType == DATATYPE.card:
+            dataType = REGICIDE_DATATYPE(int(l[0].decode()))
+            if dataType == REGICIDE_DATATYPE.card:
                 if len(l) == 1 or l[1] == b"":
                     messageData = []
                 else:
                     #messageData = [int(card.decode()) for card in l[1].split(b" ")]
                     messageData = [bytesToCard(card.strip()) for card in l[1].split()]
                 logger.info("A card Message")
-            elif dataType == DATATYPE.speak:
+            elif dataType == REGICIDE_DATATYPE.speak:
                 messageData = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
-            elif dataType == DATATYPE.confirmJoker:
+            elif dataType == REGICIDE_DATATYPE.confirmJoker:
                 messageData = int(l[1].strip())
             else:
                 messageData = None
@@ -155,13 +155,13 @@ class TCP_CLIENT:
     def messageToData(self, message:MESSAGE) -> bytes:
         if message.room != self.roomID and message.room != -1:
             return f"奇怪的信号?\n".encode()
-        if message.dataType == DATATYPE.answerStatus:
+        if message.dataType == REGICIDE_DATATYPE.answerStatus:
             flag, status = message.roomData
             if flag:
                 messageData = self._statusToStr(status)
             else:
                 messageData = self._beforeStatusToStr(status)
-        elif message.dataType == DATATYPE.answerTalking:
+        elif message.dataType == REGICIDE_DATATYPE.answerTalking:
             messageData = ""
             talkings:Tuple[TALKING_MESSAGE,...] = message.roomData
             if len(talkings) == 0:
@@ -171,18 +171,18 @@ class TCP_CLIENT:
                 nameStr = line.userName
                 talkStr = line.message
                 messageData = (timeStr+" "+nameStr+"说"+"\n\t"+talkStr + "\n") + messageData
-        elif message.dataType == DATATYPE.overSignal:
+        elif message.dataType == REGICIDE_DATATYPE.overSignal:
             isWin:bool = message.roomData
             if isWin:
                 messageData = "真棒, 你们打败了魔王\n"
             else:
                 messageData = "寄, 阁下请重新来过\n"
-        elif message.dataType == DATATYPE.cookieWrong or message.dataType == DATATYPE.logOtherPlace:
+        elif message.dataType == REGICIDE_DATATYPE.cookieWrong or message.dataType == REGICIDE_DATATYPE.logOtherPlace:
             messageData = "你被顶号了,要不要顶回来试试?\n"
-        elif message.dataType == DATATYPE.answerRoom:
+        elif message.dataType == REGICIDE_DATATYPE.answerRoom:
             self.roomID = message.roomData
             messageData = f"""你的房间号是{message.roomData}\n"""
-        elif message.dataType == DATATYPE.logInSuccess:
+        elif message.dataType == REGICIDE_DATATYPE.logInSuccess:
             messageData = ""
         elif (message.roomData == None):
             messageData = ""

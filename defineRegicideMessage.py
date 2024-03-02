@@ -8,7 +8,7 @@ import math
 playerWebSystemID = NewType("playerWebSystemID",int) 
 playerRoomLocation = NewType("playerRoomLocation",int) 
 
-class DATATYPE(Enum):
+class REGICIDE_DATATYPE(Enum):
     #TODO:注释对应data的情况
     askRoomStatus = 0   #from client
     askStatus = 1       #from client, none message                                  
@@ -44,7 +44,7 @@ class MESSAGE:
     #0 to inf for normal user, -1 for webSystem, -2 for SuperUser, -3 for self
     #-1 used: StartSignalPackage, cookieWrong  
     player: playerWebSystemID
-    dataType: DATATYPE
+    dataType: REGICIDE_DATATYPE
     roomData: Any
     webData: Any
 
