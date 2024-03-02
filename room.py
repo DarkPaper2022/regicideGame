@@ -3,7 +3,7 @@ from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
 from defineRegicideMessage import REGICIDE_DATATYPE,FROZEN_STATUS_PARTLY,\
 FROZEN_BOSS,TALKING_MESSAGE,FROZEN_PLAYER,FROZEN_STATUS_BEFORE_START,playerRoomLocation
-from defineWebSystemMessage import MESSAGE, playerWebSystemID
+from defineWebSystemMessage import MESSAGE, playerWebSystemID,WEB_SYSTEM_DATATYPE,DATATYPE
 from defineError import CardError
 from defineColor import COLOR,cardToNum
 from defineRound import ROUND
@@ -436,7 +436,7 @@ class ROOM:
             state = (self.startFlag, status)
         retMessage:MESSAGE = MESSAGE(room=self.roomIndex, 
                                      player=self.playerList[playerLocation].webSystemID, 
-                                     dataType=REGICIDE_DATATYPE.answerStatus, 
+                                     dataType=WEB_SYSTEM_DATATYPE.answerStatus, 
                                      roomData=state,
                                      webData=None)
         self.mainSend(retMessage)
@@ -456,10 +456,10 @@ class ROOM:
             self.mainSend(overMessage)
         return
     #ret:保证一定返回合适类型的信息
-    async def dataTypeSeprator(self, expected:REGICIDE_DATATYPE):
+    async def dataTypeSeprator(self, expected:DATATYPE):
         while True:
             message = await self.mainRead()
-            if message.dataType == REGICIDE_DATATYPE.askStatus:
+            if message.dataType == WEB_SYSTEM_DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
                 continue
             elif message.dataType == REGICIDE_DATATYPE.askTalking:
@@ -471,10 +471,10 @@ class ROOM:
             else:
                 return message
     #ret:保证一定返回合适类型、由合适人发来的消息
-    async def mixSeperator(self, expected:List[Tuple[playerRoomLocation,REGICIDE_DATATYPE]]):
+    async def mixSeperator(self, expected:List[Tuple[playerRoomLocation,DATATYPE]]):
         while True:
             message = await self.mainRead()
-            if message.dataType == REGICIDE_DATATYPE.askStatus:
+            if message.dataType == WEB_SYSTEM_DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
                 continue
             elif message.dataType == REGICIDE_DATATYPE.askTalking:
@@ -490,7 +490,7 @@ class ROOM:
         i = 0
         numList = []
         while i <= self.playerTotalNum - 1:
-            message = await self.dataTypeSeprator(REGICIDE_DATATYPE.confirmPrepare)
+            message = await self.dataTypeSeprator(WEB_SYSTEM_DATATYPE.confirmPrepare)
             if message.player not in numList:
                 player = PLAYER(webSystemID=message.player, userName= message.roomData, location = i)
                 self.playerList.append(player)
@@ -507,7 +507,7 @@ class ROOM:
                 continue
     async def ioGetJokerNum(self) -> playerRoomLocation:
         while True:
-            l:List[Tuple[playerRoomLocation,REGICIDE_DATATYPE]] = [(playerRoomLocation(i),REGICIDE_DATATYPE.speak) for i in range(self.playerTotalNum)] 
+            l:List[Tuple[playerRoomLocation,DATATYPE]] = [(playerRoomLocation(i),REGICIDE_DATATYPE.speak) for i in range(self.playerTotalNum)] 
             l = l + [(self.currentPlayer.location,REGICIDE_DATATYPE.confirmJoker)]
             message = await self.mixSeperator(l)
             if message.dataType == REGICIDE_DATATYPE.speak:

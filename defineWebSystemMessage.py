@@ -13,6 +13,17 @@ class PLAYER_LEVEL(Enum):
     normal = 1
     superUser = 2    
 
+class WEB_SYSTEM_DATATYPE(Enum):
+    askStatus = 1       #from client, none message 
+    answerStatus = 3    #to client
+    createRoom = 18     #from web to Game
+    cookieWrong = 13    #to client
+    logInSuccess = 8    #to client          
+    confirmPrepare = 14 #from client or from web
+    logOtherPlace = 20  #to client
+
+DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
+
 @dataclass(frozen=False)
 class MESSAGE:
     #-1 for no room or for hall
@@ -22,6 +33,6 @@ class MESSAGE:
     #0 to inf for normal user, -1 for webSystem, -2 for SuperUser, -3 for self
     #-1 used: StartSignalPackage, cookieWrong  
     player: playerWebSystemID
-    dataType: REGICIDE_DATATYPE
+    dataType: DATATYPE
     roomData: Any
     webData: Any

@@ -11,24 +11,17 @@ playerRoomLocation = NewType("playerRoomLocation",int)
 class REGICIDE_DATATYPE(Enum):
     #TODO:注释对应data的情况
     askRoomStatus = 0   #from client
-    askStatus = 1       #from client, none message                                  
     askTalking = 2      #from client, none message
-    answerStatus = 3    #to client
     answerTalking = 4   #to client
     card = 5            #from client                使用: "5#S5 J5"、"5#52" 这样的方式来出牌
     startSignal = 6     #none
     exception = 7       #to client                  TODO:no str
-    logInSuccess = 8    #to client          
     speak = 9           #from client
     confirmJoker = 10   #from client
     overSignal = 11     #to client
     gameTalk = 12       #to client                  TODO:no str
-    cookieWrong = 13    #to client
-    confirmPrepare = 14 #from client or from web
     answerRoom = 17     #to client
-    createRoom = 18     #from web to Game
     gameOver = 19       #to hall
-    logOtherPlace = 20  #to client
 
 
 

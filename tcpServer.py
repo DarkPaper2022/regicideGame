@@ -6,9 +6,9 @@ import time
 from myLogger import logger
 from typing import List,Any,Tuple,Union
 from webSystem import WEB
-from defineRegicideMessage import REGICIDE_DATATYPE,TALKING_MESSAGE,\
-    FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START
-from defineWebSystemMessage import MESSAGE, playerWebSystemID
+from defineRegicideMessage import TALKING_MESSAGE,\
+    FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START,REGICIDE_DATATYPE
+from defineWebSystemMessage import MESSAGE, playerWebSystemID, WEB_SYSTEM_DATATYPE
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError,RegisterFailedError
 from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard
@@ -122,7 +122,7 @@ class TCP_CLIENT:
             except Exception as e:
                 logger.info("sendTonetcatThread, exception Over")
                 break
-            if message.dataType == REGICIDE_DATATYPE.cookieWrong or message.dataType == REGICIDE_DATATYPE.logOtherPlace:
+            if message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong or message.dataType == WEB_SYSTEM_DATATYPE.logOtherPlace:
                 logger.info("sendTonetcatThread, cookie Over")
                 break
         try:
@@ -156,7 +156,7 @@ class TCP_CLIENT:
     def messageToData(self, message:MESSAGE) -> bytes:
         if message.room != self.roomID and message.room != -1:
             return f"奇怪的信号?\n".encode()
-        if message.dataType == REGICIDE_DATATYPE.answerStatus:
+        if message.dataType == WEB_SYSTEM_DATATYPE.answerStatus:
             flag, status = message.roomData
             if flag:
                 messageData = self._statusToStr(status)
@@ -178,12 +178,12 @@ class TCP_CLIENT:
                 messageData = "真棒, 你们打败了魔王\n"
             else:
                 messageData = "寄, 阁下请重新来过\n"
-        elif message.dataType == REGICIDE_DATATYPE.cookieWrong or message.dataType == REGICIDE_DATATYPE.logOtherPlace:
+        elif message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong or message.dataType == WEB_SYSTEM_DATATYPE.logOtherPlace:
             messageData = "你被顶号了,要不要顶回来试试?\n"
         elif message.dataType == REGICIDE_DATATYPE.answerRoom:
             self.roomID = message.roomData
             messageData = f"""你的房间号是{message.roomData}\n"""
-        elif message.dataType == REGICIDE_DATATYPE.logInSuccess:
+        elif message.dataType == WEB_SYSTEM_DATATYPE.logInSuccess:
             messageData = ""
         elif (message.roomData == None):
             messageData = ""

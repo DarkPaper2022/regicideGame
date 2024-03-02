@@ -1,7 +1,7 @@
 import webSystem
 import asyncio
 from defineRegicideMessage import REGICIDE_DATATYPE
-from defineWebSystemMessage import MESSAGE
+from defineWebSystemMessage import MESSAGE, WEB_SYSTEM_DATATYPE
 from room import ROOM
 class rommBuilder:
     web:webSystem.WEB
@@ -14,6 +14,6 @@ class rommBuilder:
     async def hallThreadFunc(self):
         while True:
             message:MESSAGE = await self.web.hallGetMessage()
-            if message.dataType == REGICIDE_DATATYPE.createRoom:
+            if message.dataType == WEB_SYSTEM_DATATYPE.createRoom:
                 room = ROOM(self.web, message.roomData)
                 await room.run()

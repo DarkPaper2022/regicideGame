@@ -1,8 +1,8 @@
 import uuid
 import math
 from dataclasses import dataclass
-from defineRegicideMessage import REGICIDE_DATATYPE,GAME_SETTINGS
-from defineWebSystemMessage import MESSAGE, playerWebSystemID,PLAYER_LEVEL
+from defineRegicideMessage import GAME_SETTINGS
+from defineWebSystemMessage import MESSAGE, playerWebSystemID,PLAYER_LEVEL,WEB_SYSTEM_DATATYPE
 from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
 from myLockQueue import myLockQueue as LockQueue
 from collections import deque
@@ -87,13 +87,13 @@ class WEB:
         player = self.players[playerIndex]
         if player == None:
             #WARNING:这里的message不是从queue里取出来的哦
-            return MESSAGE(-1,playerIndex,REGICIDE_DATATYPE.cookieWrong,None,None)
+            return MESSAGE(-1,playerIndex,WEB_SYSTEM_DATATYPE.cookieWrong,None,None)
             #TODO
         else:
             if player.playerCookie == cookie:
                 return await player.playerQueue.get()
             else:
-                return MESSAGE(-1,playerIndex,REGICIDE_DATATYPE.cookieWrong,None,None)
+                return MESSAGE(-1,playerIndex,WEB_SYSTEM_DATATYPE.cookieWrong,None,None)
     def playerSendMessage(self, message:MESSAGE, cookie:uuid.UUID):
         player = self.players[message.player]
         if player != None and player.playerCookie == cookie:
@@ -136,11 +136,11 @@ class WEB:
 
                 self.players[playerIndex] = player
                 self.rooms[roomIndex] = room
-                player.playerQueue.put_nowait(MESSAGE(-1, playerIndex, REGICIDE_DATATYPE.logInSuccess, None, None))
+                player.playerQueue.put_nowait(MESSAGE(-1, playerIndex, WEB_SYSTEM_DATATYPE.logInSuccess, None, None))
                 if newRoomFlag:
-                    self.hallQueue.put_nowait(MESSAGE(-1, playerWebSystemID(-1), REGICIDE_DATATYPE.createRoom, roomIndex, None))
+                    self.hallQueue.put_nowait(MESSAGE(-1, playerWebSystemID(-1), WEB_SYSTEM_DATATYPE.createRoom, roomIndex, None))
                 if userChangeRoomFlag:
-                    room.roomQueue.put_nowait(MESSAGE(room.roomID, playerIndex, REGICIDE_DATATYPE.confirmPrepare, playerName, None))
+                    room.roomQueue.put_nowait(MESSAGE(room.roomID, playerIndex, WEB_SYSTEM_DATATYPE.confirmPrepare, playerName, None))
                 return re
             except Exception as e:
                 logger.error(str(e))
@@ -166,7 +166,7 @@ class WEB:
     def _newPlayer(self, playerIndex:playerWebSystemID, playerName:str, playerRoom:int) -> WEB_PLAYER:
         player = self.players[playerIndex]
         if player != None:
-            player.playerQueue.put_nowait(MESSAGE(-1, playerIndex, REGICIDE_DATATYPE.logOtherPlace, roomData=None, webData=None))
+            player.playerQueue.put_nowait(MESSAGE(-1, playerIndex, WEB_SYSTEM_DATATYPE.logOtherPlace, roomData=None, webData=None))
         cookie = uuid.uuid4()
         player = WEB_PLAYER(playerCookie=cookie, playerIndex=playerIndex, playerQueue=LockQueue(), playerName=playerName, playerRoom= playerRoom, playerLevel= PLAYER_LEVEL.normal)
         return player
