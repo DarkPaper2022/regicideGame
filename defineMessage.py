@@ -10,7 +10,8 @@ playerRoomLocation = NewType("playerRoomLocation",int)
 
 class DATATYPE(Enum):
     #TODO:注释对应data的情况
-    askStatus = 1       #from client, none message
+    askRoomStatus = 0   #from client
+    askStatus = 1       #from client, none message                                  
     askTalking = 2      #from client, none message
     answerStatus = 3    #to client
     answerTalking = 4   #to client
@@ -34,7 +35,7 @@ class PLAYER_LEVEL(Enum):
     normal = 1
     superUser = 2    
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class MESSAGE:
     #-1 for no room or for hall
     #0 to inf for normal room
