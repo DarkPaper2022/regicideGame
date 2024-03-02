@@ -1,4 +1,4 @@
-from defineMessage import FROZEN_STATUS_PARTLY,FROZEN_BOSS
+from defineRegicideMessage import FROZEN_STATUS_PARTLY,FROZEN_BOSS
 from typing import Tuple
 from defineColor import COLOR
 from defineRound import ROUND

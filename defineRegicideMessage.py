@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass,field
 from typing import Any,List,Tuple,Union,NewType
 from defineColor import COLOR
 from defineRound import ROUND

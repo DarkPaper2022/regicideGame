@@ -1,6 +1,6 @@
 import webSystem
 import asyncio
-from defineMessage import MESSAGE,DATATYPE
+from defineRegicideMessage import MESSAGE,DATATYPE
 from room import ROOM
 class rommBuilder:
     web:webSystem.WEB

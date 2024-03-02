@@ -6,7 +6,7 @@ import time
 from myLogger import logger
 from typing import List,Any,Tuple,Union
 from webSystem import WEB
-from defineMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,\
+from defineRegicideMessage import MESSAGE,DATATYPE,TALKING_MESSAGE,\
     FROZEN_STATUS_PARTLY,FROZEN_STATUS_BEFORE_START,playerWebSystemID
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError,RegisterFailedError
@@ -48,14 +48,14 @@ class TCP_CLIENT:
                 data = data[index+1:]
                 l = data.strip().split(b" ")
                 try:
-                    self.web.userRegister(playerName=l[0].decode("utf-8"),
+                    self.web.playerRegister(playerName=l[0].decode("utf-8"),
                                                     password=l[1].decode("utf-8"))
                 except:
                     self.writer.write((UI_HEIGHT*"\n"+"注册失败了喵喵,请看看我们的readme"+"\n").encode())
             else:
                 l = data.strip().split(b" ")
                 try:
-                    self.playerCookie, self.playerIndex = self.web.playerLogInRoom(
+                    self.playerCookie, self.playerIndex = self.web.playerJoinRoom(
                         playerName=l[0].decode("utf-8"),
                         password=l[1].decode("utf-8"),
                         roomIndex=int(l[2].decode()))

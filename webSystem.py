@@ -1,7 +1,7 @@
 import uuid
 import math
 from dataclasses import dataclass
-from defineMessage import MESSAGE,DATATYPE,GAME_SETTINGS,playerWebSystemID,PLAYER_LEVEL
+from defineRegicideMessage import MESSAGE,DATATYPE,GAME_SETTINGS,playerWebSystemID,PLAYER_LEVEL
 from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
 from myLockQueue import myLockQueue as LockQueue
 from collections import deque
@@ -40,6 +40,12 @@ class WEB_ROOM:
     maxPlayer:int
 
 class WEB:
+    """
+    promise:
+        player connect to room <=> room connect to player
+    send and get Func:
+        in send func, we may deal with it according to the hook
+    """
     players:List[Union[WEB_PLAYER,None]]
     rooms:List[Union[WEB_ROOM,None]]
     def __init__(self,maxPlayer:int, maxRoom) -> None:
@@ -100,7 +106,7 @@ class WEB:
     #arg:legal or illegal playerName and password
     #ret:raise RegisterError, AuthError
     #ret:room creating may cause error
-    def playerLogInRoom(self, playerName:str, password:str, roomIndex:int) -> Tuple[uuid.UUID, playerWebSystemID]:
+    def playerJoinRoom(self, playerName:str, password:str, roomIndex:int) -> Tuple[uuid.UUID, playerWebSystemID]:
         """
         password are needed
         WARNING: if player use TCP, thier password is VERY easy to leak, keep it in mind
@@ -141,12 +147,12 @@ class WEB:
                 
         else:
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")
-    def playerLogInHall(self, playerName:str, password:str) -> Tuple[uuid.UUID, playerWebSystemID]:# type:ignore
+    def playerLogIn(self, playerName:str, password:str) -> Tuple[uuid.UUID, playerWebSystemID]:# type:ignore
         pass    
     #raise Error
-    def userRegister(self,playerName:str, password:str):
+    def playerRegister(self,playerName:str, password:str):
         self.sqlSystem.userRegister(playerName,password)
-    def roomRemove(self,roomIndex:int) -> None:
+    def roomDestruct(self,roomIndex:int) -> None:
         room = self.rooms[roomIndex]
         if room == None:
             logger.error(f"淦这个房怎么没关就没了")
@@ -154,15 +160,8 @@ class WEB:
         for playerIndex in room.playerIndexs:
             self.players[playerIndex] = None
 
-    def userLogOut(self,playerIndex:playerWebSystemID, cookie:uuid.UUID):
+    def playerLogOut(self,playerIndex:playerWebSystemID, cookie:uuid.UUID):
         pass
-    #arg:playerName is checked by password 
-    #ret:-1 for no player
-    def _checkFreshNewPlayer(self, playerName)->playerWebSystemID:
-        for player in self.players:
-            if player != None and player.playerName == playerName:
-                return player.playerIndex
-        return playerWebSystemID(-1)
     def _newPlayer(self, playerIndex:playerWebSystemID, playerName:str, playerRoom:int) -> WEB_PLAYER:
         player = self.players[playerIndex]
         if player != None:

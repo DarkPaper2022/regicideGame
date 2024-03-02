@@ -1,7 +1,7 @@
 from collections import deque
 from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
-from defineMessage import MESSAGE,DATATYPE,FROZEN_STATUS_PARTLY,\
+from defineRegicideMessage import MESSAGE,DATATYPE,FROZEN_STATUS_PARTLY,\
 FROZEN_BOSS,TALKING_MESSAGE,FROZEN_PLAYER,FROZEN_STATUS_BEFORE_START,playerWebSystemID,playerRoomLocation
 from defineError import CardError
 from defineColor import COLOR,cardToNum
