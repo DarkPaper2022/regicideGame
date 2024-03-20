@@ -42,11 +42,12 @@ class WEB_ROOM:
     maxPlayer:int
     status:ROOM_STATUS
     def removePlayer(self, player:WEB_PLAYER):
-        player_room_out_message = MESSAGE(roomID = self.roomID,
-                                       playerID= playerWebSystemID(-1),
-                                       dataType= WEB_SYSTEM_DATATYPE.leaveRoom,
-                                       roomData=None,
-                                       webData=player.playerIndex)
+        player_room_out_message = MESSAGE(
+                                    roomID = self.roomID,
+                                    playerID= playerWebSystemID(-1),
+                                    dataType= WEB_SYSTEM_DATATYPE.leaveRoom,
+                                    roomData=None,
+                                    webData=player.playerIndex)
         self.roomQueue.put_nowait(player_room_out_message)  # type:ignore
         self.playerIndexs = [(p,_) for p,_ in self.playerIndexs if p != player.playerIndex]
 
@@ -86,6 +87,7 @@ class WEB:
         while True:
             #arg:the player is legal
             message:MESSAGE = await self.web_system_queue.get()
+            logger.debug(message)
             if message.playerID == playerWebSystemID(-1):
                 if message.dataType==WEB_SYSTEM_DATATYPE.destroyRoom:
                     self._room_destruct(message.roomID)
@@ -120,7 +122,7 @@ class WEB:
     def roomSendMessage(self, message:MESSAGE):
         #TODO:check it
         if message.playerID == -1:
-            self.web_system_queue.put_nowait(MESSAGE)
+            self.web_system_queue.put_nowait(message)
         elif message.playerID == -2:
             print(message.roomData)
         else:

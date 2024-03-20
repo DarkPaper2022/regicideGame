@@ -79,7 +79,6 @@ class sqlSystem:
 
 if __name__ == "__main__":
     s = sqlSystem()
-    #s.adminRegister("darkpaper","114514")
-    ree,l = s.checkPassword("darkpaper","114514")
-    print(ree,l)
+    s.adminRegister("a","a")
+    #ree,l = s.checkPassword("darkpaper","114514")
     s.end()
