@@ -2,7 +2,7 @@ from collections import deque
 from typing import List,Union,Deque,Tuple
 from queue import Queue as LockQueue
 from defineRegicideMessage import REGICIDE_DATATYPE,FROZEN_STATUS_PARTLY,\
-FROZEN_BOSS,TALKING_MESSAGE,FROZEN_PLAYER,FROZEN_STATUS_BEFORE_START,playerRoomLocation
+FROZEN_BOSS,TALKING_MESSAGE,FROZEN_PLAYER_IN_ROOM,playerRoomLocation
 from defineWebSystemMessage import MESSAGE, playerWebSystemID,WEB_SYSTEM_DATATYPE,DATATYPE
 from defineError import CardError
 from defineColor import COLOR,cardToNum
@@ -296,7 +296,6 @@ class ROOM:
         else:
             self.currentBoss = self.bossHeap.popleft()
             return (True,False)
-
     #ret: change the state
     async def defendRound(self):
         if sum([cardToNum(card) for card in self.currentPlayer.cards]) < self.currentBoss.atk:
@@ -413,7 +412,7 @@ class ROOM:
 
     def ioSendStatus(self, playerLocation:playerRoomLocation):
         if self.startFlag:
-            playersLocal = tuple([FROZEN_PLAYER(player.userName,len(player.cards),player.location)
+            playersLocal = tuple([FROZEN_PLAYER_IN_ROOM(player.userName,len(player.cards),player.location)
                             for player in self.playerList if player.location != playerLocation])
             status = FROZEN_STATUS_PARTLY(
                         disCardHeap=tuple(self.discardHeap),
@@ -429,15 +428,13 @@ class ROOM:
                         defeatedBosses=tuple(self.discardBossHeap),
                         discardHeapLength=len(self.discardHeap),
                         elsedata=0)
-            state = (self.startFlag, status)
         else:
             l = self.playerList
-            status = FROZEN_STATUS_BEFORE_START(tuple([player.userName for player in l]), self.playerTotalNum)
-            state = (self.startFlag, status)
+            status = None
         retMessage:MESSAGE = MESSAGE(room=self.roomIndex, 
                                      player=self.playerList[playerLocation].webSystemID, 
-                                     dataType=WEB_SYSTEM_DATATYPE.answerStatus, 
-                                     roomData=state,
+                                     dataType=REGICIDE_DATATYPE.answerStatus, 
+                                     roomData=status,
                                      webData=None)
         self.mainSend(retMessage)
     def ioSendTalkings(self, webSystemID:playerWebSystemID):
@@ -459,7 +456,7 @@ class ROOM:
     async def dataTypeSeprator(self, expected:DATATYPE):
         while True:
             message = await self.mainRead()
-            if message.dataType == WEB_SYSTEM_DATATYPE.askStatus:
+            if message.dataType == REGICIDE_DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
                 continue
             elif message.dataType == REGICIDE_DATATYPE.askTalking:
@@ -474,15 +471,12 @@ class ROOM:
     async def mixSeperator(self, expected:List[Tuple[playerRoomLocation,DATATYPE]]):
         while True:
             message = await self.mainRead()
-            if message.dataType == WEB_SYSTEM_DATATYPE.askStatus:
+            if message.dataType == REGICIDE_DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
-                continue
             elif message.dataType == REGICIDE_DATATYPE.askTalking:
                 self.ioSendTalkings(message.player)
-                continue
             elif (message.player, message.dataType) not in expected:
                 self.ioSendException(message.player, "我现在不要这种的信息啊岂可修")
-                continue
             else:
                 return message       
     #not math function

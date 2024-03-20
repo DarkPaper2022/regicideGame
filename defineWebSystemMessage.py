@@ -13,17 +13,57 @@ class PLAYER_LEVEL(Enum):
     normal = 1
     superUser = 2    
 
+class ROOM_STATUS(Enum):
+    preparing = 0
+    running = 1
+    broken = 2
+
+
 class WEB_SYSTEM_DATATYPE(Enum):
-    askStatus = 1       #from client, none message 
-    answerStatus = 3    #to client
-    createRoom = 18     #from web to Hall to start a func
-    cookieWrong = 13    #to client
-    logInSuccess = 8    #to client          
-    confirmPrepare = 14 #from client or from web
-    logOtherPlace = 20  #to client
+    askRoomStatus = 0   #from client
+
+    
+    createRoom = 118     
+    #to Hall to start a thread
+    #hall should start a room thread, no need to start
+    
+    cookieWrong = 113    
+    #to client
+    #client should relog to deal with it
+
+    logInSuccess = 108    
+    #to client      
+    #for client, just information    
+
+    confirmPrepare = 114 
+    #from client or from web
+    #to let the hall know you are prepared
+    
+    leaveRoom = 120  #to room
+    #room should deal with it
+
+    runRoom = 121
+    
+    destroyRoom = 100
+    
+    JOIN_ROOM = 103
+    LOG_OUT = 102
+    ANSWER_ROOM_STATUS = 101
 
 DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
 
+@dataclass
+class FROZEN_ROOM:
+    roomID:int
+    playerIndexs:List[Tuple[str, bool]]
+    maxPlayer:int
+    runningFlag:bool
+    status:ROOM_STATUS
+@dataclass
+class FROZEN_PLAYER_WEB_SYSTEM:
+    playerName:str
+    playerRoom:Union[FROZEN_ROOM,None]
+    playerLevel:PLAYER_LEVEL
 @dataclass(frozen=False)
 class MESSAGE:
     #-1 for no room or for hall
@@ -33,6 +73,9 @@ class MESSAGE:
     #0 to inf for normal user, -1 for webSystem, -2 for SuperUser, -3 for self
     #-1 used: StartSignalPackage, cookieWrong  
     player: playerWebSystemID
+
+
     dataType: DATATYPE
     roomData: Any
     webData: Any
+    

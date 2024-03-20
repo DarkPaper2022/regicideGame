@@ -10,7 +10,11 @@ playerRoomLocation = NewType("playerRoomLocation",int)
 
 class REGICIDE_DATATYPE(Enum):
     #TODO:注释对应data的情况
-    askRoomStatus = 0   #from client
+    askStatus = 1       
+    #from client, none message
+              
+    answerStatus = 3    #to client
+    #hall should deal with it when room is not started
     askTalking = 2      #from client, none message
     answerTalking = 4   #to client
     card = 5            #from client                使用: "5#S5 J5"、"5#52" 这样的方式来出牌
@@ -37,7 +41,7 @@ class FROZEN_BOSS:
 
 
 @dataclass(frozen=True)
-class FROZEN_PLAYER:
+class FROZEN_PLAYER_IN_ROOM:
     #用来给玩家阅读的静态结构 
     playerName:str
     playerHandCardCnt:int
@@ -60,13 +64,9 @@ class FROZEN_STATUS_PARTLY:
     atkCardHeap:Tuple[int,...]
     defeatedBosses:Tuple[int,...]
     currentBoss:FROZEN_BOSS
-    players:Tuple[FROZEN_PLAYER,...]
+    players:Tuple[FROZEN_PLAYER_IN_ROOM,...]
     elsedata: Any
 
-@dataclass(frozen=True)
-class FROZEN_STATUS_BEFORE_START:
-    currentPlayers:Tuple[str,...]
-    totalPlayerNum:int
 
 @dataclass(frozen=True)
 class GAME_SETTINGS:
