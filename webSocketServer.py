@@ -179,7 +179,7 @@ class WEBSOCKET_CLIENT:
         return message
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> str:
-        if message.room != self.roomID and message.room != -1:
+        if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n"
         data = json.dumps(message)
         return data

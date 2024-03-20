@@ -68,11 +68,11 @@ class FROZEN_PLAYER_WEB_SYSTEM:
 class MESSAGE:
     #-1 for no room or for hall
     #0 to inf for normal room
-    room: int
+    roomID: int
 
     #0 to inf for normal user, -1 for webSystem, -2 for SuperUser, -3 for self
     #-1 used: StartSignalPackage, cookieWrong  
-    player: playerWebSystemID
+    playerID: playerWebSystemID
 
 
     dataType: DATATYPE

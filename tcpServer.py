@@ -180,7 +180,7 @@ class TCP_CLIENT:
             logger.info("json is:\n" +json_string)
         except Exception as e:
             print("SHIT", e)
-        if message.room != self.roomID and message.room != -1:
+        if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n".encode()
         if message.dataType == REGICIDE_DATATYPE.answerStatus:
             status = message.roomData

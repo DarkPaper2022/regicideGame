@@ -431,21 +431,21 @@ class ROOM:
         else:
             l = self.playerList
             status = None
-        retMessage:MESSAGE = MESSAGE(room=self.roomIndex, 
-                                     player=self.playerList[playerLocation].webSystemID, 
+        retMessage:MESSAGE = MESSAGE(roomID=self.roomIndex, 
+                                     playerID=self.playerList[playerLocation].webSystemID, 
                                      dataType=REGICIDE_DATATYPE.answerStatus, 
                                      roomData=status,
                                      webData=None)
         self.mainSend(retMessage)
     def ioSendTalkings(self, webSystemID:playerWebSystemID):
         talking = self.talkings.get()
-        retMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=REGICIDE_DATATYPE.answerTalking, roomData=talking, webData=None)
+        retMessage:MESSAGE = MESSAGE(self.roomIndex,playerID=webSystemID, dataType=REGICIDE_DATATYPE.answerTalking, roomData=talking, webData=None)
         self.mainSend(retMessage)
     def ioSendException(self, webSystemID:playerWebSystemID, exceptStr:str):
-        exceptMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=REGICIDE_DATATYPE.exception, roomData=exceptStr, webData=None)
+        exceptMessage:MESSAGE = MESSAGE(self.roomIndex,playerID=webSystemID, dataType=REGICIDE_DATATYPE.exception, roomData=exceptStr, webData=None)
         self.mainSend(exceptMessage) 
     def ioSendGameTalk(self, webSystemID:playerWebSystemID, gameTalkStr:str):
-        talkMessage:MESSAGE = MESSAGE(self.roomIndex,player=webSystemID, dataType=REGICIDE_DATATYPE.gameTalk, roomData=gameTalkStr, webData=None)
+        talkMessage:MESSAGE = MESSAGE(self.roomIndex,playerID=webSystemID, dataType=REGICIDE_DATATYPE.gameTalk, roomData=gameTalkStr, webData=None)
         self.mainSend(talkMessage) 
     def ioSendOverSignal(self, isWin:bool):
         for player in self.playerList:
@@ -457,13 +457,13 @@ class ROOM:
         while True:
             message = await self.mainRead()
             if message.dataType == REGICIDE_DATATYPE.askStatus:
-                self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
+                self.ioSendStatus(self._webSystemID_toPlayerLocation(message.playerID))
                 continue
             elif message.dataType == REGICIDE_DATATYPE.askTalking:
-                self.ioSendTalkings(message.player)
+                self.ioSendTalkings(message.playerID)
                 continue
             elif message.dataType != expected:
-                self.ioSendException(message.player, "我现在不要这种的信息啊岂可修")
+                self.ioSendException(message.playerID, "我现在不要这种的信息啊岂可修")
                 continue
             else:
                 return message
@@ -472,11 +472,11 @@ class ROOM:
         while True:
             message = await self.mainRead()
             if message.dataType == REGICIDE_DATATYPE.askStatus:
-                self.ioSendStatus(self._webSystemID_toPlayerLocation(message.player))
+                self.ioSendStatus(self._webSystemID_toPlayerLocation(message.playerID))
             elif message.dataType == REGICIDE_DATATYPE.askTalking:
-                self.ioSendTalkings(message.player)
-            elif (message.player, message.dataType) not in expected:
-                self.ioSendException(message.player, "我现在不要这种的信息啊岂可修")
+                self.ioSendTalkings(message.playerID)
+            elif (message.playerID, message.dataType) not in expected:
+                self.ioSendException(message.playerID, "我现在不要这种的信息啊岂可修")
             else:
                 return message       
     #not math function
@@ -485,8 +485,8 @@ class ROOM:
         numList = []
         while i <= self.playerTotalNum - 1:
             message = await self.dataTypeSeprator(WEB_SYSTEM_DATATYPE.confirmPrepare)
-            if message.player not in numList:
-                player = PLAYER(webSystemID=message.player, userName= message.roomData, location = i)
+            if message.playerID not in numList:
+                player = PLAYER(webSystemID=message.playerID, userName= message.roomData, location = i)
                 self.playerList.append(player)
                 numList.append(player.webSystemID)
                 i += 1
@@ -497,7 +497,7 @@ class ROOM:
             try:
                 return messgae.roomData
             except:
-                self.ioSendException(messgae.player, "卡牌格式错误")
+                self.ioSendException(messgae.playerID, "卡牌格式错误")
                 continue
     async def ioGetJokerNum(self) -> playerRoomLocation:
         while True:
@@ -517,7 +517,7 @@ class ROOM:
         try:    
             message:MESSAGE = await self.web.roomGetMessage(self.roomIndex)
         except Exception as e:
-            self.mainSend(MESSAGE(self.roomIndex, player=playerWebSystemID(-1), dataType= REGICIDE_DATATYPE.gameOver, roomData=None, webData=None))
+            self.mainSend(MESSAGE(self.roomIndex, playerID=playerWebSystemID(-1), dataType= REGICIDE_DATATYPE.gameOver, roomData=None, webData=None))
             logger.debug(f"{e}")
             logger.info(f"ROOM{self.roomIndex}正常关闭了")
             sys.exit()

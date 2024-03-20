@@ -42,8 +42,8 @@ class WEB_ROOM:
     maxPlayer:int
     status:ROOM_STATUS
     def removePlayer(self, player:WEB_PLAYER):
-        player_room_out_message = MESSAGE(room = self.roomID,
-                                       player= playerWebSystemID(-1),
+        player_room_out_message = MESSAGE(roomID = self.roomID,
+                                       playerID= playerWebSystemID(-1),
                                        dataType= WEB_SYSTEM_DATATYPE.leaveRoom,
                                        roomData=None,
                                        webData=player.playerIndex)
@@ -86,24 +86,24 @@ class WEB:
         while True:
             #arg:the player is legal
             message:MESSAGE = await self.web_system_queue.get()
-            if message.player == playerWebSystemID(-1):
+            if message.playerID == playerWebSystemID(-1):
                 if message.dataType==WEB_SYSTEM_DATATYPE.destroyRoom:
-                    self._room_destruct(message.room)
+                    self._room_destruct(message.roomID)
                     
                     
                     
-            elif message.room == -1:
+            elif message.roomID == -1:
                 if message.dataType == WEB_SYSTEM_DATATYPE.confirmPrepare:
-                    self.player_confirm_prepare(message.player)
+                    self.player_confirm_prepare(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.createRoom:
-                    room_ID = self.player_create_room(message.player, message.webData)
+                    room_ID = self.player_create_room(message.playerID, message.webData)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.askRoomStatus:
                     pass
                 elif message.dataType == WEB_SYSTEM_DATATYPE.leaveRoom:
-                    self.player_quit_room(message.player)
+                    self.player_quit_room(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
-                    self.player_log_out(message.player)
-                self.player_send_room_status(message.player)
+                    self.player_log_out(message.playerID)
+                self.player_send_room_status(message.playerID)
             else:
                 logger.error(f"websystem_message_handler 收到了糟糕的消息:{message}")
     async def hallGetMessage(self) -> MESSAGE:
@@ -117,16 +117,16 @@ class WEB:
         return message
     def roomSendMessage(self, message:MESSAGE):
         #TODO:check it
-        if message.player == -1:
+        if message.playerID == -1:
             self.web_system_queue.put_nowait(MESSAGE)
-        elif message.player == -2:
+        elif message.playerID == -2:
             print(message.roomData)
         else:
-            player = self.players[message.player]
+            player = self.players[message.playerID]
             assert player != None
             assert player.playerRoom != None
             playerRoom = self.rooms[player.playerRoom]
-            if playerRoom!=None and playerRoom.roomID == message.room:
+            if playerRoom!=None and playerRoom.roomID == message.roomID:
                 player.playerQueue.put_nowait(message)
         return
     async def playerGetMessage(self, playerIndex:playerWebSystemID, cookie:uuid.UUID)->MESSAGE:
@@ -141,14 +141,14 @@ class WEB:
             else:
                 return MESSAGE(-1,playerIndex,WEB_SYSTEM_DATATYPE.cookieWrong,None,None)
     def playerSendMessage(self, message:MESSAGE, cookie:uuid.UUID):
-        player = self.players[message.player]
+        player = self.players[message.playerID]
         assert player != None and player.playerCookie == cookie
-        if message.room == -1:
+        if message.roomID == -1:
             self.web_system_queue.put_nowait(message)
         elif player.playerRoom == None:
-            self.player_send_room_status(message.player)
+            self.player_send_room_status(message.playerID)
         else:
-            assert player.playerRoom == message.room
+            assert player.playerRoom == message.roomID
             room = self.rooms[player.playerRoom] 
             room.roomQueue.put_nowait(message)  #type:ignore
 
