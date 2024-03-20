@@ -97,6 +97,8 @@ class WEB:
                     self.player_confirm_prepare(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.createRoom:
                     room_ID = self.player_create_room(message.playerID, message.webData)
+                elif message.dataType == WEB_SYSTEM_DATATYPE.JOIN_ROOM:
+                    self.player_join_room(message.playerID, message.roomData)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.askRoomStatus:
                     pass
                 elif message.dataType == WEB_SYSTEM_DATATYPE.leaveRoom:
