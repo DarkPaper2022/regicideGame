@@ -3,6 +3,7 @@ import room
 from roomBuilder import rommBuilder
 import asyncio
 import tcpServer
+import webSocketServer
 import sys
 import random
 
@@ -23,7 +24,8 @@ except:
 UserMax,RoomMax = 100,1000
 web = WEB(UserMax,RoomMax)
 loop = asyncio.get_event_loop()
-server = tcpServer.TCP_SERVER(web, port, loop)
+server = webSocketServer.WEBSOCKET_SERVER(web, port, loop)
+
 hall = rommBuilder(web)
 async def main():
     s = asyncio.create_task(server.serverThreadFunc())
