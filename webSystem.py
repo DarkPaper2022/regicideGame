@@ -31,7 +31,7 @@ class WEB_PLAYER:
     playerCookie:uuid.UUID          
     #different room, different player cookie
     #可能持有一个糟糕的room,room方短线了,会给予用户很强的反馈
-    
+
 
 @dataclass
 class WEB_ROOM:

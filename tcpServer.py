@@ -1,8 +1,11 @@
 import socket
 import uuid
 import random
+import json
+from define_JSON_UI import MyEncoder
 import asyncio
 import time
+from dataclasses import asdict
 from myLogger import logger
 from typing import List,Any,Tuple,Union
 from webSystem import WEB
@@ -12,7 +15,7 @@ from defineWebSystemMessage import MESSAGE, playerWebSystemID,\
 WEB_SYSTEM_DATATYPE, DATATYPE, FROZEN_PLAYER_WEB_SYSTEM, FROZEN_ROOM
 from dataclasses import dataclass
 from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError,RegisterFailedError
-from defineTCP_UI import cardsToStr,cardToStr,bossToStr,bytesToCard
+from defineTCP_UI import cardsToStr,cardToStr,bossToStr,strToCard
 from defineRound import ROUND
 
 UI_HEIGHT = 30
@@ -155,7 +158,7 @@ class TCP_CLIENT:
                     messageData = []
                 else:
                     #messageData = [int(card.decode()) for card in l[1].split(b" ")]
-                    messageData = [bytesToCard(card.strip()) for card in l[1].split()]
+                    messageData = [strToCard(card.strip()) for card in l[1].split()]
                 logger.info("A card Message")
             elif data_type == REGICIDE_DATATYPE.speak:
                 messageData = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
@@ -173,6 +176,11 @@ class TCP_CLIENT:
         return message
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> bytes:
+        try:
+            json_string = json.dumps(asdict(message), cls=MyEncoder)
+            logger.info("json is:\n" +json_string)
+        except Exception as e:
+            print("SHIT", e)
         if message.room != self.roomID and message.room != -1:
             return f"奇怪的信号?\n".encode()
         if message.dataType == REGICIDE_DATATYPE.answerStatus:

@@ -3,35 +3,12 @@ from typing import Tuple
 from defineColor import COLOR
 from defineRound import ROUND
 import math
-def cardsToStr(cards:Tuple[int,...]) -> str:
-    return ', '.join([cardToStr(card) for card in cards])
-def cardToStr(card:int) -> str:
-    if (card == 52):
-        return "小王"+f"({str(card)})"
-    elif (card == 53):
-        return "大王"+f"({str(card)})"
-    else:
-        num = card % 13 + 1
-        numStr =    'A' if (num == 1) else\
-                    'J' if (num == 11) else\
-                    'Q' if (num == 12) else\
-                    'K' if (num == 13) else\
-                    str(num)
-        color = COLOR(math.floor(card / 13))
-        colorStr = str(color)
-        return colorStr+numStr+f"({color.name+numStr})"
-def bossToStr(boss:FROZEN_BOSS) -> str:
-        return f"""
-Boss:
-    name:{cardToStr(boss.name)}
-    atk:{boss.atk}
-    hp:{boss.hp}
-    免疫:{boss.color}
-"""
+import json
+from enum import Enum
+
 #arg:strip outside
 #ret:legal card
-def strToCard(b:bytes) -> int:
-    s = b.decode()
+def strToCard(s:str) -> int:
     if s[0] in [c.name for c in COLOR]:
         color = COLOR[s[0]].value
         sRest = s[1:]
@@ -54,4 +31,9 @@ def strToCard(b:bytes) -> int:
                 return card
         except:
             raise ValueError("输入处理出错")
-        
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Enum):
+            return obj.name  # 返回枚举量的名称
+        return super().default(obj)

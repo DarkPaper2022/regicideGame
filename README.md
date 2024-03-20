@@ -24,6 +24,33 @@
 ## 开发说明
 - 针对各种TODO,欢迎PR,
 - 有其他问题也欢迎联系本人
+
+## json格式说明
+- 客户端发送信息:
+    ```json
+        {
+            "dataType":"create",
+            "data":3
+        }
+    ```
+    ```json
+        {
+            "dataType":"register",
+            "data":{
+                "userName":"darkpaper",
+                "password":"114514"
+            }
+        }
+    ```
+- 客户端接收信息:
+    ```json
+        {
+            "source":-1,
+            "dataType":"ANSWER_ROOM_STATUS",
+            "data":["darkpaper", "aaa114514"]
+        }
+    ```
+
 ## TODO List
 - webSystem 中register部分的线程安全性保障,使用sql
 - 连续跳过
