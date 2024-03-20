@@ -57,7 +57,6 @@ class FROZEN_ROOM:
     roomID:int
     playerIndexs:List[Tuple[str, bool]]
     maxPlayer:int
-    runningFlag:bool
     status:ROOM_STATUS
 @dataclass
 class FROZEN_PLAYER_WEB_SYSTEM:
