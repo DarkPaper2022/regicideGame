@@ -100,11 +100,27 @@
     ```
 - 客户端接收信息:
     ```json
-        {
-            "source":-1,
-            "dataType":"ANSWER_ROOM_STATUS",
-            "data":["darkpaper", "aaa114514"]
+    {
+        "roomID": -1,
+        "playerID": 1,
+        "dataType": "ANSWER_ROOM_STATUS",
+        "roomData": null,
+        "webData": {
+            "playerName": "darkpaper",
+            "playerRoom": {
+                "roomID": 0,
+                "playerIndexs": [
+                    {
+                        "userName": "darkpaper",
+                        "ready": false
+                    }
+                ],
+                "maxPlayer": 2,
+                "status": "preparing"
+            },
+            "playerLevel": "normal"
         }
+    }
     ```
 
 ## TODO List
