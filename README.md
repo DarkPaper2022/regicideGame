@@ -30,7 +30,8 @@
     ```json
         {
             "dataType":"create",
-            "data":3
+            "data":{
+                "maxPlayer":3}
         }
     ```
     ```json
@@ -39,6 +40,23 @@
             "data":{
                 "userName":"darkpaper",
                 "password":"114514"
+            }
+        }
+    ```
+    ```json
+        {
+            "dataType":"log in",
+            "data":{
+                "userName":"darkpaper",
+                "password":"114514"
+            }
+        }
+    ```
+    ```json
+        {
+            "dataType":"join",
+            "data":{
+                "roomID":100
             }
         }
     ```
