@@ -18,20 +18,23 @@ async def logggggg(yes):
         await asyncio.sleep(5)
 
 try:    
-    port = int(sys.argv[1])
+    port_ws = int(sys.argv[1])
 except:
-    port = 6000 + random.randint(0,10)
+    port_ws = 6000 + random.randint(0,9)
+try:    
+    port_tcp = int(sys.argv[2])
+except:
+    port_tcp = 7000 + random.randint(0,9)
 UserMax,RoomMax = 100,1000
 web = WEB(UserMax,RoomMax)
 loop = asyncio.get_event_loop()
-if False:
-    server = webSocketServer.WEBSOCKET_SERVER(web, port, loop)
-else:
-    server = tcpServer.TCP_SERVER(web,port,loop)
+server_ws = webSocketServer.WEBSOCKET_SERVER(web, port_ws, loop)
+server_tcp = tcpServer.TCP_SERVER(web,port_tcp,loop)
 hall = rommBuilder(web)
 async def main():
-    s = asyncio.create_task(server.serverThreadFunc())
+    s_ws = asyncio.create_task(server_ws.serverThreadFunc())
+    s_tcp = asyncio.create_task(server_tcp.serverThreadFunc())
     h = asyncio.create_task(hall.start())
     w = asyncio.create_task(web.websystem_message_handler())
-    await asyncio.gather(s, h, w ,return_exceptions=False) 
+    await asyncio.gather(s_tcp,s_ws ,h, w ,return_exceptions=False) 
 loop.run_until_complete(main())
