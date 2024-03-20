@@ -31,7 +31,8 @@
         {
             "dataType":"create",
             "data":{
-                "maxPlayer":3}
+                "maxPlayer":3
+                }
         }
     ```
     ```json
@@ -57,6 +58,43 @@
             "dataType":"join",
             "data":{
                 "roomID":100
+            }
+        }
+    ```
+    ```json
+        {
+            "dataType":"prepare"
+        }
+    ```
+    ```json
+        {
+            "dataType":"card",
+            "data":{
+                "cards":["D4", "C4"]
+            }
+        }
+    ```
+    ```json
+        {
+            "dataType":"card",
+            "data":{
+                "cards":[]
+            }
+        }
+    ```
+    ```json
+        {
+            "dataType":"joker",
+            "data":{
+                "jokerLocation":3
+            }
+        }
+    ```
+    ```json
+        {
+            "dataType":"speak",
+            "data":{
+                "words":"哦shit"
             }
         }
     ```
