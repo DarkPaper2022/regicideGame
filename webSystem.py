@@ -40,7 +40,6 @@ class WEB_ROOM:
     playerIndexs:List[Tuple[playerWebSystemID, bool]]
     roomQueue:LockQueue
     maxPlayer:int
-    runningFlag:bool
     status:ROOM_STATUS
     def removePlayer(self, player:WEB_PLAYER):
         player_room_out_message = MESSAGE(room = self.roomID,
@@ -166,7 +165,6 @@ class WEB:
             frozen_room = FROZEN_ROOM(
                 roomID=room.roomID,
                 maxPlayer=room.maxPlayer,
-                runningFlag=room.runningFlag,
                 status=room.status,
                 playerIndexs=[{"userName":self.players[index].playerName ,"ready":ready} for index, ready in room.playerIndexs]    #type:ignore
             )
@@ -283,7 +281,6 @@ class WEB:
                         playerIndexs=[(firstPlayerIndex, False)],
                         roomQueue=LockQueue(),
                         maxPlayer=self._roomIndexToMaxPlayer(roomIndex),
-                        runningFlag=False,
                         status=ROOM_STATUS.preparing)
         return room
     #not safe
