@@ -168,7 +168,7 @@ class WEB:
                 maxPlayer=room.maxPlayer,
                 runningFlag=room.runningFlag,
                 status=room.status,
-                playerIndexs=[(self.players[index].playerName ,ready) for index, ready in room.playerIndexs]    #type:ignore
+                playerIndexs=[{"userName":self.players[index].playerName ,"ready":ready} for index, ready in room.playerIndexs]    #type:ignore
             )
         message = MESSAGE(
             -1,systemID,WEB_SYSTEM_DATATYPE.ANSWER_ROOM_STATUS,None,

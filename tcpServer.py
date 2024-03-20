@@ -157,7 +157,6 @@ class TCP_CLIENT:
                 if len(l) == 1 or l[1] == b"":
                     messageData = []
                 else:
-                    #messageData = [int(card.decode()) for card in l[1].split(b" ")]
                     messageData = [strToCard(card.strip()) for card in l[1].split()]
                 logger.info("A card Message")
             elif data_type == REGICIDE_DATATYPE.speak:
