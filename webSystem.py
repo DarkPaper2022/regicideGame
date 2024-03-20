@@ -187,16 +187,16 @@ class WEB:
     
     #arg:legal or illegal playerName and password
     #raise:AuthError
-    #ret:A player not in any room
+    #ret:A player not in any room, or keep its origin room
     def PLAYER_LOG_IN(self, playerName:str, password:str) -> Tuple[uuid.UUID, playerWebSystemID]: # type:ignore
         systemID, level = self._checkPassword(playerName, password) 
         if level == PLAYER_LEVEL.superUser:
             raise AuthError("Super User?")
         elif level == PLAYER_LEVEL.normal:
-            playerOld = self.players[systemID] 
-            if playerOld != None and playerOld.playerRoom != None:
-                self.rooms[playerOld.playerRoom].removePlayer(playerOld)    #type:ignore TODO 
             cookie = uuid.uuid4()
+            if self.players[systemID] != None:
+                self.players[systemID].playerCookie = cookie    #type:ignore
+                return cookie, systemID
             player = WEB_PLAYER(systemID,
                                 LockQueue(),
                                 playerName=playerName,

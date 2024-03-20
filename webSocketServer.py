@@ -59,7 +59,7 @@ class WEBSOCKET_CLIENT:
     async def authThread(self):
         username = ""
         while True:
-            await self.websocket.send(0*b"\n" + b"Username and Password, plz\n")
+            await self.websocket.send(json.dumps("Welcome."))
             data = str(await self.websocket.recv())
             if not data:
                 await self.websocket.close()
@@ -68,7 +68,7 @@ class WEBSOCKET_CLIENT:
                 data_dict = json.loads(data)
                 data_type:str = data_dict[dataType_json_key]
             except:
-                await self.websocket.send("")
+                await self.websocket.send(json.dumps("You are a strange GUY."))
                 continue
             if data_type == "register":
                 try:
