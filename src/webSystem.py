@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from defineRegicideMessage import GAME_SETTINGS
 from defineWebSystemMessage import MESSAGE, playerWebSystemID,\
 PLAYER_LEVEL,WEB_SYSTEM_DATATYPE,ROOM_STATUS,FROZEN_PLAYER_WEB_SYSTEM,FROZEN_ROOM,PLAYER_STATUS
-from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError,PasswordWrongError,UserNameNotFoundError
+from defineError import AuthDenial,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError,PasswordWrongDenial,UserNameNotFoundDenial
 from myLockQueue import myLockQueue as LockQueue
 from collections import deque
 from typing import List,Union,Tuple
@@ -205,7 +205,7 @@ class WEB:
     def PLAYER_LOG_IN(self, playerName:str, password:str) -> Tuple[uuid.UUID, playerWebSystemID]: # type:ignore
         systemID, level = self._checkPassword(playerName, password) 
         if level == PLAYER_LEVEL.superUser:
-            raise AuthError("Super User?")
+            raise AuthDenial("Super User?")
         elif level == PLAYER_LEVEL.normal:
             cookie = uuid.uuid4()
             if self.players[systemID] != None:
@@ -229,15 +229,15 @@ class WEB:
                 
             message:MESSAGE = MESSAGE(
                 -1, systemID, 
-                WEB_SYSTEM_DATATYPE.ANSWER_LOG_IN,
+                WEB_SYSTEM_DATATYPE.ANSWER_LOGIN,
                 None,
-                webData = {"success":True}
+                webData = True
             )
             player.playerQueue.put_nowait(message)
             self.player_send_room_status(systemID)
             return cookie, systemID
         else:
-            raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")     
+            raise AuthDenial(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")     
     
     #arg:   player is already log in
     #arg:   must not in any room
@@ -267,7 +267,10 @@ class WEB:
         player.playerRoom = roomIndex
         player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
         player.playerQueue.put_nowait(
-            MESSAGE(-1, systemID, WEB_SYSTEM_DATATYPE.logInSuccess, None, None))
+            MESSAGE(-1, systemID, 
+                    WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM, 
+                    None, 
+                    webData=True))
     
     #arg:   systemID should in [0,MAX)
     #arg:   status should be in_room_not_prepared

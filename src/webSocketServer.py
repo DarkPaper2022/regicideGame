@@ -12,8 +12,8 @@ from defineRegicideMessage import TALKING_MESSAGE,\
 from defineWebSystemMessage import MESSAGE, playerWebSystemID,\
 WEB_SYSTEM_DATATYPE, DATATYPE, FROZEN_PLAYER_WEB_SYSTEM, FROZEN_ROOM
 from dataclasses import dataclass
-from defineError import AuthError,MessageFormatError,RoomError,ServerBusyError,RegisterFailedError
-from define_JSON_UI import strToCard
+from defineError import AuthDenial,MessageFormatError,UserNameNotFoundDenial,PasswordWrongDenial,RegisterFailedError
+from define_JSON_UI import strToCard,ComplexEncoder
 from defineRound import ROUND
 
 UI_HEIGHT = 30
@@ -39,7 +39,7 @@ speak_json_key = "speak"
 joker_json_key = "jokerLocation"
 room_ID_json_key = "roomID"
 expected_player_max_json_key = "maxPlayer"
-
+error_reason_json_key = "error"
 #recv and send NO LOCK
 #只对socket和web的交互有线程问题、而这两个都是线程安全的
 class WEBSOCKET_CLIENT:
@@ -101,15 +101,16 @@ class WEBSOCKET_CLIENT:
                         password=data_dict[data_json_key]["password"])
                     username = data_dict[data_json_key]["username"]
                     break
-                except (AuthError,RegisterFailedError,TimeoutError) as e:
+                except (RegisterFailedError,TimeoutError) as e:
                     await self.websocket.send((UI_HEIGHT*"\n"+str(e)+"\n").encode())
-                except Exception as e:
+                except AuthDenial as e:
                     await self.websocket.send(json.dumps({
                         "dataType":"ANSWER_LOGIN",
                         "data":{
-                            "success":False
+                            "success":False,
+                            error_reason_json_key:str(e)
                         }
-                    }))
+                    }))             
             else:
                 await self.websocket.send((UI_HEIGHT*"\n"+""" "register" or "log in", no other choice """+"\n").encode())
         
@@ -199,11 +200,15 @@ class WEBSOCKET_CLIENT:
             raise MessageFormatError("Fuck you!")
         message = MESSAGE(room_ID,self.playerIndex, data_type, messageData, web_data)
         return message
+    
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> str:
+        if message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS:
+            room_status:FROZEN_PLAYER_WEB_SYSTEM = message.webData
+            self.roomID = -1 if room_status.playerRoom == None else room_status.playerRoom.roomID
         if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n"
-        data = json.dumps(message)
+        data = json.dumps(message, cls=ComplexEncoder)
         return data
 
 class WEBSOCKET_SERVER:

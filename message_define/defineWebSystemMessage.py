@@ -31,8 +31,9 @@ class PLAYER_STATUS(Enum):
 class WEB_SYSTEM_DATATYPE(Enum):
     UPDATE_ROOM_STATUS = 0
 
-    ANSWER_LOG_IN = 115
-    ANSWER_REGISTER = 116
+    ANSWER_LOGIN = 150
+    ANSWER_REGISTER = 151
+    ANSWER_JOIN_ROOM = 152
     HALL_CREATE_ROOM = 120
     PLAYER_CREATE_ROOM = 118     
     #to Hall to start a thread
@@ -41,10 +42,6 @@ class WEB_SYSTEM_DATATYPE(Enum):
     cookieWrong = 113    
     #to client
     #client should relog to deal with it
-
-    logInSuccess = 108    
-    #to client      
-    #for client, just information    
 
     confirmPrepare = 114 
     #from client or from web

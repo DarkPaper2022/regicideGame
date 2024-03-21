@@ -2,7 +2,7 @@ import socket
 import uuid
 import random
 import json
-from define_JSON_UI import MyEncoder
+from define_JSON_UI import SimpleEncoder
 import asyncio
 import time
 from dataclasses import asdict
@@ -14,7 +14,7 @@ from defineRegicideMessage import TALKING_MESSAGE,\
 from defineWebSystemMessage import MESSAGE, playerWebSystemID,\
 WEB_SYSTEM_DATATYPE, DATATYPE, FROZEN_PLAYER_WEB_SYSTEM, FROZEN_ROOM, PLAYER_STATUS
 from dataclasses import dataclass
-from defineError import AuthError,MessageFormatError,RegisterFailedError
+from defineError import AuthDenial,MessageFormatError,RegisterFailedError
 from defineTCP_UI import cardsToStr,bossToStr,strToCard
 from defineRound import ROUND
 
@@ -77,7 +77,7 @@ class TCP_CLIENT:
                         password=l[1].decode("utf-8"))
                     username = l[0].decode("utf-8")
                     break
-                except (AuthError,RegisterFailedError,TimeoutError) as e:
+                except (AuthDenial,RegisterFailedError,TimeoutError) as e:
                     self.writer.write((UI_HEIGHT*"\n"+str(e)+"\n").encode())
                 except Exception as e:
                     self.writer.write((UI_HEIGHT*"\n"+"Wrong Format Username and Password: 你在乱输什么啊\n").encode() + str(e).encode())
@@ -172,7 +172,7 @@ class TCP_CLIENT:
             raise MessageFormatError("Fuck you!")
         message = MESSAGE(roomID,self.playerIndex, data_type, messageData, web_data)
         try:
-            json_string = json.dumps(asdict(message), cls=MyEncoder)
+            json_string = json.dumps(asdict(message), cls=SimpleEncoder)
             logger.debug("json is sending to room:\n" +json_string)
         except Exception as e:
             print("SHIT", e)
@@ -180,7 +180,7 @@ class TCP_CLIENT:
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> bytes:
         try:
-            json_string = json.dumps(asdict(message), cls=MyEncoder)
+            json_string = json.dumps(asdict(message), cls=SimpleEncoder)
             logger.debug("json is sending to client:\n" +json_string)
         except Exception as e:
             print("SHIT", e)
@@ -200,15 +200,11 @@ class TCP_CLIENT:
                 talkStr = line.message
                 messageData = (timeStr+" "+nameStr+"说"+"\n\t"+talkStr + "\n") + messageData
         elif message.dataType == REGICIDE_DATATYPE.overSignal:
-            isWin:bool = message.roomData
-            if isWin:
-                messageData = "真棒, 你们打败了魔王\n"
-            else:
-                messageData = "寄, 阁下请重新来过\n"
+            messageData = "真棒, 你们打败了魔王\n" if message.roomData else "寄, 阁下请重新来过\n"
         elif message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong or message.dataType == WEB_SYSTEM_DATATYPE.leaveRoom:
             messageData = "你被顶号了,要不要顶回来试试?\n"
-        elif message.dataType == WEB_SYSTEM_DATATYPE.logInSuccess:
-            messageData = ""
+        elif message.dataType == WEB_SYSTEM_DATATYPE.ANSWER_LOGIN:
+            messageData = f"""你登录{"成功" if message.webData else "失败"} 了\n"""
         elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS:
             room_status:FROZEN_PLAYER_WEB_SYSTEM = message.webData
             self.roomID = -1 if room_status.playerRoom == None else  room_status.playerRoom.roomID

@@ -1,7 +1,9 @@
 from defineRegicideMessage import FROZEN_STATUS_PARTLY,FROZEN_BOSS
-from typing import Tuple
+from defineWebSystemMessage import MESSAGE,DATATYPE,WEB_SYSTEM_DATATYPE,REGICIDE_DATATYPE
+from typing import Tuple,Any
 from defineColor import COLOR
 from defineRound import ROUND
+from dataclasses import dataclass
 import math
 import json
 from enum import Enum
@@ -32,8 +34,50 @@ def strToCard(s:str) -> int:
         except:
             raise ValueError("输入处理出错")
 
-class MyEncoder(json.JSONEncoder):
+@dataclass
+class SimplifiedMessage:
+    dataType:DATATYPE
+    data:Any
+
+
+
+
+
+
+
+
+
+class SimpleEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Enum):
             return obj.name  # 返回枚举量的名称
         return super().default(obj)
+
+class ComplexEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Enum):
+            return obj.name
+        elif isinstance(obj, MESSAGE):
+            message = obj
+            if message.dataType in [WEB_SYSTEM_DATATYPE.ANSWER_LOGIN]:
+                new_message_data = self._data_helper_answer(message)
+            else:
+                new_message_data = self._data_helper_default(message)
+            new_message = SimplifiedMessage(dataType=message.dataType,
+                                            data=new_message_data)
+            return self.default(new_message_data)
+        return super().default(obj)
+    def _data_helper_default(self, message:MESSAGE):
+        if message.webData == None and message.roomData == None:
+            new_message_data = None
+        elif message.webData == None:
+            new_message_data = message.roomData
+        elif message.roomData == None:
+            new_message_data = message.webData
+        else:
+            new_message_data = {
+                "webData":message.webData,
+                "roomData":message.roomData
+            }
+        return new_message_data
+    def _data_helper_answer(self, message:MESSAGE):

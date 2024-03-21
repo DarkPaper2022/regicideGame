@@ -1,7 +1,7 @@
 from typing import Tuple,List
 import mysql.connector
 import re
-from defineError import AuthError,PasswordWrongError,UserNameNotFoundError
+from defineError import AuthDenial,PasswordWrongDenial,UserNameNotFoundDenial
 from myLogger import logger
 from defineWebSystemMessage import playerWebSystemID,PLAYER_LEVEL
 import configparser
@@ -33,17 +33,17 @@ class sqlSystem:
             p:str = str(rows[0][2]) 
             s:str = str(rows[0][1]) 
             if p != password:
-                raise PasswordWrongError
+                raise PasswordWrongDenial
             level:PLAYER_LEVEL = PLAYER_LEVEL.normal if s == "user" else\
                                  PLAYER_LEVEL.superUser if s == "super user" else\
                                  PLAYER_LEVEL.illegal
             return (playerWebSystemID(rows[0][0]), level)
         elif len(rows) == 0:
-            raise UserNameNotFoundError
+            raise UserNameNotFoundDenial
         else:
             logger.error(f"""select {userName, password}
 recieve:{rows}""")
-            raise AuthError("Wow")
+            raise AuthDenial("Wow")
         cursor.close()
     def adminRegister(self,userName:str, password:str):
         cursor = self.connection.cursor()
@@ -67,7 +67,7 @@ recieve:{rows}""")
             result:List[int] = cursor.fetchall()  #type:ignore
             if len(result) != 0:
                 cursor.close()
-                raise AuthError("有号就登,别注册了搁着儿")
+                raise AuthDenial("有号就登,别注册了搁着儿")
             else:
                 cursor.execute( "INSERT INTO accounts (username, password) VALUES (%s, %s);",(userName, password))
                 self.connection.commit()
@@ -75,7 +75,7 @@ recieve:{rows}""")
                 return
         else:
             logger.error(f"{userName},{password}正则炸了")
-            raise AuthError("不是什么东西都可以作用户名和密码哦")
+            raise AuthDenial("不是什么东西都可以作用户名和密码哦")
     def end(self):
         self.connection.close()
         
