@@ -18,6 +18,14 @@ class ROOM_STATUS(Enum):
     running = 1
     broken = 2
 
+#only 
+class PLAYER_STATUS(Enum):
+    NONE = -1
+    ROOM_IS_NONE = 0
+    IN_ROOM_NOT_PREPARED=1
+    IN_ROOM_PREPARED=2
+    IN_ROOM_PLAYING=3
+    IN_ROOM_ZOMBIE=4
 
 class WEB_SYSTEM_DATATYPE(Enum):
     askRoomStatus = 0   #from client
@@ -47,8 +55,12 @@ class WEB_SYSTEM_DATATYPE(Enum):
     destroyRoom = 100
     
     JOIN_ROOM = 103
+    
     LOG_OUT = 102
+    
     ANSWER_ROOM_STATUS = 101
+    
+    HE_IS_A_ZOMBIE = 104
 
 DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
 

@@ -117,7 +117,7 @@ class ROOM:
         self.zombieFlag = False
         self.web = web
         self.roomIndex = roomIndex
-        self.playerTotalNum = self.web._roomIndexToMaxPlayer(roomIndex)
+        self.playerTotalNum = self.web._room_ID_to_Max_player(roomIndex)
         self.talkings = TALKING()
     def getCard_cardHeap(self, cnt):
         notEmptyPlayerIndex = self.currentPlayer.location
