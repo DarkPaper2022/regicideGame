@@ -64,7 +64,9 @@ class WEBSOCKET_CLIENT:
             return"""
 
         while True:
-            await self.websocket.send(json.dumps("Welcome."))
+            await self.websocket.send(json.dumps({
+                "dataType":"ANSWER_CONNECTION"
+            }))
             data = str(await self.websocket.recv())
             if not data:
                 await self.websocket.close()
