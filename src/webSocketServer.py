@@ -99,7 +99,7 @@ class WEBSOCKET_CLIENT:
                     self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
                         playerName=data_dict[data_json_key]["username"],
                         password=data_dict[data_json_key]["password"])
-                    username = data_dict[data_json_key]["userName"]
+                    username = data_dict[data_json_key]["username"]
                     break
                 except (AuthError,RegisterFailedError,TimeoutError) as e:
                     await self.websocket.send((UI_HEIGHT*"\n"+str(e)+"\n").encode())
