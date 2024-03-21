@@ -60,7 +60,7 @@ class ComplexEncoder(json.JSONEncoder):
         elif isinstance(obj, MESSAGE):
             message = obj
             if message.dataType in [WEB_SYSTEM_DATATYPE.ANSWER_LOGIN]:
-                new_message_data = self._data_helper_answer(message)
+                new_message_data = self._data_helper_answer(message.webData)
             else:
                 new_message_data = self._data_helper_default(message)
             new_message = SimplifiedMessage(dataType=message.dataType,
@@ -80,4 +80,6 @@ class ComplexEncoder(json.JSONEncoder):
                 "roomData":message.roomData
             }
         return new_message_data
-    def _data_helper_answer(self, message:MESSAGE):
+    def _data_helper_answer(self, webData:Any):
+        new_message_data = {"success":webData}
+        return new_message_data
