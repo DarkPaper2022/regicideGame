@@ -62,17 +62,17 @@ class WEBSOCKET_CLIENT:
         if not data:
             await self.websocket.close()
             return"""
-
+        await self.websocket.send(json.dumps({
+            "dataType":"ANSWER_CONNECTION",
+            "data":{
+                "games":[{
+                    "name":"regicide",
+                    "vesion":"1.0.0"
+                }]
+            }
+        }))
         while True:
-            await self.websocket.send(json.dumps({
-                "dataType":"ANSWER_CONNECTION",
-                "data":{
-                    "game_and_version":[{
-                        "game":"regicide",
-                        "vesion":"1.0.0"
-                    }]
-                }
-            }))
+
             data = str(await self.websocket.recv())
             if not data:
                 await self.websocket.close()
@@ -81,19 +81,18 @@ class WEBSOCKET_CLIENT:
                 data_dict = json.loads(data)
                 data_type:str = data_dict[dataType_json_key]
             except:
-                await self.websocket.send(json.dumps("You are a strange GUY."))
                 continue
             if data_type == "ASK_REGISTER":
                 try:
                     self.web.PLAYER_REGISTER(
-                        playerName=data_dict[data_json_key]["userName"],
+                        playerName=data_dict[data_json_key]["username"],
                         password=data_dict[data_json_key]["password"])
                 except:
                     await self.websocket.send((UI_HEIGHT*"\n"+"注册失败了喵喵,请看看我们的readme"+"\n").encode())
             elif data_type == "ASK_LOGIN":
                 try:
                     self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
-                        playerName=data_dict[data_json_key]["userName"],
+                        playerName=data_dict[data_json_key]["username"],
                         password=data_dict[data_json_key]["password"])
                     username = data_dict[data_json_key]["userName"]
                     break
