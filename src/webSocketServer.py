@@ -88,7 +88,12 @@ class WEBSOCKET_CLIENT:
                         playerName=data_dict[data_json_key]["username"],
                         password=data_dict[data_json_key]["password"])
                 except:
-                    await self.websocket.send((UI_HEIGHT*"\n"+"注册失败了喵喵,请看看我们的readme"+"\n").encode())
+                    await self.websocket.send(json.dumps({
+                        "dataType":"ANSWER_REGISTER",
+                        "data":{
+                            "success":False
+                        }
+                    }))
             elif data_type == "ASK_LOGIN":
                 try:
                     self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
@@ -99,7 +104,12 @@ class WEBSOCKET_CLIENT:
                 except (AuthError,RegisterFailedError,TimeoutError) as e:
                     await self.websocket.send((UI_HEIGHT*"\n"+str(e)+"\n").encode())
                 except Exception as e:
-                    await self.websocket.send((UI_HEIGHT*"\n"+"Wrong Format Username and Password: 你在乱输什么啊\n").encode() + str(e).encode())
+                    await self.websocket.send(json.dumps({
+                        "dataType":"ANSWER_REGISTER",
+                        "data":{
+                            "success":False
+                        }
+                    }))
             else:
                 await self.websocket.send((UI_HEIGHT*"\n"+""" "register" or "log in", no other choice """+"\n").encode())
         
