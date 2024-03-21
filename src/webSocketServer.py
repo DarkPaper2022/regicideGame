@@ -105,7 +105,7 @@ class WEBSOCKET_CLIENT:
                     await self.websocket.send((UI_HEIGHT*"\n"+str(e)+"\n").encode())
                 except Exception as e:
                     await self.websocket.send(json.dumps({
-                        "dataType":"ANSWER_REGISTER",
+                        "dataType":"ANSWER_LOGIN",
                         "data":{
                             "success":False
                         }
