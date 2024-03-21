@@ -65,7 +65,13 @@ class WEBSOCKET_CLIENT:
 
         while True:
             await self.websocket.send(json.dumps({
-                "dataType":"ANSWER_CONNECTION"
+                "dataType":"ANSWER_CONNECTION",
+                "data":{
+                    "game_and_version":[{
+                        "game":"regicide",
+                        "vesion":"1.0.0"
+                    }]
+                }
             }))
             data = str(await self.websocket.recv())
             if not data:
@@ -84,7 +90,7 @@ class WEBSOCKET_CLIENT:
                         password=data_dict[data_json_key]["password"])
                 except:
                     await self.websocket.send((UI_HEIGHT*"\n"+"注册失败了喵喵,请看看我们的readme"+"\n").encode())
-            elif data_type == "ASK_LOG_IN":
+            elif data_type == "ASK_LOGIN":
                 try:
                     self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
                         playerName=data_dict[data_json_key]["userName"],
