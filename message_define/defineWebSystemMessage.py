@@ -12,6 +12,7 @@ class PLAYER_LEVEL(Enum):
     illegal = 0
     normal = 1
     superUser = 2    
+    NOT_EXIST = 3
 
 class ROOM_STATUS(Enum):
     preparing = 0
@@ -32,8 +33,8 @@ class WEB_SYSTEM_DATATYPE(Enum):
 
     ANSWER_LOG_IN = 115
     ANSWER_REGISTER = 116
-
-    createRoom = 118     
+    HALL_CREATE_ROOM = 120
+    PLAYER_CREATE_ROOM = 118     
     #to Hall to start a thread
     #hall should start a room thread, no need to start
     
@@ -68,7 +69,7 @@ DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
 @dataclass
 class FROZEN_ROOM:
     roomID:int
-    playerIndexs:Dict[str,PLAYER_STATUS]
+    playerIndexs:List[Tuple[str,PLAYER_STATUS]]
     maxPlayer:int
     status:ROOM_STATUS
 @dataclass

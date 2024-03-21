@@ -1,7 +1,7 @@
-from typing import Tuple
+from typing import Tuple,List
 import mysql.connector
 import re
-from defineError import AuthError
+from defineError import AuthError,PasswordWrongError,UserNameNotFoundError
 from myLogger import logger
 from defineWebSystemMessage import playerWebSystemID,PLAYER_LEVEL
 import configparser
@@ -25,18 +25,25 @@ class sqlSystem:
     #raise error
     def checkPassword(self, userName:str, password:str) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
         cursor = self.connection.cursor()
-        cursor.execute('SELECT id, authority FROM accounts WHERE username=%s AND password=%s', 
-                   (userName,password))
-        rows = cursor.fetchall()
-        if len(rows) == 1:
-            s:str = str(rows[0][1]) # type: ignore
+        cursor.execute('SELECT id, authority, password FROM accounts WHERE username=%s', 
+                   (userName,))
+        rows:List[Tuple[int,str,str]] = cursor.fetchall() # type: ignore
+        logger.debug(f"""{rows}""")
+        if len(rows) == 1:  
+            p:str = str(rows[0][2]) 
+            s:str = str(rows[0][1]) 
+            if p != password:
+                raise PasswordWrongError
             level:PLAYER_LEVEL = PLAYER_LEVEL.normal if s == "user" else\
                                  PLAYER_LEVEL.superUser if s == "super user" else\
                                  PLAYER_LEVEL.illegal
-            return (rows[0][0], level)   # type: ignore
+            return (playerWebSystemID(rows[0][0]), level)
+        elif len(rows) == 0:
+            raise UserNameNotFoundError
         else:
-            logger.info(f"错误的密码?\n{rows}")
-            raise AuthError("密码乱输?")
+            logger.error(f"""select {userName, password}
+recieve:{rows}""")
+            raise AuthError("Wow")
         cursor.close()
     def adminRegister(self,userName:str, password:str):
         cursor = self.connection.cursor()
@@ -57,7 +64,7 @@ class sqlSystem:
             cursor = self.connection.cursor()
             cursor.execute('SELECT id FROM accounts WHERE username=%s', 
                    (userName,))
-            result = cursor.fetchall()
+            result:List[int] = cursor.fetchall()  #type:ignore
             if len(result) != 0:
                 cursor.close()
                 raise AuthError("有号就登,别注册了搁着儿")

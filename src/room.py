@@ -335,7 +335,6 @@ class ROOM:
 
     async def roomThreadingFunc(self):
         self.playerList = []
-        logger.info("playListHere")
         await self.ioGetPlayerRegister()
         while True:
             await self.start()

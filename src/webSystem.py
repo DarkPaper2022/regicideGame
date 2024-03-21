@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from defineRegicideMessage import GAME_SETTINGS
 from defineWebSystemMessage import MESSAGE, playerWebSystemID,\
 PLAYER_LEVEL,WEB_SYSTEM_DATATYPE,ROOM_STATUS,FROZEN_PLAYER_WEB_SYSTEM,FROZEN_ROOM,PLAYER_STATUS
-from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError
+from defineError import AuthError,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError,PasswordWrongError,UserNameNotFoundError
 from myLockQueue import myLockQueue as LockQueue
 from collections import deque
 from typing import List,Union,Tuple
@@ -93,7 +93,7 @@ class WEB:
 
     async def websystem_message_handler(self):
         while True:
-            #arg: player or room of the message is legal
+            #arg: player or room of the message is not -1
             message:MESSAGE = await self.web_system_queue.get()
             logger.debug(message)
             if message.playerID == playerWebSystemID(-1):
@@ -105,7 +105,7 @@ class WEB:
             elif message.roomID == -1:
                 if message.dataType == WEB_SYSTEM_DATATYPE.confirmPrepare:
                     self.player_confirm_prepare(message.playerID)
-                elif message.dataType == WEB_SYSTEM_DATATYPE.createRoom:
+                elif message.dataType == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                     room_ID = self.player_create_room(message.playerID, message.webData)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.JOIN_ROOM:
                     try:
@@ -165,13 +165,18 @@ class WEB:
             self.player_send_room_status(message.playerID)
         else:
             assert player.playerRoom == message.roomID
-            room = self.rooms[player.playerRoom] 
-            room.roomQueue.put_nowait(message)  #type:ignore
-
-    #arg: legal systemID
-    def player_send_room_status(self, systemID:playerWebSystemID)->None:
-        logger.debug(f"i am sending to {systemID}")
-        player:WEB_PLAYER = self.players[systemID]  #type:ignore
+            room:WEB_ROOM = self.rooms[player.playerRoom] #type:ignore
+            if room.status == ROOM_STATUS.running:
+                room.roomQueue.put_nowait(message)  
+            else:
+                self.player_send_room_status(message.playerID)
+    
+    #arg:   systemID should in [0,MAX)
+    #arg:   status should be not none
+    #raise: assertion error if status is not satisfied
+    def player_send_room_status(self, systemID:playerWebSystemID)->None:  
+        player = self.players[systemID]
+        assert player != None 
         if player.playerRoom==None:
             frozen_room = None
         else:
@@ -180,7 +185,7 @@ class WEB:
                 roomID=room.roomID,
                 maxPlayer=room.maxPlayer,
                 status=room.status,
-                playerIndexs=[{"userName":self.players[index].playerName ,"status":self.players[index].playerStatus} for index in room.playerIndexs]    #type:ignore
+                playerIndexs=[(self.players[index].playerName ,self.players[index].playerStatus) for index in room.playerIndexs]    #type:ignore
             )
         message = MESSAGE(
             -1,systemID,WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS,None,
@@ -188,16 +193,15 @@ class WEB:
                 playerName=player.playerName,
                 playerLevel=player.playerLevel,
                 playerRoom=frozen_room))
-        logger.debug(f"i put {message}")
         player.playerQueue.put_nowait(message)
 
     #raise Error
     def PLAYER_REGISTER(self,playerName:str, password:str):
         self.sqlSystem.userRegister(playerName,password)
     
-    #arg:legal or illegal playerName and password
-    #raise:AuthError
-    #ret:A player not in any room, or keep its origin room
+    #arg:   legal or illegal playerName and password
+    #raise: AuthError
+    #ret:   A player not in any room, or keep its origin room
     def PLAYER_LOG_IN(self, playerName:str, password:str) -> Tuple[uuid.UUID, playerWebSystemID]: # type:ignore
         systemID, level = self._checkPassword(playerName, password) 
         if level == PLAYER_LEVEL.superUser:
@@ -227,7 +231,7 @@ class WEB:
                 -1, systemID, 
                 WEB_SYSTEM_DATATYPE.ANSWER_LOG_IN,
                 None,
-                webData = {"success":False}
+                webData = {"success":True}
             )
             player.playerQueue.put_nowait(message)
             self.player_send_room_status(systemID)
@@ -236,8 +240,8 @@ class WEB:
             raise AuthError(f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n")     
     
     #arg:   player is already log in
-    #       must not in any room
-    #       room must be not full
+    #arg:   must not in any room
+    #arg:   room must be not full
     #raise: excpetion if the above is not satisfied
     def player_join_room(self,  systemID:playerWebSystemID, roomIndex:int) -> None:
         player = self.players[systemID]
@@ -258,14 +262,16 @@ class WEB:
             room = self._room_construst(roomIndex)  
             self.rooms[roomIndex] = room  
             self.hallQueue.put_nowait(
-                MESSAGE(-1, playerWebSystemID(-1), WEB_SYSTEM_DATATYPE.createRoom, roomIndex, None))
+                MESSAGE(-1, playerWebSystemID(-1), WEB_SYSTEM_DATATYPE.HALL_CREATE_ROOM, roomIndex, None))
         self._room_join_in_system(roomIndex, systemID)  #room error
         player.playerRoom = roomIndex
         player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
         player.playerQueue.put_nowait(
             MESSAGE(-1, systemID, WEB_SYSTEM_DATATYPE.logInSuccess, None, None))
     
-    #arg: systemID should in [0,MAX)
+    #arg:   systemID should in [0,MAX)
+    #arg:   status should be in_room_not_prepared
+    #raise: no error even status is not satisfied
     def player_confirm_prepare(self, systemID:playerWebSystemID):
         if self._status(systemID) != PLAYER_STATUS.IN_ROOM_NOT_PREPARED:
             return        
@@ -278,29 +284,41 @@ class WEB:
                 cnt += 1
         
         if cnt == self._room_ID_to_Max_player(room.roomID) and room.status == ROOM_STATUS.preparing:
-            room.roomQueue.put_nowait(
+            self.room_run(room.roomID)
+    #arg:   room is preparing
+    #raise: assertion or attribute error
+    def room_run(self, roomID:int):
+        room:WEB_ROOM = self.rooms[roomID] #type:ignore
+        assert room.status == ROOM_STATUS.preparing
+        room.roomQueue.put_nowait(
                 MESSAGE(room.roomID,
                         playerWebSystemID(-1),
                         WEB_SYSTEM_DATATYPE.runRoom,
                         None,
                         [(systemID, self.players[systemID].playerName) for systemID in room.playerIndexs])) #   type:ignore
-            room.status = ROOM_STATUS.running
-            for a_systemID in room.playerIndexs:
+        room.status = ROOM_STATUS.running
+        for a_systemID in room.playerIndexs:
                 self.players[a_systemID].playerStatus = PLAYER_STATUS.IN_ROOM_PLAYING   #   type:ignore
-    
     #arg: systemID should in [0,MAX)
+    #arg: any status is OK
     def player_log_out(self,systemID:playerWebSystemID):
         if self._status(systemID) == PLAYER_STATUS.IN_ROOM_PLAYING:
             self._change_player_to_zombie(systemID)
         else:
             self.player_quit_room(systemID)
             self.players[systemID] = None
+            
+    #arg:   systemID should in [0,MAX)
+    #arg:   status should be room_is_none
+    #raise: assertion error if status is not OK
     def player_create_room(self,systemID:playerWebSystemID, expectedRoomMax:int)->int:
+        assert self._status(systemID) == PLAYER_STATUS.ROOM_IS_NONE
         room_ID = self._find_empty_room(expectedRoomMax)
         self.player_join_room(systemID, room_ID)
         return room_ID
     
-    #arg: systemID should in [0,MAX) 
+    #arg:   systemID should in [0,MAX)
+    #arg:   status can be any
     def player_quit_room(self,systemID:playerWebSystemID):
         if self._status(systemID) in [PLAYER_STATUS.IN_ROOM_PREPARED, 
                                       PLAYER_STATUS.IN_ROOM_NOT_PREPARED]:
@@ -346,7 +364,7 @@ class WEB:
         try:
             re = self.sqlSystem.checkPassword(playerName, password)
             return re
-        except:
+        except :
             return (playerWebSystemID(-1),PLAYER_LEVEL.illegal)
     def _checkOldCookie(self,playerIndex:playerWebSystemID , oldCookie:uuid.UUID)->PLAYER_LEVEL:
         p = self.players[playerIndex]
@@ -369,8 +387,11 @@ class WEB:
                 return i
         raise RoomError(f"{expected_max_player}的房满了")
    
-    #arg: status should be playing
+    #arg:   systemID should in [0,MAX)
+    #arg:   status should be in_room_playing
+    #raise: assertion error
     def _change_player_to_zombie(self, systemID:playerWebSystemID):
+        assert self._status(systemID) == PLAYER_STATUS.IN_ROOM_PLAYING
         self.players[systemID].playerStatus = PLAYER_STATUS.IN_ROOM_ZOMBIE #type:ignore
         room:WEB_ROOM = self.rooms[self.players[systemID].playerRoom]   #type:ignore
         room.roomQueue.put_nowait(MESSAGE(

@@ -19,7 +19,7 @@ from defineRound import ROUND
 UI_HEIGHT = 30
 translate_dict:dict[str,DATATYPE] = {
     "join":WEB_SYSTEM_DATATYPE.JOIN_ROOM,
-    "create":WEB_SYSTEM_DATATYPE.createRoom,
+    "create":WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
     "prepare":WEB_SYSTEM_DATATYPE.confirmPrepare,
     "quit":WEB_SYSTEM_DATATYPE.leaveRoom,
     "log out":WEB_SYSTEM_DATATYPE.LOG_OUT,
@@ -129,7 +129,6 @@ class WEBSOCKET_CLIENT:
                 if not data:
                     break
                 message = self.dataToMessage(data)
-                logger.debug(message)
                 self.web.playerSendMessage(message,self.playerCookie)
                 if message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     break
@@ -152,7 +151,6 @@ class WEBSOCKET_CLIENT:
             return
     #send To netcat
     async def sendThreadFunc(self):
-        logger.debug("I CAN SEND")
         while True:
             message = await self.web.playerGetMessage(self.playerIndex, self.playerCookie)
             data =self.messageToData(message)
@@ -182,24 +180,24 @@ class WEBSOCKET_CLIENT:
             data_dict = json.loads(data)
             data_type_str = data_dict[dataType_json_key]
             data_type = translate_dict[data_type_str]
+            room_ID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID 
             messageData = None
             web_data = None
             if data_type == REGICIDE_DATATYPE.card:
                 messageData = [strToCard(card) for card in data_dict[data_json_key][cards_json_key]]
-                logger.info("A card Message")
             elif data_type == REGICIDE_DATATYPE.speak:
                 messageData = TALKING_MESSAGE(time.time(), self.userName, data_dict[data_json_key][speak_json_key])
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 messageData = data_dict[data_json_key][speak_json_key]
             elif data_type == WEB_SYSTEM_DATATYPE.JOIN_ROOM:
                 messageData = data_dict[data_json_key][room_ID_json_key]
-            elif data_type == WEB_SYSTEM_DATATYPE.createRoom:
+            elif data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                 web_data = data_dict[data_json_key][expected_player_max_json_key]
             else:
                 pass
         except:
             raise MessageFormatError("Fuck you!")
-        message = MESSAGE(self.roomID,self.playerIndex, data_type, messageData, web_data)
+        message = MESSAGE(room_ID,self.playerIndex, data_type, messageData, web_data)
         return message
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> str:

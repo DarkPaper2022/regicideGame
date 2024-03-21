@@ -21,7 +21,7 @@ from defineRound import ROUND
 UI_HEIGHT = 30
 translate_dict:dict[str,DATATYPE] = {
     "join":WEB_SYSTEM_DATATYPE.JOIN_ROOM,
-    "create":WEB_SYSTEM_DATATYPE.createRoom,
+    "create":WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
     "prepare":WEB_SYSTEM_DATATYPE.confirmPrepare,
     "quit":WEB_SYSTEM_DATATYPE.leaveRoom,
     "log out":WEB_SYSTEM_DATATYPE.LOG_OUT,
@@ -98,7 +98,6 @@ class TCP_CLIENT:
                 if not data:
                     break
                 message = self.dataToMessage(data)
-                logger.debug(message)
                 self.web.playerSendMessage(message,self.playerCookie)
                 if message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     break
@@ -121,7 +120,6 @@ class TCP_CLIENT:
             return
     #send To netcat
     async def sendThreadFunc(self):
-        logger.debug("I CAN SEND")
         while True:
             message = await self.web.playerGetMessage(self.playerIndex, self.playerCookie)
             data =UI_HEIGHT*b"\n" + self.messageToData(message)
@@ -151,6 +149,7 @@ class TCP_CLIENT:
             l = [line.strip() for line in data.strip().split(b'#')]
             data_type_str = l[0].decode()
             data_type = translate_dict[data_type_str]
+            roomID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID 
             messageData = None
             web_data = None
             if data_type == REGICIDE_DATATYPE.card:
@@ -165,25 +164,30 @@ class TCP_CLIENT:
                 messageData = int(l[1].strip())
             elif data_type == WEB_SYSTEM_DATATYPE.JOIN_ROOM:
                 messageData = int(l[1].strip())
-            elif data_type == WEB_SYSTEM_DATATYPE.createRoom:
+            elif data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                 web_data = int(l[1].strip())
             else:
                 pass
         except:
             raise MessageFormatError("Fuck you!")
-        message = MESSAGE(self.roomID,self.playerIndex, data_type, messageData, web_data)
+        message = MESSAGE(roomID,self.playerIndex, data_type, messageData, web_data)
+        try:
+            json_string = json.dumps(asdict(message), cls=MyEncoder)
+            logger.debug("json is sending to room:\n" +json_string)
+        except Exception as e:
+            print("SHIT", e)
         return message
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> bytes:
         try:
             json_string = json.dumps(asdict(message), cls=MyEncoder)
-            logger.info("json is:\n" +json_string)
+            logger.debug("json is sending to client:\n" +json_string)
         except Exception as e:
             print("SHIT", e)
         if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n{message.roomID}".encode()
         if message.dataType == REGICIDE_DATATYPE.answerStatus:
-            status = message.roomData
+            status:FROZEN_STATUS_PARTLY = message.roomData  
             messageData = self._statusToStr(status)
         elif message.dataType == REGICIDE_DATATYPE.answerTalking:
             messageData = ""
@@ -206,9 +210,9 @@ class TCP_CLIENT:
         elif message.dataType == WEB_SYSTEM_DATATYPE.logInSuccess:
             messageData = ""
         elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS:
-            status:FROZEN_ROOM = message.webData
-            self.roomID = status.roomID
-            messageData = self._room_status_to_str(status)            
+            room_status:FROZEN_PLAYER_WEB_SYSTEM = message.webData
+            self.roomID = -1 if room_status.playerRoom == None else  room_status.playerRoom.roomID
+            messageData = self._room_status_to_str(room_status)            
         elif (message.roomData == None):
             messageData = ""
         else:
@@ -255,7 +259,7 @@ class TCP_CLIENT:
             re_room = ""
             re_room += f"""房间的最大人数为:{room.maxPlayer}\n"""
             re_room += f"""房间号为:{room.roomID}\n"""
-            re_room += ",".join([f"""{user["userName"]}({"已" if user["status"]==PLAYER_STATUS.IN_ROOM_PREPARED else "未"}准备)""" for user in room.playerIndexs]) + "\n"
+            re_room += ",".join([f"""{user}({"已" if status==PLAYER_STATUS.IN_ROOM_PREPARED else "未"}准备)""" for user, status in room.playerIndexs]) + "\n"
             re_room += f"""房间状态为:{room.status.name}\n"""
         re = ""
         re += f"""用户等级为:{status.playerLevel.name}\n"""
