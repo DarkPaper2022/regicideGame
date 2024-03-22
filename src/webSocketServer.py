@@ -37,7 +37,6 @@ from define_JSON_UI_1 import strToCard, ComplexFrontEncoder
 from define_JSON_UI_1 import *
 from defineRound import ROUND
 
-UI_HEIGHT = 0
 
 
 class WEBSOCKET_CLIENT:
@@ -117,9 +116,7 @@ class WEBSOCKET_CLIENT:
                     username = login_data.username
                     break
                 except (RegisterFailedError, TimeoutError) as e:
-                    await self.websocket.send(
-                        (UI_HEIGHT * "\n" + str(e) + "\n").encode()
-                    )
+                    logger.error(str(e))
                 except AuthDenial as e:
                     await self.websocket.send(
                         json.dumps(
@@ -144,13 +141,7 @@ class WEBSOCKET_CLIENT:
                         )
                     )
             else:
-                await self.websocket.send(
-                    (
-                        UI_HEIGHT * "\n"
-                        + """ "register" or "log in", no other choice """
-                        + "\n"
-                    ).encode()
-                )
+                logger.error("format")
 
         self.userName = username
         rec = asyncio.create_task(self.recvThreadFunc())
@@ -179,11 +170,7 @@ class WEBSOCKET_CLIENT:
                 else:
                     break
             except MessageFormatError as e:
-                await self.websocket.send(
-                    (
-                        UI_HEIGHT * "\n" + "Wrong Format Mesasge: 你在乱输什么啊\n"
-                    ).encode()
-                )
+                logger.error(str(e))
             except Exception as e:
                 logger.info("recvFromnetcatThread, exception Over")
                 break
@@ -262,7 +249,7 @@ class WEBSOCKET_CLIENT:
                 -1 if room_status.playerRoom == None else room_status.playerRoom.roomID
             )
         if message.roomID != self.roomID and message.roomID != -1:
-            return f"奇怪的信号?\n"
+            logger.error(f"奇怪的信号?\n")
         data = json.dumps(message, cls=ComplexFrontEncoder)
         return data
 
