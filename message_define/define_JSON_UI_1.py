@@ -141,9 +141,12 @@ def _ask_register(data: Dict[str, Any]) -> DATA_ASK_REGISTER:
 def _create_room(data: Dict[str, Any]) -> int:
     return data["maxPlayer"]
 
+def _ask_connection(data: Dict[str, Any]) -> FROZEN_GAME_TYPE:
+    return FROZEN_GAME_TYPE(name=data["gameName"], version=str(data["version"]))
 
-def _deafult_dict(data: Dict[str, Any]) -> Dict[str, Any]:
-    return data
+
+def _deafult_dict(data: Dict[str, Any]):
+    return None
 
 
 def _update_card(data: Dict[str, Any]) -> Tuple[int, ...]:
@@ -156,6 +159,7 @@ func_dict: Dict[DATATYPE, Callable] = {
     WEB_SYSTEM_DATATYPE.ASK_REGISTER: _ask_register,
     REGICIDE_DATATYPE.card: _update_card,
     WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM: _create_room,
+    WEB_SYSTEM_DATATYPE.ASK_CONNECTION:_ask_connection
 }
 
 
@@ -168,7 +172,7 @@ def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any]:
         try:
             data = func(json_dict["data"])
         except:
-            return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, json_dict)
+            return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, None)
         return (dataType, data)
     else:
-        return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, json_dict)
+        return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, None)
