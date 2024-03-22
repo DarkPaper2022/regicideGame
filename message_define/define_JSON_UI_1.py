@@ -17,7 +17,7 @@ from enum import Enum
 
 
 # arg:strip outside
-# ret:legal card
+# raise:legal card
 def strToCard(s: str) -> int:
     if s[0] in [c.name for c in COLOR]:
         color = COLOR[s[0]].value
@@ -72,25 +72,24 @@ class SimpleEncoder(json.JSONEncoder):
 class ComplexFrontEncoder(json.JSONEncoder):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.func_map: Dict[DATATYPE, Callable] = {}
+        self.func_map: Dict[DATATYPE, Callable] = {
+            WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS: self._data_helper_player_
+        }
 
     def default(self, obj):
         if isinstance(obj, Enum):
             return obj.name
         elif isinstance(obj, MESSAGE):
             message = obj
-            new_message_data = self._data_helper_default(message)
-            new_message = FirstSimplifiedMessage(
-                dataType=message.dataType, data=new_message_data
-            )
+            new_message = self._data_helper_first(message)
             return self.default(new_message)
         elif isinstance(obj, FirstSimplifiedMessage):
             func = self.func_map.get(obj.dataType, asdict)
             return func(obj)
         else:
-            return super().default(obj)
+            return super().default(obj)  # str or asdict
 
-    def _data_helper_default(self, message: MESSAGE):
+    def _data_helper_first(self, message: MESSAGE) -> FirstSimplifiedMessage:
         if message.webData == None and message.roomData == None:
             new_message_data = None
         elif message.webData == None:
@@ -102,4 +101,74 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "webData": message.webData,
                 "roomData": message.roomData,
             }
-        return new_message_data
+        return FirstSimplifiedMessage(message.dataType, new_message_data)
+
+    def _data_helper_player_(self, message: FirstSimplifiedMessage) -> Dict[str, Any]:
+        data: DATA_UPDATE_PLAYER_STATUS = message.data
+        if data.playerRoom == None:
+            data.playerRoom = {"roomID": -1}  # type:ignore
+        return asdict(message)
+
+
+translate_dict: dict[str, DATATYPE] = {
+    "ASK_LOGIN": WEB_SYSTEM_DATATYPE.ASK_LOG_IN,
+    "ASK_CONNECTION": WEB_SYSTEM_DATATYPE.ASK_CONNECTION,
+    "ASK_REGISTER": WEB_SYSTEM_DATATYPE.ASK_REGISTER,
+    "join": WEB_SYSTEM_DATATYPE.JOIN_ROOM,
+    "create": WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
+    "prepare": WEB_SYSTEM_DATATYPE.confirmPrepare,
+    "quit": WEB_SYSTEM_DATATYPE.leaveRoom,
+    "log out": WEB_SYSTEM_DATATYPE.LOG_OUT,
+    "room status": WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
+    "status": REGICIDE_DATATYPE.askStatus,
+    "talk log": REGICIDE_DATATYPE.askTalking,
+    "card": REGICIDE_DATATYPE.card,
+    "speak": REGICIDE_DATATYPE.speak,
+    "joker": REGICIDE_DATATYPE.confirmJoker,
+}
+
+
+# arg: any
+# raise: exception if format failed
+def _ask_log_in(data: Dict[str, Any]) -> DATA_ASK_LOGIN:
+    return DATA_ASK_LOGIN(username=data["username"], password=data["password"])
+
+
+def _ask_register(data: Dict[str, Any]) -> DATA_ASK_REGISTER:
+    return DATA_ASK_REGISTER(username=data["username"], password=data["password"])
+
+
+def _create_room(data: Dict[str, Any]) -> int:
+    return data["maxPlayer"]
+
+
+def _deafult_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+    return data
+
+
+def _update_card(data: Dict[str, Any]) -> Tuple[int, ...]:
+    return tuple([strToCard(card) for card in data["cards"]])
+
+
+func_dict: Dict[DATATYPE, Callable] = {
+    WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON: _deafult_dict,
+    WEB_SYSTEM_DATATYPE.ASK_LOG_IN: _ask_log_in,
+    WEB_SYSTEM_DATATYPE.ASK_REGISTER: _ask_register,
+    REGICIDE_DATATYPE.card: _update_card,
+    WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM: _create_room,
+}
+
+
+def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any]:
+    if "dataType" in json_dict:
+        dataType: DATATYPE = translate_dict.get(
+            json_dict["dataType"], WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON
+        )
+        func = func_dict.get(dataType, _deafult_dict)
+        try:
+            data = func(json_dict["data"])
+        except:
+            return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, json_dict)
+        return (dataType, data)
+    else:
+        return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, json_dict)

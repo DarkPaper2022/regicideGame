@@ -9,7 +9,7 @@ from defineWebSystemMessage import (
     WEB_SYSTEM_DATATYPE,
     ROOM_STATUS,
     DATA_UPDATE_PLAYER_STATUS,
-    FROZEN_ROOM_WEB_SYSTEM,
+    FROZEN_ROOM_STATUS_inWebSystem,
     PLAYER_STATUS,
     DINAL_TYPE,
     DATA_ANSWER_LOGIN,
@@ -110,6 +110,7 @@ class WEB:
         self.players = [None] * maxPlayer  # maxplayer 很大
         self.rooms = [None] * maxRoom
         self.sqlSystem = sqlSystem()
+        self.games = [FROZEN_GAME_TYPE("regicide", "1.1.0")]
         """
         binding     playerQueue-playerIndex-cookie-playerName
         cookie      playerName+password = cookie 
@@ -212,12 +213,12 @@ class WEB:
             frozen_room = None
         else:
             room: WEB_ROOM = self.rooms[player.playerRoom]  # type:ignore
-            frozen_room = FROZEN_ROOM_WEB_SYSTEM(
+            frozen_room = FROZEN_ROOM_STATUS_inWebSystem(
                 roomID=room.roomID,
                 maxPlayer=room.maxPlayer,
                 status=room.status,
                 playerIndexs=[
-                    FROZEN_PLAYER_STATUS_PART(
+                    FROZEN_PLAYER_STATUS_SeenInRoom(
                         self.players[index].playerName,  # type:ignore
                         self.players[index].playerStatus,  # type:ignore
                     )
@@ -233,6 +234,7 @@ class WEB:
                 playerName=player.playerName,
                 playerLevel=player.playerLevel,
                 playerRoom=frozen_room,
+                playerStatus=player.playerStatus
             ),
         )
         player.playerQueue.put_nowait(message)
@@ -508,3 +510,6 @@ class WEB:
             return PLAYER_STATUS.NONE
         else:
             return player.playerStatus
+        
+    def _check_game_vesion(self, game:FROZEN_GAME_TYPE)->bool:
+        return game in self.games

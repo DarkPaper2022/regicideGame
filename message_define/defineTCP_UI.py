@@ -1,4 +1,5 @@
-from defineRegicideMessage import FROZEN_STATUS_PARTLY, FROZEN_BOSS
+from defineRegicideMessage import FROZEN_STATUS_PARTLY, FROZEN_BOSS,REGICIDE_DATATYPE
+from defineWebSystemMessage import WEB_SYSTEM_DATATYPE,DATATYPE
 from typing import Tuple
 from defineColor import COLOR
 from defineRound import ROUND
@@ -63,3 +64,20 @@ def strToCard(b: bytes) -> int:
                 return card
         except:
             raise ValueError("输入处理出错")
+        
+        
+translate_dict:dict[str,DATATYPE] = {
+    "join":WEB_SYSTEM_DATATYPE.JOIN_ROOM,
+    "create":WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
+    "prepare":WEB_SYSTEM_DATATYPE.confirmPrepare,
+    "quit":WEB_SYSTEM_DATATYPE.leaveRoom,
+    "log out":WEB_SYSTEM_DATATYPE.LOG_OUT,
+    "room status":WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
+    
+    "status":REGICIDE_DATATYPE.askStatus,
+    "talk log":REGICIDE_DATATYPE.askTalking,
+    "card":REGICIDE_DATATYPE.card,
+    "speak":REGICIDE_DATATYPE.speak,
+    "joker":REGICIDE_DATATYPE.confirmJoker 
+}
+

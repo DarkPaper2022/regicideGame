@@ -12,27 +12,13 @@ from webSystem import WEB
 from defineRegicideMessage import TALKING_MESSAGE,\
     FROZEN_STATUS_PARTLY,REGICIDE_DATATYPE
 from defineWebSystemMessage import MESSAGE, playerWebSystemID,\
-WEB_SYSTEM_DATATYPE, DATATYPE, DATA_UPDATE_PLAYER_STATUS, FROZEN_ROOM_WEB_SYSTEM, PLAYER_STATUS
+WEB_SYSTEM_DATATYPE, DATATYPE, DATA_UPDATE_PLAYER_STATUS, FROZEN_ROOM_STATUS_inWebSystem, PLAYER_STATUS
 from dataclasses import dataclass
 from defineError import AuthDenial,MessageFormatError,RegisterFailedError
-from defineTCP_UI import cardsToStr,bossToStr,strToCard
+from defineTCP_UI import cardsToStr,bossToStr,strToCard,translate_dict
 from defineRound import ROUND
 
 UI_HEIGHT = 30
-translate_dict:dict[str,DATATYPE] = {
-    "join":WEB_SYSTEM_DATATYPE.JOIN_ROOM,
-    "create":WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
-    "prepare":WEB_SYSTEM_DATATYPE.confirmPrepare,
-    "quit":WEB_SYSTEM_DATATYPE.leaveRoom,
-    "log out":WEB_SYSTEM_DATATYPE.LOG_OUT,
-    "room status":WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
-    
-    "status":REGICIDE_DATATYPE.askStatus,
-    "talk log":REGICIDE_DATATYPE.askTalking,
-    "card":REGICIDE_DATATYPE.card,
-    "speak":REGICIDE_DATATYPE.speak,
-    "joker":REGICIDE_DATATYPE.confirmJoker 
-}
 
 #recv and send NO LOCK
 #只对socket和web的交互有线程问题、而这两个都是线程安全的

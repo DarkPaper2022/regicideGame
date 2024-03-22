@@ -18,7 +18,7 @@ from defineWebSystemMessage import (
     WEB_SYSTEM_DATATYPE,
     DATATYPE,
     DATA_UPDATE_PLAYER_STATUS,
-    FROZEN_ROOM_WEB_SYSTEM,
+    FROZEN_ROOM_STATUS_inWebSystem,
     DATA_ANSWER_LOGIN,
     DINAL_TYPE,
     DATA_ANSWER_CONNECTION,
@@ -34,32 +34,10 @@ from defineError import (
     RegisterFailedError,
 )
 from define_JSON_UI_1 import strToCard, ComplexFrontEncoder
+from define_JSON_UI_1 import *
 from defineRound import ROUND
 
-UI_HEIGHT = 30
-translate_dict: dict[str, DATATYPE] = {
-    "join": WEB_SYSTEM_DATATYPE.JOIN_ROOM,
-    "create": WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
-    "prepare": WEB_SYSTEM_DATATYPE.confirmPrepare,
-    "quit": WEB_SYSTEM_DATATYPE.leaveRoom,
-    "log out": WEB_SYSTEM_DATATYPE.LOG_OUT,
-    "room status": WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
-    "status": REGICIDE_DATATYPE.askStatus,
-    "talk log": REGICIDE_DATATYPE.askTalking,
-    "card": REGICIDE_DATATYPE.card,
-    "speak": REGICIDE_DATATYPE.speak,
-    "joker": REGICIDE_DATATYPE.confirmJoker,
-}
-
-dataType_json_key = "dataType"
-data_json_key = "data"
-cards_json_key = "cards"
-speak_json_key = "speak"
-joker_json_key = "jokerLocation"
-room_ID_json_key = "roomID"
-expected_player_max_json_key = "maxPlayer"
-error_reason_json_key = "error"
-
+UI_HEIGHT = 0
 
 
 class WEBSOCKET_CLIENT:
@@ -78,38 +56,40 @@ class WEBSOCKET_CLIENT:
         self.roomID = -1
 
     async def authThread(self):
-        await self.websocket.send(
-            json.dumps(
-                MESSAGE(
-                    roomData=None,
-                    playerID=playerWebSystemID(-1),
-                    roomID=-1,
-                    dataType=WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION,
-                    webData=DATA_ANSWER_CONNECTION(
-                        games=tuple(
-                            [FROZEN_GAME_TYPE(name="regicide", version="1.1.0")]
-                        )
-                    ),
-                ),
-                cls=ComplexFrontEncoder,
-            )
-        )
-        while True:
 
-            data = str(await self.websocket.recv())
-            if not data:
+        try:
+            await self.websocket.send(
+                json.dumps(
+                    MESSAGE(
+                        roomData=None,
+                        playerID=playerWebSystemID(-1),
+                        roomID=-1,
+                        dataType=WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION,
+                        webData=DATA_ANSWER_CONNECTION(tuple(self.web.games)),
+                    ),
+                    cls=ComplexFrontEncoder,
+                )
+            )
+            checked: bool = await self.socket_init()
+        except:
+            await self.websocket.close()
+            return
+        if not checked:
+            await self.websocket.close()
+            return
+        while True:
+            socket_data = str(await self.websocket.recv())
+            if not socket_data:
                 await self.websocket.close()
                 return
-            try:
-                data_dict = json.loads(data)
-                data_type: str = data_dict[dataType_json_key]
-            except:
-                continue
-            if data_type == "ASK_REGISTER":
+            data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
+            data_type: DATATYPE
+            if data_type == WEB_SYSTEM_DATATYPE.ASK_REGISTER:
+                reg_data: DATA_ASK_REGISTER = data
                 try:
                     self.web.PLAYER_REGISTER(
-                        playerName=data_dict[data_json_key]["username"],
-                        password=data_dict[data_json_key]["password"],
+                        playerName=reg_data.username,
+                        password=reg_data.password,
                     )
                 except:
                     await self.websocket.send(
@@ -127,13 +107,14 @@ class WEBSOCKET_CLIENT:
                             cls=ComplexFrontEncoder,
                         )
                     )
-            elif data_type == "ASK_LOGIN":
+            elif data_type == WEB_SYSTEM_DATATYPE.ASK_LOG_IN:
                 try:
+                    login_data: DATA_ASK_LOGIN = data
                     self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
-                        playerName=data_dict[data_json_key]["username"],
-                        password=data_dict[data_json_key]["password"],
+                        playerName=login_data.username,
+                        password=login_data.password,
                     )
-                    username = data_dict[data_json_key]["username"]
+                    username = login_data.username
                     break
                 except (RegisterFailedError, TimeoutError) as e:
                     await self.websocket.send(
@@ -244,28 +225,28 @@ class WEBSOCKET_CLIENT:
             return
 
     # error MessageFormatError if bytes are illegal
-    def dataToMessage(self, data: str) -> MESSAGE:
+    def dataToMessage(self, socket_data: str) -> MESSAGE:
         try:
-            data_dict = json.loads(data)
-            data_type_str = data_dict[dataType_json_key]
-            data_type = translate_dict[data_type_str]
+            data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
+            data_type: DATATYPE
             room_ID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID
             messageData = None
             web_data = None
             if data_type == REGICIDE_DATATYPE.card:
-                messageData = [
-                    strToCard(card) for card in data_dict[data_json_key][cards_json_key]
-                ]
+                card_data: Tuple[int, ...] = data
+                messageData = card_data
             elif data_type == REGICIDE_DATATYPE.speak:
-                messageData = TALKING_MESSAGE(
-                    time.time(), self.userName, data_dict[data_json_key][speak_json_key]
-                )
+                speak_data: str = data
+                messageData = TALKING_MESSAGE(time.time(), self.userName, speak_data)
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
-                messageData = data_dict[data_json_key][speak_json_key]
+                joker_data: int = data
+                messageData = joker_data
             elif data_type == WEB_SYSTEM_DATATYPE.JOIN_ROOM:
-                messageData = data_dict[data_json_key][room_ID_json_key]
+                join_data: int = data
+                messageData = join_data
             elif data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
-                web_data = data_dict[data_json_key][expected_player_max_json_key]
+                create_data: int = data
+                web_data = create_data
             else:
                 pass
         except:
@@ -284,6 +265,17 @@ class WEBSOCKET_CLIENT:
             return f"奇怪的信号?\n"
         data = json.dumps(message, cls=ComplexFrontEncoder)
         return data
+
+    async def socket_init(self) -> bool:
+        data = str(await self.websocket.recv())
+        if not data:
+            return False
+        dataType, game_and_version = json.loads(data)
+        if dataType != WEB_SYSTEM_DATATYPE.ASK_CONNECTION:
+            return False
+        else:
+            game_and_version: FROZEN_GAME_TYPE
+            return self.web._check_game_vesion(game_and_version)
 
 
 class WEBSOCKET_SERVER:

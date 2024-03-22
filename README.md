@@ -26,6 +26,24 @@
 - 有其他问题也欢迎联系本人
 
 ## json格式说明
+
+1. update
+    - 
+2. ask
+    - ask login
+    - ask register
+    - ask join room
+3. answer
+    - answer join room
+        - success: true / false
+    
+4. action
+    - leave room
+    - create room
+    - change prepare
+    - log out
+
+
 - 客户端发送信息:
     ```json
         {

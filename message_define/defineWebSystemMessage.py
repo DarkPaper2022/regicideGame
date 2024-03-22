@@ -33,7 +33,12 @@ class PLAYER_STATUS(Enum):
 
 
 class WEB_SYSTEM_DATATYPE(Enum):
+
+    ILLEAGAL_JSON = 200
     UPDATE_PLAYER_STATUS = 0
+    ASK_LOG_IN = 149
+    ASK_REGISTER = 148
+    ASK_CONNECTION = 147
     ANSWER_LOGIN = 150
     ANSWER_REGISTER = 151
     ANSWER_JOIN_ROOM = 152
@@ -75,15 +80,17 @@ DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
 
 
 @dataclass
-class DATA_ANSWER_LOGIN:
-    success: bool
-    error: Optional[DINAL_TYPE]
+class FROZEN_PLAYER_STATUS_SeenInRoom:
+    name: str
+    status: PLAYER_STATUS
 
 
 @dataclass
-class DATA_ANSWER_REGISTER:
-    success: bool
-    error: Optional[DINAL_TYPE]
+class FROZEN_ROOM_STATUS_inWebSystem:
+    roomID: int
+    playerIndexs: List[FROZEN_PLAYER_STATUS_SeenInRoom]
+    maxPlayer: int
+    status: ROOM_STATUS
 
 
 @dataclass
@@ -93,29 +100,40 @@ class FROZEN_GAME_TYPE:
 
 
 @dataclass
+class DATA_ANSWER_LOGIN:
+    success: bool
+    error: Optional[DINAL_TYPE]
+
+
+@dataclass
+class DATA_ASK_LOGIN:
+    username: str
+    password: str
+
+
+@dataclass
+class DATA_ASK_REGISTER:
+    username: str
+    password: str
+
+
+@dataclass
+class DATA_ANSWER_REGISTER:
+    success: bool
+    error: Optional[DINAL_TYPE]
+
+
+@dataclass
 class DATA_ANSWER_CONNECTION:
     games: Tuple[FROZEN_GAME_TYPE, ...]
 
 
 @dataclass
-class FROZEN_PLAYER_STATUS_PART:
-    name: str
-    status: PLAYER_STATUS
-
-
-@dataclass
-class FROZEN_ROOM_WEB_SYSTEM:
-    roomID: int
-    playerIndexs: List[FROZEN_PLAYER_STATUS_PART]
-    maxPlayer: int
-    status: ROOM_STATUS
-
-
-@dataclass
 class DATA_UPDATE_PLAYER_STATUS:
     playerName: str
-    playerRoom: Optional[FROZEN_ROOM_WEB_SYSTEM]
+    playerRoom: Optional[FROZEN_ROOM_STATUS_inWebSystem]
     playerLevel: PLAYER_LEVEL
+    playerStatus: PLAYER_STATUS
 
 
 @dataclass(frozen=False)

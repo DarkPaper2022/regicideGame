@@ -9,7 +9,7 @@
 
 
 ## findEmptyRoom
-[get] /regicide/api/user/userID
+    [get] /regicide/api/user/userID
 
 ## joinRoom
 [post] /regicide/api/user/userID
