@@ -426,13 +426,13 @@ class ROOM:
                         cardHeapLength=len(self.cardHeap),
                         defeatedBosses=tuple(self.discardBossHeap),
                         discardHeapLength=len(self.discardHeap),
-                        elsedata=0)
+                        elsedata=None)
         else:
             l = self.playerList
             status = None
         retMessage:MESSAGE = MESSAGE(roomID=self.roomIndex, 
                                      playerID=self.playerList[playerLocation].webSystemID, 
-                                     dataType=REGICIDE_DATATYPE.answerStatus, 
+                                     dataType=REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS, 
                                      roomData=status,
                                      webData=None)
         self.mainSend(retMessage)

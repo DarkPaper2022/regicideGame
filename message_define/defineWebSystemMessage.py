@@ -1,5 +1,5 @@
 from dataclasses import dataclass,field
-from typing import Any,List,Tuple,Union,NewType,Dict
+from typing import Any,List,Tuple,Union,NewType,Dict,Optional
 from defineColor import COLOR
 from defineRound import ROUND
 from enum import Enum
@@ -19,7 +19,6 @@ class ROOM_STATUS(Enum):
     running = 1
     broken = 2
 
-#only 
 class PLAYER_STATUS(Enum):
     NONE = -1
     ROOM_IS_NONE = 0
@@ -29,11 +28,11 @@ class PLAYER_STATUS(Enum):
     IN_ROOM_ZOMBIE=4
 
 class WEB_SYSTEM_DATATYPE(Enum):
-    UPDATE_ROOM_STATUS = 0
-
+    UPDATE_PLAYER_STATUS = 0
     ANSWER_LOGIN = 150
     ANSWER_REGISTER = 151
     ANSWER_JOIN_ROOM = 152
+    ANSWER_CONNECTION = 153
     HALL_CREATE_ROOM = 120
     PLAYER_CREATE_ROOM = 118     
     #to Hall to start a thread
@@ -61,18 +60,47 @@ class WEB_SYSTEM_DATATYPE(Enum):
     
     HE_IS_A_ZOMBIE = 104
 
+class DINAL_TYPE(Enum):
+    LOGIN_PASSWORD_WRONG = 0
+    LOGIN_USERNAME_NOT_FOUND = 1
+
 DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
 
 @dataclass
-class FROZEN_ROOM:
+class DATA_ANSWER_LOGIN:
+    success:bool
+    error:Optional[DINAL_TYPE]
+
+@dataclass
+class DATA_ANSWER_REGISTER:
+    success:bool
+    error:Optional[DINAL_TYPE]
+    
+@dataclass
+class FROZEN_GAME_TYPE:
+    name:str
+    version:str
+
+@dataclass
+class DATA_ANSWER_CONNECTION:
+    games:Tuple[FROZEN_GAME_TYPE,...]
+
+@dataclass
+class FROZEN_PLAYER_STATUS_PART:
+    name:str
+    status:PLAYER_STATUS
+
+@dataclass
+class FROZEN_ROOM_WEB_SYSTEM:
     roomID:int
-    playerIndexs:List[Tuple[str,PLAYER_STATUS]]
+    playerIndexs:List[FROZEN_PLAYER_STATUS_PART]
     maxPlayer:int
     status:ROOM_STATUS
+    
 @dataclass
-class FROZEN_PLAYER_WEB_SYSTEM:
+class DATA_UPDATE_PLAYER_STATUS:
     playerName:str
-    playerRoom:Union[FROZEN_ROOM,None]
+    playerRoom:Optional[FROZEN_ROOM_WEB_SYSTEM]
     playerLevel:PLAYER_LEVEL
 @dataclass(frozen=False)
 class MESSAGE:

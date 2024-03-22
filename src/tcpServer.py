@@ -2,7 +2,7 @@ import socket
 import uuid
 import random
 import json
-from define_JSON_UI import SimpleEncoder
+from define_JSON_UI import SimpleEncoder,ComplexEncoder
 import asyncio
 import time
 from dataclasses import asdict
@@ -12,7 +12,7 @@ from webSystem import WEB
 from defineRegicideMessage import TALKING_MESSAGE,\
     FROZEN_STATUS_PARTLY,REGICIDE_DATATYPE
 from defineWebSystemMessage import MESSAGE, playerWebSystemID,\
-WEB_SYSTEM_DATATYPE, DATATYPE, FROZEN_PLAYER_WEB_SYSTEM, FROZEN_ROOM, PLAYER_STATUS
+WEB_SYSTEM_DATATYPE, DATATYPE, DATA_UPDATE_PLAYER_STATUS, FROZEN_ROOM_WEB_SYSTEM, PLAYER_STATUS
 from dataclasses import dataclass
 from defineError import AuthDenial,MessageFormatError,RegisterFailedError
 from defineTCP_UI import cardsToStr,bossToStr,strToCard
@@ -25,7 +25,7 @@ translate_dict:dict[str,DATATYPE] = {
     "prepare":WEB_SYSTEM_DATATYPE.confirmPrepare,
     "quit":WEB_SYSTEM_DATATYPE.leaveRoom,
     "log out":WEB_SYSTEM_DATATYPE.LOG_OUT,
-    "room status":WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS,
+    "room status":WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
     
     "status":REGICIDE_DATATYPE.askStatus,
     "talk log":REGICIDE_DATATYPE.askTalking,
@@ -172,21 +172,23 @@ class TCP_CLIENT:
             raise MessageFormatError("Fuck you!")
         message = MESSAGE(roomID,self.playerIndex, data_type, messageData, web_data)
         try:
-            json_string = json.dumps(asdict(message), cls=SimpleEncoder)
-            logger.debug("json is sending to room:\n" +json_string)
+            from define_copy_memory import save_dataclass_to_file
+            save_dataclass_to_file(message)
+            #logger.debug("json is sending to room:\n" + str(asdict(message)))
         except Exception as e:
-            print("SHIT", e)
+            logger.error("SHIT"+str(e))
         return message
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> bytes:
         try:
-            json_string = json.dumps(asdict(message), cls=SimpleEncoder)
-            logger.debug("json is sending to client:\n" +json_string)
+            from define_copy_memory import save_dataclass_to_file
+            save_dataclass_to_file(message)
+            #logger.debug("json is sending to client:\n" + str(asdict(message)))
         except Exception as e:
-            print("SHIT", e)
+            logger.error("SHIT"+str(e))
         if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n{message.roomID}".encode()
-        if message.dataType == REGICIDE_DATATYPE.answerStatus:
+        if message.dataType == REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS:
             status:FROZEN_STATUS_PARTLY = message.roomData  
             messageData = self._statusToStr(status)
         elif message.dataType == REGICIDE_DATATYPE.answerTalking:
@@ -204,9 +206,9 @@ class TCP_CLIENT:
         elif message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong or message.dataType == WEB_SYSTEM_DATATYPE.leaveRoom:
             messageData = "你被顶号了,要不要顶回来试试?\n"
         elif message.dataType == WEB_SYSTEM_DATATYPE.ANSWER_LOGIN:
-            messageData = f"""你登录{"成功" if message.webData else "失败"} 了\n"""
-        elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS:
-            room_status:FROZEN_PLAYER_WEB_SYSTEM = message.webData
+            messageData = f"""你登录{"成功" if message.webData.success else "失败"} 了\n"""
+        elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
+            room_status:DATA_UPDATE_PLAYER_STATUS = message.webData
             self.roomID = -1 if room_status.playerRoom == None else  room_status.playerRoom.roomID
             messageData = self._room_status_to_str(room_status)            
         elif (message.roomData == None):
@@ -247,7 +249,7 @@ class TCP_CLIENT:
         currentBossStr = bossToStr(status.currentBoss)
         re:str = cardHeapLengthStr + discardHeapLengthStr + disCardHeapStr + atkCardHeapStr + defeatedBossesStr + playersStr + currentPlayerAndRoundStr + yourCardsStr + currentBossStr 
         return re
-    def _room_status_to_str(self, status:FROZEN_PLAYER_WEB_SYSTEM)->str:
+    def _room_status_to_str(self, status:DATA_UPDATE_PLAYER_STATUS)->str:
         room = status.playerRoom
         if room == None:
             re_room = "您不在房里\n"
@@ -255,7 +257,7 @@ class TCP_CLIENT:
             re_room = ""
             re_room += f"""房间的最大人数为:{room.maxPlayer}\n"""
             re_room += f"""房间号为:{room.roomID}\n"""
-            re_room += ",".join([f"""{user}({"已" if status==PLAYER_STATUS.IN_ROOM_PREPARED else "未"}准备)""" for user, status in room.playerIndexs]) + "\n"
+            re_room += ",".join([f"""{s.name}({"已" if s.status==PLAYER_STATUS.IN_ROOM_PREPARED else "未"}准备)""" for s in room.playerIndexs]) + "\n"
             re_room += f"""房间状态为:{room.status.name}\n"""
         re = ""
         re += f"""用户等级为:{status.playerLevel.name}\n"""

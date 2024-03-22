@@ -3,7 +3,9 @@ import math
 from dataclasses import dataclass
 from defineRegicideMessage import GAME_SETTINGS
 from defineWebSystemMessage import MESSAGE, playerWebSystemID,\
-PLAYER_LEVEL,WEB_SYSTEM_DATATYPE,ROOM_STATUS,FROZEN_PLAYER_WEB_SYSTEM,FROZEN_ROOM,PLAYER_STATUS
+PLAYER_LEVEL,WEB_SYSTEM_DATATYPE,ROOM_STATUS,DATA_UPDATE_PLAYER_STATUS,\
+FROZEN_ROOM_WEB_SYSTEM,PLAYER_STATUS,DINAL_TYPE,DATA_ANSWER_LOGIN
+from defineWebSystemMessage import *
 from defineError import AuthDenial,PlayerNumError,ServerBusyError,RoomError,RegisterFailedError,PasswordWrongDenial,UserNameNotFoundDenial
 from myLockQueue import myLockQueue as LockQueue
 from collections import deque
@@ -113,7 +115,7 @@ class WEB:
                     except Exception as e:
                         #TODO
                         pass
-                elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS:
+                elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
                     pass
                 elif message.dataType == WEB_SYSTEM_DATATYPE.leaveRoom:
                     self.player_quit_room(message.playerID)
@@ -181,15 +183,15 @@ class WEB:
             frozen_room = None
         else:
             room:WEB_ROOM = self.rooms[player.playerRoom] #type:ignore
-            frozen_room = FROZEN_ROOM(
+            frozen_room = FROZEN_ROOM_WEB_SYSTEM(
                 roomID=room.roomID,
                 maxPlayer=room.maxPlayer,
                 status=room.status,
-                playerIndexs=[(self.players[index].playerName ,self.players[index].playerStatus) for index in room.playerIndexs]    #type:ignore
+                playerIndexs=[FROZEN_PLAYER_STATUS_PART(self.players[index].playerName ,self.players[index].playerStatus) for index in room.playerIndexs]    #type:ignore
             )
         message = MESSAGE(
-            -1,systemID,WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS,None,
-            FROZEN_PLAYER_WEB_SYSTEM(
+            -1,systemID,WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,None,
+            DATA_UPDATE_PLAYER_STATUS(
                 playerName=player.playerName,
                 playerLevel=player.playerLevel,
                 playerRoom=frozen_room))
@@ -231,7 +233,10 @@ class WEB:
                 -1, systemID, 
                 WEB_SYSTEM_DATATYPE.ANSWER_LOGIN,
                 None,
-                webData = True
+                webData = DATA_ANSWER_LOGIN(
+                    success=False,
+                    error = None
+                )
             )
             player.playerQueue.put_nowait(message)
             self.player_send_room_status(systemID)

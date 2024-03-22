@@ -3,7 +3,8 @@ from defineWebSystemMessage import MESSAGE,DATATYPE,WEB_SYSTEM_DATATYPE,REGICIDE
 from typing import Tuple,Any
 from defineColor import COLOR
 from defineRound import ROUND
-from dataclasses import dataclass
+from dataclasses import dataclass,asdict
+from myLogger import logger
 import math
 import json
 from enum import Enum
@@ -59,14 +60,14 @@ class ComplexEncoder(json.JSONEncoder):
             return obj.name
         elif isinstance(obj, MESSAGE):
             message = obj
-            if message.dataType in [WEB_SYSTEM_DATATYPE.ANSWER_LOGIN]:
-                new_message_data = self._data_helper_answer(message.webData)
-            else:
-                new_message_data = self._data_helper_default(message)
+            new_message_data = self._data_helper_default(message)
             new_message = SimplifiedMessage(dataType=message.dataType,
                                             data=new_message_data)
-            return self.default(new_message_data)
-        return super().default(obj)
+            return self.default(new_message)
+        elif isinstance(obj, SimplifiedMessage):
+            return asdict(obj)
+        else:
+            return super().default(obj)
     def _data_helper_default(self, message:MESSAGE):
         if message.webData == None and message.roomData == None:
             new_message_data = None
@@ -79,7 +80,4 @@ class ComplexEncoder(json.JSONEncoder):
                 "webData":message.webData,
                 "roomData":message.roomData
             }
-        return new_message_data
-    def _data_helper_answer(self, webData:Any):
-        new_message_data = {"success":webData}
         return new_message_data

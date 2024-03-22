@@ -10,10 +10,11 @@ from webSystem import WEB
 from defineRegicideMessage import TALKING_MESSAGE,\
     FROZEN_STATUS_PARTLY,REGICIDE_DATATYPE
 from defineWebSystemMessage import MESSAGE, playerWebSystemID,\
-WEB_SYSTEM_DATATYPE, DATATYPE, FROZEN_PLAYER_WEB_SYSTEM, FROZEN_ROOM
+WEB_SYSTEM_DATATYPE, DATATYPE, DATA_UPDATE_PLAYER_STATUS, FROZEN_ROOM_WEB_SYSTEM,\
+DATA_ANSWER_LOGIN,DINAL_TYPE,DATA_ANSWER_CONNECTION,DATA_ANSWER_REGISTER,FROZEN_GAME_TYPE
 from dataclasses import dataclass
 from defineError import AuthDenial,MessageFormatError,UserNameNotFoundDenial,PasswordWrongDenial,RegisterFailedError
-from define_JSON_UI import strToCard,ComplexEncoder
+from define_JSON_UI import strToCard,ComplexEncoder,SimplifiedMessage
 from defineRound import ROUND
 
 UI_HEIGHT = 30
@@ -23,7 +24,7 @@ translate_dict:dict[str,DATATYPE] = {
     "prepare":WEB_SYSTEM_DATATYPE.confirmPrepare,
     "quit":WEB_SYSTEM_DATATYPE.leaveRoom,
     "log out":WEB_SYSTEM_DATATYPE.LOG_OUT,
-    "room status":WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS,
+    "room status":WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
     
     "status":REGICIDE_DATATYPE.askStatus,
     "talk log":REGICIDE_DATATYPE.askTalking,
@@ -62,15 +63,15 @@ class WEBSOCKET_CLIENT:
         if not data:
             await self.websocket.close()
             return"""
-        await self.websocket.send(json.dumps({
-            "dataType":"ANSWER_CONNECTION",
-            "data":{
-                "games":[{
-                    "name":"regicide",
-                    "vesion":"1.0.0"
-                }]
-            }
-        }))
+        await self.websocket.send(json.dumps(
+            SimplifiedMessage(
+                dataType=WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION,
+                data=DATA_ANSWER_CONNECTION(
+                    games=tuple([FROZEN_GAME_TYPE(
+                        name="regicide",
+                        version="1.1.0"
+                        )]))
+            ),cls=ComplexEncoder))
         while True:
 
             data = str(await self.websocket.recv())
@@ -88,12 +89,10 @@ class WEBSOCKET_CLIENT:
                         playerName=data_dict[data_json_key]["username"],
                         password=data_dict[data_json_key]["password"])
                 except:
-                    await self.websocket.send(json.dumps({
-                        "dataType":"ANSWER_REGISTER",
-                        "data":{
-                            "success":False
-                        }
-                    }))
+                    await self.websocket.send(json.dumps(
+                        SimplifiedMessage(
+                            dataType=WEB_SYSTEM_DATATYPE.ANSWER_REGISTER,
+                            data={}),cls=ComplexEncoder))
             elif data_type == "ASK_LOGIN":
                 try:
                     self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
@@ -104,13 +103,15 @@ class WEBSOCKET_CLIENT:
                 except (RegisterFailedError,TimeoutError) as e:
                     await self.websocket.send((UI_HEIGHT*"\n"+str(e)+"\n").encode())
                 except AuthDenial as e:
-                    await self.websocket.send(json.dumps({
-                        "dataType":"ANSWER_LOGIN",
-                        "data":{
-                            "success":False,
-                            error_reason_json_key:str(e)
-                        }
-                    }))             
+                    await self.websocket.send(json.dumps(SimplifiedMessage(
+                        dataType=WEB_SYSTEM_DATATYPE.ANSWER_LOGIN,
+                        data=DATA_ANSWER_LOGIN(
+                            success=False,
+                            error = DINAL_TYPE.LOGIN_PASSWORD_WRONG if isinstance(e, PasswordWrongDenial) else
+                                    DINAL_TYPE.LOGIN_PASSWORD_WRONG if isinstance(e, PasswordWrongDenial) else 
+                                    None
+                        )
+                    )))             
             else:
                 await self.websocket.send((UI_HEIGHT*"\n"+""" "register" or "log in", no other choice """+"\n").encode())
         
@@ -203,8 +204,8 @@ class WEBSOCKET_CLIENT:
     
     #Warning: not math function, self.room changed here 
     def messageToData(self, message:MESSAGE) -> str:
-        if message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_ROOM_STATUS:
-            room_status:FROZEN_PLAYER_WEB_SYSTEM = message.webData
+        if message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
+            room_status:DATA_UPDATE_PLAYER_STATUS = message.webData
             self.roomID = -1 if room_status.playerRoom == None else room_status.playerRoom.roomID
         if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n"

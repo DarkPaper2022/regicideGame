@@ -86,6 +86,6 @@ recieve:{rows}""")
 
 if __name__ == "__main__":
     s = sqlSystem()
-    s.adminRegister("a","a")
+    s.adminRegister("b","b")
     #ree,l = s.checkPassword("darkpaper","114514")
     s.end()
