@@ -73,21 +73,64 @@ class ComplexFrontEncoder(json.JSONEncoder):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.func_map: Dict[DATATYPE, Callable] = {
-            WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS: self._data_helper_player_
+            WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS: self.default,
+            WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION: lambda x:{},
+            WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE: lambda x:{},
+        }
+        self.my_enum_map: Dict[Enum, str] = {
+            WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS: "UPDATE_ROOM_STATUS"
         }
 
     def default(self, obj):
-        if isinstance(obj, Enum):
-            return obj.name
-        elif isinstance(obj, MESSAGE):
+        logger.debug(obj)
+        if isinstance(obj, MESSAGE):
             message = obj
             new_message = self._data_helper_first(message)
             return self.default(new_message)
         elif isinstance(obj, FirstSimplifiedMessage):
-            func = self.func_map.get(obj.dataType, asdict)
-            return func(obj)
+            if obj.dataType in self.func_map:
+                func = self.func_map[obj.dataType]
+                return {"dataType": self.default(obj.dataType), "data": func(obj.data)}
+            else:
+                return asdict(obj)
+
+        elif isinstance(obj, Enum):
+            return self.my_enum_map.get(obj, obj.name)
+        elif isinstance(obj, int):
+            return obj
+        elif isinstance(obj, bool):
+            return obj
+        elif isinstance(obj, str):
+            return obj
+        elif obj == None:
+            return {}
+        elif isinstance(obj, List):
+            return [self.default(i) for i in obj]
+
+        elif isinstance(obj, DATA_UPDATE_PLAYER_STATUS):
+            if obj.playerRoom == None:
+                return {"roomID": -1}
+            else:
+                return self.default(obj.playerRoom)
+        elif isinstance(obj, DATA_ANSWER_LOGIN):
+            return {"success":obj.success}
+        elif isinstance(obj, DATA_ANSWER_REGISTER):
+            return {"success":obj.success}
+        elif isinstance(obj, DATA_ANSWER_JOINROOM):
+            return {"success":obj.success}
+        elif isinstance(obj, FROZEN_ROOM_STATUS_inWebSystem):
+            return {
+                "roomID": obj.roomID,
+                "maxPlayer": obj.maxPlayer,
+                "playerList": self.default(obj.playerIndexs),
+            }
+        elif isinstance(obj, FROZEN_PLAYER_STATUS_SeenInRoom):
+            return {
+                "playerName": obj.name,
+                "playerPrepared": obj.status == PLAYER_STATUS.IN_ROOM_PREPARED,
+            }
         else:
-            return super().default(obj)  # str or asdict
+            return asdict(obj)
 
     def _data_helper_first(self, message: MESSAGE) -> FirstSimplifiedMessage:
         if message.webData == None and message.roomData == None:
@@ -103,20 +146,14 @@ class ComplexFrontEncoder(json.JSONEncoder):
             }
         return FirstSimplifiedMessage(message.dataType, new_message_data)
 
-    def _data_helper_player_(self, message: FirstSimplifiedMessage) -> Dict[str, Any]:
-        data: DATA_UPDATE_PLAYER_STATUS = message.data
-        if data.playerRoom == None:
-            data.playerRoom = {"roomID": -1}  # type:ignore
-        return asdict(message)
-
 
 translate_dict: dict[str, DATATYPE] = {
     "ASK_LOGIN": WEB_SYSTEM_DATATYPE.ASK_LOG_IN,
     "ASK_CONNECTION": WEB_SYSTEM_DATATYPE.ASK_CONNECTION,
     "ASK_REGISTER": WEB_SYSTEM_DATATYPE.ASK_REGISTER,
-    "join": WEB_SYSTEM_DATATYPE.JOIN_ROOM,
-    "create": WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
-    "prepare": WEB_SYSTEM_DATATYPE.confirmPrepare,
+    "ASK_JOIN_ROOM": WEB_SYSTEM_DATATYPE.JOIN_ROOM,
+    "ACTION_CREATE_ROOM": WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
+    "prepare": WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE,
     "quit": WEB_SYSTEM_DATATYPE.leaveRoom,
     "log out": WEB_SYSTEM_DATATYPE.LOG_OUT,
     "room status": WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
@@ -141,6 +178,7 @@ def _ask_register(data: Dict[str, Any]) -> DATA_ASK_REGISTER:
 def _create_room(data: Dict[str, Any]) -> int:
     return data["maxPlayer"]
 
+
 def _ask_connection(data: Dict[str, Any]) -> FROZEN_GAME_TYPE:
     return FROZEN_GAME_TYPE(name=data["gameName"], version=str(data["version"]))
 
@@ -159,11 +197,12 @@ func_dict: Dict[DATATYPE, Callable] = {
     WEB_SYSTEM_DATATYPE.ASK_REGISTER: _ask_register,
     REGICIDE_DATATYPE.card: _update_card,
     WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM: _create_room,
-    WEB_SYSTEM_DATATYPE.ASK_CONNECTION:_ask_connection
+    WEB_SYSTEM_DATATYPE.ASK_CONNECTION: _ask_connection,
 }
 
 
-def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any]:
+def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any] | Dict[str, Any]:
+    logger.debug("i get json:" + str(json_dict))
     if "dataType" in json_dict:
         dataType: DATATYPE = translate_dict.get(
             json_dict["dataType"], WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON
@@ -175,4 +214,4 @@ def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any]:
             return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, None)
         return (dataType, data)
     else:
-        return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, None)
+        return json_dict

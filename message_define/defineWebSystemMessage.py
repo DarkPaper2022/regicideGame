@@ -52,7 +52,7 @@ class WEB_SYSTEM_DATATYPE(Enum):
     # to client
     # client should relog to deal with it
 
-    confirmPrepare = 114
+    ACTION_CHANGE_PREPARE = 114
     # from client or from web
     # to let the hall know you are prepared
 
@@ -119,6 +119,11 @@ class DATA_ASK_REGISTER:
 
 @dataclass
 class DATA_ANSWER_REGISTER:
+    success: bool
+    error: Optional[DINAL_TYPE]
+    
+@dataclass
+class DATA_ANSWER_JOINROOM:
     success: bool
     error: Optional[DINAL_TYPE]
 

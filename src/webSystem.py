@@ -126,8 +126,8 @@ class WEB:
                     self._room_destruct(message.roomID)
 
             elif message.roomID == -1:
-                if message.dataType == WEB_SYSTEM_DATATYPE.confirmPrepare:
-                    self.player_confirm_prepare(message.playerID)
+                if message.dataType == WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE:
+                    self.player_reverse_prepare(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                     room_ID = self.player_create_room(message.playerID, message.webData)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.JOIN_ROOM:
@@ -280,7 +280,7 @@ class WEB:
                 systemID,
                 WEB_SYSTEM_DATATYPE.ANSWER_LOGIN,
                 None,
-                webData=DATA_ANSWER_LOGIN(success=False, error=None),
+                webData=DATA_ANSWER_LOGIN(success=True, error=None),
             )
             player.playerQueue.put_nowait(message)
             self.player_send_room_status(systemID)
@@ -309,17 +309,7 @@ class WEB:
             raise IndexError("错误的房间喵喵")  # index error
 
         if room == None:
-            room = self._room_construst(roomIndex)
-            self.rooms[roomIndex] = room
-            self.hallQueue.put_nowait(
-                MESSAGE(
-                    -1,
-                    playerWebSystemID(-1),
-                    WEB_SYSTEM_DATATYPE.HALL_CREATE_ROOM,
-                    roomIndex,
-                    None,
-                )
-            )
+            raise RoomError("")  # room error
         self._room_join_in_system(roomIndex, systemID)  # room error
         player.playerRoom = roomIndex
         player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
@@ -332,25 +322,31 @@ class WEB:
     # arg:   systemID should in [0,MAX)
     # arg:   status should be in_room_not_prepared
     # raise: no error even status is not satisfied
-    def player_confirm_prepare(self, systemID: playerWebSystemID):
-        if self._status(systemID) != PLAYER_STATUS.IN_ROOM_NOT_PREPARED:
+    def player_reverse_prepare(self, systemID: playerWebSystemID):
+        if self._status(systemID) == PLAYER_STATUS.IN_ROOM_PREPARED:
+            player: WEB_PLAYER = self.players[systemID]  # type:ignore
+            player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
             return
-        player: WEB_PLAYER = self.players[systemID]  # type:ignore
-        room: WEB_ROOM = self.rooms[player.playerRoom]  # type:ignore
-        cnt = 0
-        player.playerStatus = PLAYER_STATUS.IN_ROOM_PREPARED
-        for a_systemID in room.playerIndexs:
-            if (
-                self.players[a_systemID].playerStatus  # type:ignore
-                == PLAYER_STATUS.IN_ROOM_PREPARED  # type:ignore
-            ):
-                cnt += 1
+        elif self._status(systemID) == PLAYER_STATUS.IN_ROOM_NOT_PREPARED:
+            player: WEB_PLAYER = self.players[systemID]  # type:ignore
+            room: WEB_ROOM = self.rooms[player.playerRoom]  # type:ignore
 
-        if (
-            cnt == self._room_ID_to_Max_player(room.roomID)
-            and room.status == ROOM_STATUS.preparing
-        ):
-            self.room_run(room.roomID)
+            player.playerStatus = PLAYER_STATUS.IN_ROOM_PREPARED
+            cnt = 0
+            for a_systemID in room.playerIndexs:
+                if (
+                    self.players[a_systemID].playerStatus  # type:ignore
+                    == PLAYER_STATUS.IN_ROOM_PREPARED  # type:ignore
+                ):
+                    cnt += 1
+
+            if (
+                cnt == self._room_ID_to_Max_player(room.roomID)
+                and room.status == ROOM_STATUS.preparing
+            ):
+                self.room_run(room.roomID)
+        else:
+            pass
 
     # arg:   room is preparing
     # raise: assertion or attribute error
@@ -392,7 +388,40 @@ class WEB:
     ) -> int:
         assert self._status(systemID) == PLAYER_STATUS.ROOM_IS_NONE
         room_ID = self._find_empty_room(expectedRoomMax)
-        self.player_join_room(systemID, room_ID)
+        player = self.players[systemID]
+
+        try:
+            assert player != None
+            assert player.playerRoom == None
+        except:
+            raise Exception("加你大爷")
+
+        # get the room
+        if room_ID >= 0 and room_ID <= self.maxRoom:
+            room = self.rooms[room_ID]
+        else:
+            raise IndexError("错误的房间喵喵")  # index error
+
+        room = self._room_construst(room_ID)
+        self.rooms[room_ID] = room
+        self.hallQueue.put_nowait(
+            MESSAGE(
+                -1,
+                playerWebSystemID(-1),
+                WEB_SYSTEM_DATATYPE.HALL_CREATE_ROOM,
+                room_ID,
+                None,
+            )
+        )
+        self._room_join_in_system(room_ID, systemID)  # no room error, here
+        player.playerRoom = room_ID
+        player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
+        player.playerQueue.put_nowait(
+            MESSAGE(
+                -1, systemID, WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM, None, webData=True
+            )
+        )
+
         return room_ID
 
     # arg:   systemID should in [0,MAX)

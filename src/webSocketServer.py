@@ -38,7 +38,6 @@ from define_JSON_UI_1 import *
 from defineRound import ROUND
 
 
-
 class WEBSOCKET_CLIENT:
     websocket: WebSocketServerProtocol
     playerIndex: playerWebSystemID
@@ -70,10 +69,12 @@ class WEBSOCKET_CLIENT:
                 )
             )
             checked: bool = await self.socket_init()
-        except:
+        except Exception as e:
+            logger.info(e)
             await self.websocket.close()
             return
         if not checked:
+            logger.info("checked")
             await self.websocket.close()
             return
         while True:
@@ -255,9 +256,10 @@ class WEBSOCKET_CLIENT:
 
     async def socket_init(self) -> bool:
         data = str(await self.websocket.recv())
+        logger.debug("i get json str" + data)
         if not data:
             return False
-        dataType, game_and_version = json.loads(data)
+        dataType, game_and_version = json.loads(data, object_hook=json_1_obj_hook)
         if dataType != WEB_SYSTEM_DATATYPE.ASK_CONNECTION:
             return False
         else:
@@ -287,6 +289,7 @@ class WEBSOCKET_SERVER:
                     lambda websocket: tcpClientHandler(websocket, self.web),
                     self.SERVER_HOST,
                     self.SERVER_PORT,
+                    reuse_address=True,
                 ):
                     print(f"""serving on {self.SERVER_HOST}:{self.SERVER_PORT}""")
                     await asyncio.Future()

@@ -20,11 +20,11 @@ async def logggggg(yes):
 try:    
     port_ws = int(sys.argv[1])
 except:
-    port_ws = 6000 + random.randint(0,9)
+    port_ws = 6000
 try:    
     port_tcp = int(sys.argv[2])
 except:
-    port_tcp = 7000 + random.randint(0,9)
+    port_tcp = 7000
 UserMax,RoomMax = 100,1000
 web = WEB(UserMax,RoomMax)
 loop = asyncio.get_event_loop()

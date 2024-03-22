@@ -69,7 +69,7 @@ def strToCard(b: bytes) -> int:
 translate_dict:dict[str,DATATYPE] = {
     "join":WEB_SYSTEM_DATATYPE.JOIN_ROOM,
     "create":WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
-    "prepare":WEB_SYSTEM_DATATYPE.confirmPrepare,
+    "prepare":WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE,
     "quit":WEB_SYSTEM_DATATYPE.leaveRoom,
     "log out":WEB_SYSTEM_DATATYPE.LOG_OUT,
     "room status":WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
