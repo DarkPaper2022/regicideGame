@@ -234,7 +234,7 @@ class WEB:
                 playerName=player.playerName,
                 playerLevel=player.playerLevel,
                 playerRoom=frozen_room,
-                playerStatus=player.playerStatus
+                playerStatus=player.playerStatus,
             ),
         )
         player.playerQueue.put_nowait(message)
@@ -510,6 +510,6 @@ class WEB:
             return PLAYER_STATUS.NONE
         else:
             return player.playerStatus
-        
-    def _check_game_vesion(self, game:FROZEN_GAME_TYPE)->bool:
-        return game in self.games
+
+    def _check_game_vesion(self, game: FROZEN_GAME_TYPE) -> bool:
+        return game.name in [game.name for game in self.games]
