@@ -5,7 +5,8 @@ from defineWebSystemMessage import (
     WEB_SYSTEM_DATATYPE,
     REGICIDE_DATATYPE,
 )
-from typing import Tuple, Any
+from defineWebSystemMessage import *
+from typing import Tuple, Any, Callable
 from defineColor import COLOR
 from defineRound import ROUND
 from dataclasses import dataclass, asdict
@@ -56,7 +57,7 @@ def strToCard(s: str) -> int:
 
 
 @dataclass
-class SimplifiedMessage:
+class FirstSimplifiedMessage:
     dataType: DATATYPE
     data: Any
 
@@ -69,18 +70,23 @@ class SimpleEncoder(json.JSONEncoder):
 
 
 class ComplexFrontEncoder(json.JSONEncoder):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.func_map: Dict[DATATYPE, Callable] = {}
+
     def default(self, obj):
         if isinstance(obj, Enum):
             return obj.name
         elif isinstance(obj, MESSAGE):
             message = obj
             new_message_data = self._data_helper_default(message)
-            new_message = SimplifiedMessage(
+            new_message = FirstSimplifiedMessage(
                 dataType=message.dataType, data=new_message_data
             )
             return self.default(new_message)
-        elif isinstance(obj, SimplifiedMessage):
-            return asdict(obj)
+        elif isinstance(obj, FirstSimplifiedMessage):
+            func = self.func_map.get(obj.dataType, asdict)
+            return func(obj)
         else:
             return super().default(obj)
 

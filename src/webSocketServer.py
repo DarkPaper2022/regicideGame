@@ -61,8 +61,7 @@ expected_player_max_json_key = "maxPlayer"
 error_reason_json_key = "error"
 
 
-# recv and send NO LOCK
-# 只对socket和web的交互有线程问题、而这两个都是线程安全的
+
 class WEBSOCKET_CLIENT:
     websocket: WebSocketServerProtocol
     playerIndex: playerWebSystemID
@@ -79,11 +78,6 @@ class WEBSOCKET_CLIENT:
         self.roomID = -1
 
     async def authThread(self):
-        """username = ""
-        data = str(await self.websocket.recv())
-        if not data:
-            await self.websocket.close()
-            return"""
         await self.websocket.send(
             json.dumps(
                 MESSAGE(
