@@ -2,7 +2,7 @@ import socket
 import uuid
 import random
 import json
-from define_JSON_UI import SimpleEncoder,ComplexEncoder
+from define_JSON_UI import SimpleEncoder,ComplexFrontEncoder
 import asyncio
 import time
 from dataclasses import asdict

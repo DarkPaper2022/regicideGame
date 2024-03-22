@@ -63,6 +63,7 @@ class WEB_SYSTEM_DATATYPE(Enum):
 class DINAL_TYPE(Enum):
     LOGIN_PASSWORD_WRONG = 0
     LOGIN_USERNAME_NOT_FOUND = 1
+    REGISTER_FORMAT_WRONG = 2
 
 DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
 
@@ -104,15 +105,8 @@ class DATA_UPDATE_PLAYER_STATUS:
     playerLevel:PLAYER_LEVEL
 @dataclass(frozen=False)
 class MESSAGE:
-    #-1 for no room or for hall
-    #0 to inf for normal room
     roomID: int
-
-    #0 to inf for normal user, -1 for webSystem, -2 for SuperUser, -3 for self
-    #-1 used: StartSignalPackage, cookieWrong  
     playerID: playerWebSystemID
-
-
     dataType: DATATYPE
     roomData: Any
     webData: Any

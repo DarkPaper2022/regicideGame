@@ -14,7 +14,7 @@ WEB_SYSTEM_DATATYPE, DATATYPE, DATA_UPDATE_PLAYER_STATUS, FROZEN_ROOM_WEB_SYSTEM
 DATA_ANSWER_LOGIN,DINAL_TYPE,DATA_ANSWER_CONNECTION,DATA_ANSWER_REGISTER,FROZEN_GAME_TYPE
 from dataclasses import dataclass
 from defineError import AuthDenial,MessageFormatError,UserNameNotFoundDenial,PasswordWrongDenial,RegisterFailedError
-from define_JSON_UI import strToCard,ComplexEncoder,SimplifiedMessage
+from define_JSON_UI import strToCard,ComplexFrontEncoder
 from defineRound import ROUND
 
 UI_HEIGHT = 30
@@ -64,14 +64,19 @@ class WEBSOCKET_CLIENT:
             await self.websocket.close()
             return"""
         await self.websocket.send(json.dumps(
-            SimplifiedMessage(
+            MESSAGE(
+                roomData=None,
+                playerID=playerWebSystemID(-1),
+                roomID=-1,
                 dataType=WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION,
-                data=DATA_ANSWER_CONNECTION(
+                webData=DATA_ANSWER_CONNECTION(
                     games=tuple([FROZEN_GAME_TYPE(
                         name="regicide",
                         version="1.1.0"
-                        )]))
-            ),cls=ComplexEncoder))
+                        )]
+                                )
+                    )
+            ),cls=ComplexFrontEncoder))
         while True:
 
             data = str(await self.websocket.recv())
@@ -90,9 +95,14 @@ class WEBSOCKET_CLIENT:
                         password=data_dict[data_json_key]["password"])
                 except:
                     await self.websocket.send(json.dumps(
-                        SimplifiedMessage(
+                        MESSAGE(
+                                            roomData=None,
+                playerID=playerWebSystemID(-1),
+                roomID=-1,
                             dataType=WEB_SYSTEM_DATATYPE.ANSWER_REGISTER,
-                            data={}),cls=ComplexEncoder))
+                            webData=DATA_ANSWER_REGISTER(
+                                success=False,
+                                error=DINAL_TYPE.REGISTER_FORMAT_WRONG)),cls=ComplexFrontEncoder))
             elif data_type == "ASK_LOGIN":
                 try:
                     self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
@@ -209,7 +219,7 @@ class WEBSOCKET_CLIENT:
             self.roomID = -1 if room_status.playerRoom == None else room_status.playerRoom.roomID
         if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n"
-        data = json.dumps(message, cls=ComplexEncoder)
+        data = json.dumps(message, cls=ComplexFrontEncoder)
         return data
 
 class WEBSOCKET_SERVER:

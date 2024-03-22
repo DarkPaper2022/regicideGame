@@ -54,7 +54,7 @@ class SimpleEncoder(json.JSONEncoder):
             return obj.name  # 返回枚举量的名称
         return super().default(obj)
 
-class ComplexEncoder(json.JSONEncoder):
+class ComplexFrontEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Enum):
             return obj.name
