@@ -82,7 +82,6 @@ class ComplexFrontEncoder(json.JSONEncoder):
         }
 
     def default(self, obj):
-        logger.debug(obj)
         if isinstance(obj, MESSAGE):
             message = obj
             new_message = self._data_helper_first(message)
@@ -153,9 +152,9 @@ translate_dict: dict[str, DATATYPE] = {
     "ASK_REGISTER": WEB_SYSTEM_DATATYPE.ASK_REGISTER,
     "ASK_JOIN_ROOM": WEB_SYSTEM_DATATYPE.JOIN_ROOM,
     "ACTION_CREATE_ROOM": WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
-    "prepare": WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE,
-    "quit": WEB_SYSTEM_DATATYPE.leaveRoom,
-    "log out": WEB_SYSTEM_DATATYPE.LOG_OUT,
+    "ACTION_CHANGE_PREPARE": WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE,
+    "ACTION_LEAVE_ROOM": WEB_SYSTEM_DATATYPE.leaveRoom,
+    "ACTION_LOGOUT": WEB_SYSTEM_DATATYPE.LOG_OUT,
     "room status": WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
     "status": REGICIDE_DATATYPE.askStatus,
     "talk log": REGICIDE_DATATYPE.askTalking,
@@ -202,7 +201,6 @@ func_dict: Dict[DATATYPE, Callable] = {
 
 
 def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any] | Dict[str, Any]:
-    logger.debug("i get json:" + str(json_dict))
     if "dataType" in json_dict:
         dataType: DATATYPE = translate_dict.get(
             json_dict["dataType"], WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON

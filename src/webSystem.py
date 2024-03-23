@@ -416,12 +416,6 @@ class WEB:
         self._room_join_in_system(room_ID, systemID)  # no room error, here
         player.playerRoom = room_ID
         player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
-        player.playerQueue.put_nowait(
-            MESSAGE(
-                -1, systemID, WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM, None, webData=True
-            )
-        )
-
         return room_ID
 
     # arg:   systemID should in [0,MAX)
