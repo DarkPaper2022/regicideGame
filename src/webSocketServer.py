@@ -296,4 +296,4 @@ class WEBSOCKET_SERVER:
 
 async def tcpClientHandler(websocket, web):
     tcpClient = WEBSOCKET_CLIENT(websocket, web, timeOutSetting=300)
-    await asyncio.create_task(tcpClient.authThread())
+    await asyncio.create_task(tcpClient.playerMannage())
