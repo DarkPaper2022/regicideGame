@@ -24,7 +24,7 @@ from defineWebSystemMessage import (
     PLAYER_STATUS,
 )
 from dataclasses import dataclass
-from defineError import AuthDenial, MessageFormatError, RegisterFailedError
+from defineError import AuthDenial, MessageFormatError, RegisterDenial
 from defineTCP_UI import cardsToStr, bossToStr, strToCard, translate_dict
 from defineRound import ROUND
 
@@ -81,7 +81,7 @@ class TCP_CLIENT:
                     )
                     username = l[0].decode("utf-8")
                     break
-                except (AuthDenial, RegisterFailedError, TimeoutError) as e:
+                except (AuthDenial, RegisterDenial, TimeoutError) as e:
                     self.writer.write((UI_HEIGHT * "\n" + str(e) + "\n").encode())
                 except Exception as e:
                     self.writer.write(

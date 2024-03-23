@@ -19,10 +19,9 @@ from defineError import (
     AuthDenial,
     PlayerNumError,
     ServerBusyError,
-    RoomError,
-    RegisterFailedError,
-    PasswordWrongDenial,
-    UserNameNotFoundDenial,
+    RoomDenial,
+    RegisterDenial,
+    AuthError
 )
 from myLockQueue import myLockQueue as LockQueue
 from collections import deque
@@ -248,10 +247,10 @@ class WEB:
     # ret:   A player not in any room, or keep its origin room
     def PLAYER_LOG_IN(
         self, playerName: str, password: str
-    ) -> Tuple[uuid.UUID, playerWebSystemID]:  # type:ignore
+    ) -> Tuple[uuid.UUID, playerWebSystemID]:
         systemID, level = self._checkPassword(playerName, password)
         if level == PLAYER_LEVEL.superUser:
-            raise AuthDenial("Super User?")
+            raise AuthDenial(DINAL_TYPE.LOGIN_SUPER_USER)
         elif level == PLAYER_LEVEL.normal:
             cookie = uuid.uuid4()
             if self.players[systemID] != None:
@@ -286,9 +285,7 @@ class WEB:
             self.player_send_room_status(systemID)
             return cookie, systemID
         else:
-            raise AuthDenial(
-                f"Username or Password is wrong. 忘掉了请联系管理员桑呢\nUsername:{playerName}\n Password:{password}\n"
-            )
+            raise AuthError
 
     # arg:   player is already log in
     # arg:   must not in any room
@@ -306,16 +303,20 @@ class WEB:
         if roomIndex >= 0 and roomIndex <= self.maxRoom:
             room = self.rooms[roomIndex]
         else:
-            raise IndexError("错误的房间喵喵")  # index error
+            raise RoomDenial("错误的房间喵喵")  # index error
 
         if room == None:
-            raise RoomError("")  # room error
+            raise RoomDenial("")  # room error
         self._room_join_in_system(roomIndex, systemID)  # room error
         player.playerRoom = roomIndex
         player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
         player.playerQueue.put_nowait(
             MESSAGE(
-                -1, systemID, WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM, None, webData=True
+                -1,
+                systemID,
+                WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM,
+                None,
+                webData=DATA_ANSWER_JOIN_ROOM(True, None),
             )
         )
 
@@ -464,16 +465,14 @@ class WEB:
         if self._room_ID_to_Max_player(roomIndex) > len(room.playerIndexs):
             room.playerIndexs.append(systemID)
         else:
-            raise RoomError("房满了,要不...踢个人?")
+            raise RoomDenial("房满了,要不...踢个人?")
 
+    #raise: AuthDinal
     def _checkPassword(
         self, playerName: str, password: str
     ) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
-        try:
-            re = self.sqlSystem.checkPassword(playerName, password)
-            return re
-        except:
-            return (playerWebSystemID(-1), PLAYER_LEVEL.illegal)
+        re = self.sqlSystem.checkPassword(playerName, password)
+        return re
 
     def _checkOldCookie(
         self, playerIndex: playerWebSystemID, oldCookie: uuid.UUID
@@ -502,7 +501,7 @@ class WEB:
                 i
             ] == None:
                 return i
-        raise RoomError(f"{expected_max_player}的房满了")
+        raise RoomDenial(f"{expected_max_player}的房满了")
 
     # arg:   systemID should in [0,MAX)
     # arg:   status should be in_room_playing

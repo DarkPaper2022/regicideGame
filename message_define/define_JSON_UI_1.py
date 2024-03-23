@@ -115,7 +115,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
             return {"success":obj.success}
         elif isinstance(obj, DATA_ANSWER_REGISTER):
             return {"success":obj.success}
-        elif isinstance(obj, DATA_ANSWER_JOINROOM):
+        elif isinstance(obj, DATA_ANSWER_JOIN_ROOM):
             return {"success":obj.success}
         elif isinstance(obj, FROZEN_ROOM_STATUS_inWebSystem):
             return {

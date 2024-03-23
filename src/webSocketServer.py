@@ -26,13 +26,7 @@ from defineWebSystemMessage import (
     FROZEN_GAME_TYPE,
 )
 from dataclasses import dataclass
-from defineError import (
-    AuthDenial,
-    MessageFormatError,
-    UserNameNotFoundDenial,
-    PasswordWrongDenial,
-    RegisterFailedError,
-)
+from defineError import AuthDenial, MessageFormatError, RegisterDenial
 from define_JSON_UI_1 import strToCard, ComplexFrontEncoder
 from define_JSON_UI_1 import *
 from defineRound import ROUND
@@ -54,7 +48,6 @@ class WEBSOCKET_CLIENT:
         self.roomID = -1
 
     async def authThread(self):
-
         try:
             await self.websocket.send(
                 json.dumps(
@@ -91,7 +84,7 @@ class WEBSOCKET_CLIENT:
                         playerName=reg_data.username,
                         password=reg_data.password,
                     )
-                except:
+                except RegisterDenial as e:
                     await self.websocket.send(
                         json.dumps(
                             MESSAGE(
@@ -116,7 +109,7 @@ class WEBSOCKET_CLIENT:
                     )
                     username = login_data.username
                     break
-                except (RegisterFailedError, TimeoutError) as e:
+                except TimeoutError as e:
                     logger.error(str(e))
                 except AuthDenial as e:
                     await self.websocket.send(
@@ -128,15 +121,7 @@ class WEBSOCKET_CLIENT:
                                 dataType=WEB_SYSTEM_DATATYPE.ANSWER_LOGIN,
                                 webData=DATA_ANSWER_LOGIN(
                                     success=False,
-                                    error=(
-                                        DINAL_TYPE.LOGIN_PASSWORD_WRONG
-                                        if isinstance(e, PasswordWrongDenial)
-                                        else (
-                                            DINAL_TYPE.LOGIN_PASSWORD_WRONG
-                                            if isinstance(e, PasswordWrongDenial)
-                                            else None
-                                        )
-                                    ),
+                                    error=e.args[0],
                                 ),
                             )
                         )

@@ -4,8 +4,7 @@ from defineColor import COLOR
 from defineRound import ROUND
 from enum import Enum
 from defineRegicideMessage import REGICIDE_DATATYPE
-import math
-
+from defineError import DINAL_TYPE
 
 playerWebSystemID = NewType("playerWebSystemID", int)
 
@@ -70,10 +69,6 @@ class WEB_SYSTEM_DATATYPE(Enum):
     HE_IS_A_ZOMBIE = 104
 
 
-class DINAL_TYPE(Enum):
-    LOGIN_PASSWORD_WRONG = 0
-    LOGIN_USERNAME_NOT_FOUND = 1
-    REGISTER_FORMAT_WRONG = 2
 
 
 DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
@@ -123,7 +118,7 @@ class DATA_ANSWER_REGISTER:
     error: Optional[DINAL_TYPE]
     
 @dataclass
-class DATA_ANSWER_JOINROOM:
+class DATA_ANSWER_JOIN_ROOM:
     success: bool
     error: Optional[DINAL_TYPE]
 
