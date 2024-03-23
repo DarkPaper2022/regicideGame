@@ -151,7 +151,7 @@ translate_dict: dict[str, DATATYPE] = {
     "ASK_LOGIN": WEB_SYSTEM_DATATYPE.ASK_LOG_IN,
     "ASK_CONNECTION": WEB_SYSTEM_DATATYPE.ASK_CONNECTION,
     "ASK_REGISTER": WEB_SYSTEM_DATATYPE.ASK_REGISTER,
-    "ASK_JOIN_ROOM": WEB_SYSTEM_DATATYPE.JOIN_ROOM,
+    "ASK_JOIN_ROOM": WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM,
     "ACTION_CREATE_ROOM": WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
     "ACTION_CHANGE_PREPARE": WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE,
     "ACTION_LEAVE_ROOM": WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT,
@@ -182,6 +182,9 @@ def _create_room(data: Dict[str, Any]) -> int:
 def _ask_connection(data: Dict[str, Any]) -> FROZEN_GAME_TYPE:
     return FROZEN_GAME_TYPE(name=data["gameName"], version=str(data["version"]))
 
+def _ask_join_room(data: Dict[str, Any]) -> int:
+    return data["joinRoomID"]
+
 
 def _deafult_dict(data: Dict[str, Any]):
     return None
@@ -198,6 +201,7 @@ func_dict: Dict[DATATYPE, Callable] = {
     REGICIDE_DATATYPE.card: _update_card,
     WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM: _create_room,
     WEB_SYSTEM_DATATYPE.ASK_CONNECTION: _ask_connection,
+    WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:_ask_join_room
 }
 
 

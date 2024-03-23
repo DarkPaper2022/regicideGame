@@ -129,7 +129,7 @@ class WEB:
                     self.player_reverse_prepare(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                     room_ID = self.player_create_room(message.playerID, message.webData)
-                elif message.dataType == WEB_SYSTEM_DATATYPE.JOIN_ROOM:
+                elif message.dataType == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
                     try:
                         self.player_join_room(message.playerID, message.roomData)
                     except Exception as e:

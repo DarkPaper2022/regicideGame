@@ -220,7 +220,7 @@ class WEBSOCKET_CLIENT:
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 joker_data: int = data
                 messageData = joker_data
-            elif data_type == WEB_SYSTEM_DATATYPE.JOIN_ROOM:
+            elif data_type == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
                 join_data: int = data
                 messageData = join_data
             elif data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:

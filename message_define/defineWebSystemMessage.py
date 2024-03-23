@@ -62,7 +62,7 @@ class WEB_SYSTEM_DATATYPE(Enum):
 
     destroyRoom = 100
 
-    JOIN_ROOM = 103
+    ASK_JOIN_ROOM = 103
 
     LOG_OUT = 102
 

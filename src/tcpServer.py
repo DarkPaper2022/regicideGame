@@ -190,7 +190,7 @@ class TCP_CLIENT:
                 messageData = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 messageData = int(l[1].strip())
-            elif data_type == WEB_SYSTEM_DATATYPE.JOIN_ROOM:
+            elif data_type == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
                 messageData = int(l[1].strip())
             elif data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                 web_data = int(l[1].strip())
