@@ -164,7 +164,7 @@ class WEBSOCKET_CLIENT:
                                     success=False,
                                     error=e.args[0],
                                 ),
-                            )
+                            ),cls=ComplexFrontEncoder
                         )
                     )
             else:
