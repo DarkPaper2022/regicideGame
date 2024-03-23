@@ -150,6 +150,7 @@ class WEB:
                     self.player_quit_room(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     self.player_log_out(message.playerID)
+                    continue  # if you log out, your player will be none, so can't send room status
                 self.player_send_room_status(message.playerID)
             else:
                 logger.error(f"websystem_message_handler 收到了糟糕的消息:{message}")
