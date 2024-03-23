@@ -514,13 +514,13 @@ class WEB:
             return level
 
     def _room_ID_to_Max_player(self, roomIndex: int) -> int:
-        if roomIndex >= 0 and roomIndex < self.maxRoom:
+        if roomIndex >= 10 and roomIndex < self.maxRoom:
             re = math.floor(roomIndex / 100) + 2
             re = re if (re in [2, 3, 4]) else 2
             return re
         else:
             logger.error(f"这里炸了,{roomIndex}被送进来了")
-            return 2
+            return 0
 
     def _find_empty_room(self, expected_max_player: int) -> int:
         for i in range(self.maxRoom):
