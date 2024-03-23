@@ -128,6 +128,7 @@ class WEB:
                     self._room_destruct(message.roomID)
 
             elif message.roomID == -1:
+                player:WEB_PLAYER = self.players[message.playerID]  #type:ignore
                 if message.dataType == WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE:
                     self.player_reverse_prepare(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
@@ -137,7 +138,6 @@ class WEB:
                         self.player_join_room(message.playerID, message.roomData)
                     except RoomDenial as e:
                         systemID = message.playerID
-                        player: WEB_PLAYER = self.players[systemID]  # type:ignore
                         player.playerQueue.put_nowait(
                             MESSAGE(
                                 -1,
@@ -149,7 +149,6 @@ class WEB:
                         )
                     except Exception as e:
                         systemID = message.playerID
-                        player: WEB_PLAYER = self.players[systemID]  # type:ignore
                         player.playerQueue.put_nowait(
                             MESSAGE(
                                 -1,
@@ -162,11 +161,13 @@ class WEB:
                 elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
                     pass
                 elif message.dataType == WEB_SYSTEM_DATATYPE.ACTION_LEAVE_ROOM:
+                    roomID =player.playerRoom
                     self.player_quit_room(message.playerID)
+                    self.broadcast_room_status(roomID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     self.player_log_out(message.playerID)
                     continue  # if you log out, your player will be none, so can't send room status
-                player:WEB_PLAYER = self.players[message.playerID]  #type:ignore
+                
                 self.player_send_room_status(message.playerID)
                 self.broadcast_room_status(player.playerRoom)
             else:
