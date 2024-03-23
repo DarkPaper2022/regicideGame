@@ -215,7 +215,6 @@ class WEBSOCKET_CLIENT:
                 break
             if (
                 message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong
-                or message.dataType == WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT
             ):
                 break
         self.player_exit()
