@@ -169,7 +169,7 @@ translate_dict: dict[str, DATATYPE] = {
 # arg: any
 # raise: exception if format failed
 def _ask_log_in(data: Dict[str, Any]) -> DATA_ASK_LOGIN:
-    return DATA_ASK_LOGIN(username=data["username"], password=data["password"])
+    return DATA_ASK_LOGIN(username=(data["username"]), password=data["password"])
 
 
 def _ask_register(data: Dict[str, Any]) -> DATA_ASK_REGISTER:
@@ -177,14 +177,14 @@ def _ask_register(data: Dict[str, Any]) -> DATA_ASK_REGISTER:
 
 
 def _create_room(data: Dict[str, Any]) -> int:
-    return data["maxPlayer"]
+    return int(data["maxPlayer"])
 
 
 def _ask_connection(data: Dict[str, Any]) -> FROZEN_GAME_TYPE:
     return FROZEN_GAME_TYPE(name=data["gameName"], version=str(data["version"]))
 
 def _ask_join_room(data: Dict[str, Any]) -> int:
-    return data["joinRoomID"]
+    return int(data["joinRoomID"])
 
 
 def _deafult_dict(data: Dict[str, Any]):
@@ -212,10 +212,7 @@ def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any] | Dict[st
             json_dict["dataType"], WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON
         )
         func = func_dict.get(dataType, _deafult_dict)
-        try:
-            data = func(json_dict["data"])
-        except:
-            return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, None)
+        data = func(json_dict["data"])
         logger.debug((dataType, data))
         return (dataType, data)
     else:

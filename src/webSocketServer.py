@@ -97,8 +97,12 @@ class WEBSOCKET_CLIENT:
             if not socket_data:
                 await self.socket_exit()
                 return
-            data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
-            data_type: DATATYPE
+            try:
+                data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
+                assert isinstance(data_type, DATATYPE)
+            except:
+                logger.error(socket_data)
+                continue
             if data_type == WEB_SYSTEM_DATATYPE.ASK_REGISTER:
                 reg_data: DATA_ASK_REGISTER = data
                 try:
@@ -218,9 +222,14 @@ class WEBSOCKET_CLIENT:
 
     # error MessageFormatError if bytes are illegal
     def dataToMessage(self, socket_data: str) -> MESSAGE:
+        
         try:
             data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
-            data_type: DATATYPE
+            assert isinstance(data_type, DATATYPE)
+        except:
+            logger.error(socket_data)
+            raise MessageFormatError(f"{socket_data}")
+        try:    
             room_ID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID
             messageData = None
             web_data = None
@@ -261,11 +270,16 @@ class WEBSOCKET_CLIENT:
         return data
 
     async def check_game_version(self) -> bool:
-        data = str(await self.websocket.recv())
-        if not data:
+        socket_data = str(await self.websocket.recv())
+        if not socket_data:
             return False
-        dataType, game_and_version = json.loads(data, object_hook=json_1_obj_hook)
-        if dataType != WEB_SYSTEM_DATATYPE.ASK_CONNECTION:
+        try:
+            data_type, game_and_version = json.loads(socket_data, object_hook=json_1_obj_hook)
+            assert isinstance(data_type, DATATYPE)
+        except:
+            logger.error(socket_data)
+            return False
+        if data_type!= WEB_SYSTEM_DATATYPE.ASK_CONNECTION:
             return False
         else:
             game_and_version: FROZEN_GAME_TYPE
