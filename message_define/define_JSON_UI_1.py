@@ -74,6 +74,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
         super().__init__(*args, **kwargs)
         self.func_map: Dict[DATATYPE, Callable] = {
             WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS: self.default,
+            WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:self.default,
             WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION: lambda x:{},
             WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE: lambda x:{},
         }
@@ -88,8 +89,8 @@ class ComplexFrontEncoder(json.JSONEncoder):
             return self.default(new_message)
         elif isinstance(obj, FirstSimplifiedMessage):
             logger.debug(obj)
-            if obj.dataType in self.func_map:
-                func = self.func_map[obj.dataType]
+            if True:
+                func = self.func_map.get(obj.dataType, self.default)
                 return {"dataType": self.default(obj.dataType), "data": func(obj.data)}
             else:
                 return asdict(obj)
