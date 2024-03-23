@@ -6,6 +6,9 @@ class DINAL_TYPE(Enum):
     LOGIN_SUPER_USER = 4
     REGISTER_FORMAT_WRONG = 2
     REGISTER_ALREADY_EXIST = 3
+    ROOM_FULL = 5
+    ROOM_NOT_EXIST = 6
+    ROOM_OUT_OF_RANGE = 7
     
 class AuthError(Exception):
     def __init__(self):
@@ -70,20 +73,26 @@ class RegisterDenial(Exception):
 
 
 class RoomDenial(Exception):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, type:DINAL_TYPE):
+        super().__init__(type)
 
     def __str__(self):
         return f"RoomError: {self.args[0]}"
 class RoomFullDenial(RoomDenial):
     def __init__(self):
-        super().__init__("")
+        super().__init__(DINAL_TYPE.ROOM_FULL)
 
     def __str__(self):
         return "Room is Full"
-class RoomOutOfRange(RoomDenial):
+class RoomNotExistDenial(RoomDenial):
     def __init__(self):
-        super().__init__("")
+        super().__init__(DINAL_TYPE.ROOM_NOT_EXIST)
+
+    def __str__(self):
+        return "Room ID Out Of Range"
+class RoomOutOfRangeDenial(RoomDenial):
+    def __init__(self):
+        super().__init__(DINAL_TYPE.ROOM_OUT_OF_RANGE)
 
     def __str__(self):
         return "Room ID Out Of Range"

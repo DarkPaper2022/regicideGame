@@ -55,9 +55,11 @@ class WEB_SYSTEM_DATATYPE(Enum):
     # from client or from web
     # to let the hall know you are prepared
 
-    ERROR_KICK_OUT = 120  # to room
+    ACCESS_DENIED_KICK_OUT = 120  # to room
     # room should deal with it
 
+    ERROR = 126
+    
     runRoom = 121
 
     destroyRoom = 100
