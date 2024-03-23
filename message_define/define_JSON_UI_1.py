@@ -87,6 +87,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
             new_message = self._data_helper_first(message)
             return self.default(new_message)
         elif isinstance(obj, FirstSimplifiedMessage):
+            logger.debug(obj)
             if obj.dataType in self.func_map:
                 func = self.func_map[obj.dataType]
                 return {"dataType": self.default(obj.dataType), "data": func(obj.data)}
@@ -210,6 +211,7 @@ def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any] | Dict[st
             data = func(json_dict["data"])
         except:
             return (WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON, None)
+        logger.debug((dataType, data))
         return (dataType, data)
     else:
         return json_dict
