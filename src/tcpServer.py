@@ -161,7 +161,7 @@ class TCP_CLIENT:
                 break
             if (
                 message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong
-                or message.dataType == WEB_SYSTEM_DATATYPE.leaveRoom
+                or message.dataType == WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT
             ):
                 logger.info("sendTonetcatThread, cookie Over")
                 break
@@ -240,7 +240,7 @@ class TCP_CLIENT:
             )
         elif (
             message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong
-            or message.dataType == WEB_SYSTEM_DATATYPE.leaveRoom
+            or message.dataType == WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT
         ):
             messageData = "你被顶号了,要不要顶回来试试?\n"
         elif message.dataType == WEB_SYSTEM_DATATYPE.ANSWER_LOGIN:

@@ -5,7 +5,7 @@ import asyncio
 import time
 import json
 from myLogger import logger
-from typing import List, Any, Tuple, Union
+from typing import List, Any, Tuple, Union, Optional
 from webSystem import WEB
 from defineRegicideMessage import (
     TALKING_MESSAGE,
@@ -34,20 +34,22 @@ from defineRound import ROUND
 
 class WEBSOCKET_CLIENT:
     websocket: WebSocketServerProtocol
-    playerIndex: playerWebSystemID
-    playerCookie: uuid.UUID
-    userName: str  # be careful, once initialized it should never be changed
+    systemID: Optional[playerWebSystemID]
+    playerCookie: Optional[uuid.UUID]
+    userName: Optional[str]  # be careful, once initialized it should never be changed
     web: WEB
     roomID: int
 
     def __init__(self, websocket, web, timeOutSetting: int) -> None:
         self.websocket = websocket
         self.web = web
-        self.overFlag = False
+        self.socket_over_flag = False
         self.timeOutSetting = timeOutSetting
         self.roomID = -1
+        self.player_exit_event = asyncio.Event()
+        self.player_exit_event.clear()
 
-    async def authThread(self):
+    async def playerMannage(self):
         try:
             await self.websocket.send(
                 json.dumps(
@@ -61,19 +63,40 @@ class WEBSOCKET_CLIENT:
                     cls=ComplexFrontEncoder,
                 )
             )
-            checked: bool = await self.socket_init()
+            checked: bool = await self.check_game_version()
         except Exception as e:
-            logger.info(e)
-            await self.websocket.close()
+            self.player_exit()
             return
         if not checked:
-            logger.info("checked")
-            await self.websocket.close()
+            await self.socket_exit()
             return
+        
+        
+        while not self.socket_over_flag:
+            self.player_exit_event.clear()
+            await self.authThread()
+
+    async def socket_exit(self):
+        self.socket_over_flag = True
+        self.player_exit()
+        try:
+            await self.websocket.close()
+        finally:
+            return
+
+    def player_exit(self):
+        self.roomID = -1
+        self.userName = None
+        self.playerCookie = None
+        self.systemID = None
+        self.player_exit_event.set()
+
+    async def authThread(self):
+
         while True:
             socket_data = str(await self.websocket.recv())
             if not socket_data:
-                await self.websocket.close()
+                await self.socket_exit()
                 return
             data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
             data_type: DATATYPE
@@ -103,7 +126,7 @@ class WEBSOCKET_CLIENT:
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_LOG_IN:
                 try:
                     login_data: DATA_ASK_LOGIN = data
-                    self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
+                    self.playerCookie, self.systemID = self.web.PLAYER_LOG_IN(
                         playerName=login_data.username,
                         password=login_data.password,
                     )
@@ -132,13 +155,16 @@ class WEBSOCKET_CLIENT:
         self.userName = username
         rec = asyncio.create_task(self.recvThreadFunc())
         sen = asyncio.create_task(self.sendThreadFunc())
-        await asyncio.gather(rec, sen)
-        return
+        log_out = asyncio.create_task(self.player_exit_event.wait())
+        done, pending = await asyncio.wait(
+            [rec, sen, log_out], return_when=asyncio.FIRST_COMPLETED
+        )
+        for task in pending:
+            task.cancel()
 
     # recv From  netcat
     async def recvThreadFunc(self):
-        # 认为到这里我们拿到了一个正常的cookie和playerIndex,但是没有合适的room
-        timeOutCnt = 0
+        assert self.playerCookie != None
         while True:
             try:
                 data = str(await self.websocket.recv())
@@ -148,54 +174,33 @@ class WEBSOCKET_CLIENT:
                 self.web.playerSendMessage(message, self.playerCookie)
                 if message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     break
-            except socket.timeout:
-                if self.overFlag == False:
-                    timeOutCnt += 1
-                    if timeOutCnt == 3:
-                        self.overFlag = True
-                else:
-                    break
             except MessageFormatError as e:
-                logger.error(str(e))
+                logger.debug(str(e))
+            except asyncio.CancelledError:
+                break
             except Exception as e:
                 logger.info("recvFromnetcatThread, exception Over")
                 break
-        try:
-            self.overFlag = True
-            await self.websocket.close()
-        finally:
-            return
+        self.player_exit()
 
     # send To netcat
     async def sendThreadFunc(self):
+        assert self.playerCookie != None and self.systemID != None
         while True:
-            message = await self.web.playerGetMessage(
-                self.playerIndex, self.playerCookie
-            )
+            message = await self.web.playerGetMessage(self.systemID, self.playerCookie)
             data = self.messageToData(message)
             try:
                 await self.websocket.send(data)
-            except socket.timeout:
-                if self.overFlag == False:
-                    logger.info("sendTonetcatThread, timeout Continue")
-                    pass
-                else:
-                    logger.info("sendTonetcatThread, timeout Over")
-                    break
+            except asyncio.CancelledError:
+                break    
             except Exception as e:
-                logger.info("sendTonetcatThread, exception Over")
                 break
             if (
                 message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong
-                or message.dataType == WEB_SYSTEM_DATATYPE.leaveRoom
+                or message.dataType == WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT
             ):
-                logger.info("sendTonetcatThread, cookie Over")
                 break
-        try:
-            self.overFlag = True
-            await self.websocket.close()
-        finally:
-            return
+        self.player_exit()
 
     # error MessageFormatError if bytes are illegal
     def dataToMessage(self, socket_data: str) -> MESSAGE:
@@ -210,6 +215,7 @@ class WEBSOCKET_CLIENT:
                 messageData = card_data
             elif data_type == REGICIDE_DATATYPE.speak:
                 speak_data: str = data
+                assert self.userName != None
                 messageData = TALKING_MESSAGE(time.time(), self.userName, speak_data)
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 joker_data: int = data
@@ -224,7 +230,8 @@ class WEBSOCKET_CLIENT:
                 pass
         except:
             raise MessageFormatError("Fuck you!")
-        message = MESSAGE(room_ID, self.playerIndex, data_type, messageData, web_data)
+        assert self.systemID != None
+        message = MESSAGE(room_ID, self.systemID, data_type, messageData, web_data)
         return message
 
     # Warning: not math function, self.room changed here
@@ -239,9 +246,8 @@ class WEBSOCKET_CLIENT:
         data = json.dumps(message, cls=ComplexFrontEncoder)
         return data
 
-    async def socket_init(self) -> bool:
+    async def check_game_version(self) -> bool:
         data = str(await self.websocket.recv())
-        logger.debug("i get json str" + data)
         if not data:
             return False
         dataType, game_and_version = json.loads(data, object_hook=json_1_obj_hook)

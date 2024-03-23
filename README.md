@@ -24,6 +24,7 @@
 ## 开发说明
 - 针对各种TODO,欢迎PR,
 - 有其他问题也欢迎联系本人
+- 在发送ASK_LOGIN包时,必须等待ANSWER_LOGIN
 
 ## json格式说明
 

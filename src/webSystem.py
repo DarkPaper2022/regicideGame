@@ -21,7 +21,7 @@ from defineError import (
     ServerBusyError,
     RoomDenial,
     RegisterDenial,
-    AuthError
+    AuthError,
 )
 from myLockQueue import myLockQueue as LockQueue
 from collections import deque
@@ -73,7 +73,7 @@ class WEB_ROOM:
         player_out_of_room_message = MESSAGE(
             roomID=self.roomID,
             playerID=playerWebSystemID(-1),
-            dataType=WEB_SYSTEM_DATATYPE.leaveRoom,
+            dataType=WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT,
             roomData=None,
             webData=systemID,
         )
@@ -133,11 +133,20 @@ class WEB:
                     try:
                         self.player_join_room(message.playerID, message.roomData)
                     except Exception as e:
-                        # TODO
-                        pass
+                        systemID = message.playerID
+                        player: WEB_PLAYER = self.players[systemID]  # type:ignore
+                        player.playerQueue.put_nowait(
+                            MESSAGE(
+                                -1,
+                                systemID,
+                                WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM,
+                                None,
+                                webData=DATA_ANSWER_JOIN_ROOM(True, None),
+                            )
+                        )
                 elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
                     pass
-                elif message.dataType == WEB_SYSTEM_DATATYPE.leaveRoom:
+                elif message.dataType == WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT:
                     self.player_quit_room(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     self.player_log_out(message.playerID)
@@ -467,7 +476,7 @@ class WEB:
         else:
             raise RoomDenial("房满了,要不...踢个人?")
 
-    #raise: AuthDinal
+    # raise: AuthDinal
     def _checkPassword(
         self, playerName: str, password: str
     ) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:

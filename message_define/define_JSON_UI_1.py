@@ -81,7 +81,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
             WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS: "UPDATE_ROOM_STATUS"
         }
 
-    def default(self, obj):
+    def default(self, obj:Any):
         if isinstance(obj, MESSAGE):
             message = obj
             new_message = self._data_helper_first(message)
@@ -153,7 +153,7 @@ translate_dict: dict[str, DATATYPE] = {
     "ASK_JOIN_ROOM": WEB_SYSTEM_DATATYPE.JOIN_ROOM,
     "ACTION_CREATE_ROOM": WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM,
     "ACTION_CHANGE_PREPARE": WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE,
-    "ACTION_LEAVE_ROOM": WEB_SYSTEM_DATATYPE.leaveRoom,
+    "ACTION_LEAVE_ROOM": WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT,
     "ACTION_LOGOUT": WEB_SYSTEM_DATATYPE.LOG_OUT,
     "room status": WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
     "status": REGICIDE_DATATYPE.askStatus,
