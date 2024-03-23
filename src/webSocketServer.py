@@ -70,8 +70,7 @@ class WEBSOCKET_CLIENT:
         if not checked:
             await self.socket_exit()
             return
-        
-        
+
         while not self.socket_over_flag:
             self.player_exit_event.clear()
             await self.authThread()
@@ -106,6 +105,21 @@ class WEBSOCKET_CLIENT:
                     self.web.PLAYER_REGISTER(
                         playerName=reg_data.username,
                         password=reg_data.password,
+                    )
+                    await self.websocket.send(
+                        json.dumps(
+                            MESSAGE(
+                                roomData=None,
+                                playerID=playerWebSystemID(-1),
+                                roomID=-1,
+                                dataType=WEB_SYSTEM_DATATYPE.ANSWER_REGISTER,
+                                webData=DATA_ANSWER_REGISTER(
+                                    success=True,
+                                    error=None,
+                                ),
+                            ),
+                            cls=ComplexFrontEncoder,
+                        )
                     )
                 except RegisterDenial as e:
                     await self.websocket.send(
@@ -192,7 +206,7 @@ class WEBSOCKET_CLIENT:
             try:
                 await self.websocket.send(data)
             except asyncio.CancelledError:
-                break    
+                break
             except Exception as e:
                 break
             if (

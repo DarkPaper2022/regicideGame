@@ -150,6 +150,8 @@ class WEB:
                             )
                         )
                     except Exception as e:
+                        systemID = message.playerID
+                        player: WEB_PLAYER = self.players[systemID]  # type:ignore
                         player.playerQueue.put_nowait(
                             MESSAGE(
                                 -1,
@@ -266,7 +268,7 @@ class WEB:
     # raise Error
     def PLAYER_REGISTER(self, playerName: str, password: str):
         self.sqlSystem.userRegister(playerName, password)
-
+    
     # arg:   legal or illegal playerName and password
     # raise: AuthError
     # ret:   A player not in any room, or keep its origin room
