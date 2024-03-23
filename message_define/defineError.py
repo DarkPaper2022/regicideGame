@@ -75,7 +75,8 @@ class RegisterDenial(Exception):
 class RoomDenial(Exception):
     def __init__(self, type:DINAL_TYPE):
         super().__init__(type)
-
+    def enum(self) -> DINAL_TYPE:
+        return self.args[0]
     def __str__(self):
         return f"RoomError: {self.args[0]}"
 class RoomFullDenial(RoomDenial):

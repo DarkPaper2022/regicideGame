@@ -76,7 +76,7 @@ class WEB_ROOM:
         player_out_of_room_message = MESSAGE(
             roomID=self.roomID,
             playerID=playerWebSystemID(-1),
-            dataType=WEB_SYSTEM_DATATYPE.ACCESS_DENIED_KICK_OUT,
+            dataType=WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT,
             roomData=None,
             webData=systemID,
         )
@@ -145,7 +145,7 @@ class WEB:
                                 WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM,
                                 None,
                                 webData=DATA_ANSWER_JOIN_ROOM(
-                                    False, RoomDenial.args[0]
+                                    False, e.enum()
                                 ),
                             )
                         )
@@ -161,7 +161,7 @@ class WEB:
                         )
                 elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
                     pass
-                elif message.dataType == WEB_SYSTEM_DATATYPE.ACCESS_DENIED_KICK_OUT:
+                elif message.dataType == WEB_SYSTEM_DATATYPE.ERROR_KICK_OUT:
                     self.player_quit_room(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     self.player_log_out(message.playerID)
