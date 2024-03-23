@@ -144,9 +144,7 @@ class WEB:
                                 systemID,
                                 WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM,
                                 None,
-                                webData=DATA_ANSWER_JOIN_ROOM(
-                                    False, e.enum()
-                                ),
+                                webData=DATA_ANSWER_JOIN_ROOM(False, e.enum()),
                             )
                         )
                     except Exception as e:
@@ -168,7 +166,9 @@ class WEB:
                 elif message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     self.player_log_out(message.playerID)
                     continue  # if you log out, your player will be none, so can't send room status
+                player:WEB_PLAYER = self.players[message.playerID]  #type:ignore
                 self.player_send_room_status(message.playerID)
+                self.broadcast_room_status(player.playerRoom)
             else:
                 logger.error(f"websystem_message_handler 收到了糟糕的消息:{message}")
 
@@ -229,6 +229,14 @@ class WEB:
             else:
                 self.player_send_room_status(message.playerID)
 
+    def broadcast_room_status(self, roomID: Optional[int]):
+        try:
+            room = self.rooms[roomID]       # type:ignore #TODO
+            for id in room.playerIndexs:    # type:ignore
+                self.player_send_room_status(id)
+        except:
+            pass
+
     # arg:   systemID should in [0,MAX)
     # arg:   status should be not none
     # raise: assertion error if status is not satisfied
@@ -268,7 +276,7 @@ class WEB:
     # raise Error
     def PLAYER_REGISTER(self, playerName: str, password: str):
         self.sqlSystem.userRegister(playerName, password)
-    
+
     # arg:   legal or illegal playerName and password
     # raise: AuthError
     # ret:   A player not in any room, or keep its origin room
