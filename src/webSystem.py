@@ -288,6 +288,7 @@ class WEB:
     def PLAYER_LOG_IN(
         self, playerName: str, password: str
     ) -> Tuple[uuid.UUID, playerWebSystemID]:
+        logger.debug(f"""login :{playerName}, {password}""")
         systemID, level = self._checkPassword(playerName, password)
         if level == PLAYER_LEVEL.superUser:
             raise AuthDenial(DINAL_TYPE.LOGIN_SUPER_USER)
