@@ -65,44 +65,55 @@ class WEBSOCKET_CLIENT:
             )
             checked: bool = await self.check_game_version()
         except Exception as e:
-            self.player_exit()
+            self._player_exit()
             return
         if not checked:
-            await self.socket_exit()
+            await self._socket_exit()
             return
 
         while not self.socket_over_flag:
             self.player_exit_event.clear()
             await self.authThread()
 
-    async def socket_exit(self):
+    async def _socket_exit(self):
         self.socket_over_flag = True
-        self.player_exit()
+        self._player_exit()
         try:
             await self.websocket.close()
         finally:
             return
 
-    def player_exit(self):
+    def _player_exit(self):
         self.roomID = -1
         self.userName = None
         self.playerCookie = None
         self.systemID = None
         self.player_exit_event.set()
 
+    #ret: optional
+    #raise: no exception
+    def _socket_read(self, socket_data:str) -> Optional[Tuple[DATATYPE, Any]]:
+        try:
+            data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
+            assert isinstance(data_type, DATATYPE)
+            return data_type, data
+        except:
+            logger.error(socket_data)
+            return None
+
     async def authThread(self):
 
         while True:
             socket_data = str(await self.websocket.recv())
             if not socket_data:
-                await self.socket_exit()
+                await self._socket_exit()
                 return
-            try:
-                data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
-                assert isinstance(data_type, DATATYPE)
-            except:
-                logger.error(socket_data)
+            re = self._socket_read(socket_data)
+            if re == None:
                 continue
+            else:
+                data_type = re[0]
+                data = re[1]
             if data_type == WEB_SYSTEM_DATATYPE.ASK_REGISTER:
                 reg_data: DATA_ASK_REGISTER = data
                 try:
@@ -199,7 +210,7 @@ class WEBSOCKET_CLIENT:
             except Exception as e:
                 logger.info("recvFromnetcatThread, exception Over")
                 break
-        self.player_exit()
+        self._player_exit()
 
     # send To netcat
     async def sendThreadFunc(self):
@@ -217,17 +228,17 @@ class WEBSOCKET_CLIENT:
                 message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong
             ):
                 break
-        self.player_exit()
+        self._player_exit()
 
     # error MessageFormatError if bytes are illegal
     def dataToMessage(self, socket_data: str) -> MESSAGE:
         
-        try:
-            data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
-            assert isinstance(data_type, DATATYPE)
-        except:
-            logger.error(socket_data)
+        re = self._socket_read(socket_data)
+        if re == None:
             raise MessageFormatError(f"{socket_data}")
+        else:
+            data_type = re[0]
+            data = re[1]
         try:    
             room_ID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID
             messageData = None
@@ -272,16 +283,16 @@ class WEBSOCKET_CLIENT:
         socket_data = str(await self.websocket.recv())
         if not socket_data:
             return False
-        try:
-            data_type, game_and_version = json.loads(socket_data, object_hook=json_1_obj_hook)
-            assert isinstance(data_type, DATATYPE)
-        except:
-            logger.error(socket_data)
+        re = self._socket_read(socket_data)
+        if re == None:
             return False
+        else:
+            data_type = re[0]
+            data = re[1]
         if data_type!= WEB_SYSTEM_DATATYPE.ASK_CONNECTION:
             return False
         else:
-            game_and_version: FROZEN_GAME_TYPE
+            game_and_version: FROZEN_GAME_TYPE = data
             return self.web._check_game_vesion(game_and_version)
 
 
