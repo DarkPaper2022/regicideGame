@@ -170,6 +170,7 @@ private/
 
 #log
 *.log
+logs/
 
 TEST.py
 
