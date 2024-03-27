@@ -576,3 +576,6 @@ class WEB:
 
     def _check_game_vesion(self, game: FROZEN_GAME_TYPE) -> bool:
         return game.name in [game.name for game in self.games]
+    
+    def end_sql(self):
+        self.sqlSystem.end()

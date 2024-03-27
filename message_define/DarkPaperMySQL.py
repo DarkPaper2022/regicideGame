@@ -24,7 +24,10 @@ class sqlSystem:
                             database=database)
     #raise error
     def checkPassword(self, userName:str, password:str) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
-        cursor = self.connection.cursor()
+        try:
+            cursor = self.connection.cursor()
+        except:
+            self.reconnect()
         cursor.execute('SELECT id, authority, password FROM accounts WHERE username=%s', 
                    (userName,))
         rows:List[Tuple[int,str,str]] = cursor.fetchall() # type: ignore
@@ -46,7 +49,10 @@ recieve:{rows}""")
             raise AuthError
         cursor.close()
     def adminRegister(self,userName:str, password:str):
-        cursor = self.connection.cursor()
+        try:
+            cursor = self.connection.cursor()
+        except:
+            self.reconnect()
         sql = "INSERT INTO accounts (username, password) VALUES (%s, %s);"
         cursor.execute(sql, (userName, password))
         self.connection.commit()
@@ -61,7 +67,10 @@ recieve:{rows}""")
     def userRegister(self,userName:str, password:str):
         pattern = r'^[a-zA-Z0-9_]{6,16}$'
         if re.match(pattern, userName) and re.match(pattern, password):
-            cursor = self.connection.cursor()
+            try:
+                cursor = self.connection.cursor()
+            except:
+                self.reconnect()
             cursor.execute('SELECT id FROM accounts WHERE username=%s', 
                    (userName,))
             result:List[int] = cursor.fetchall()  #type:ignore
@@ -77,8 +86,21 @@ recieve:{rows}""")
             logger.error(f"{userName},{password}正则炸了")
             raise RegisterDenial(DINAL_TYPE.REGISTER_FORMAT_WRONG)
     def end(self):
-        self.connection.close()
-        
+        logger.info("sql come to its end.")
+        if self.connection.is_connected():
+            self.connection.close()
+    def reconnect(self):
+        if self.connection.is_connected():
+            self.connection.close()
+            logger.error("MYSQL connection is open, but now restarting...")
+        else:
+            logger.error("MYSQL FAILED, restarting...")
+        self.connection = mysql.connector.connect(
+                            host=host,
+                            port=sqlport,
+                            user=sqlUser,
+                            password=sqlPassword,
+                            database=database)
 
 
 
