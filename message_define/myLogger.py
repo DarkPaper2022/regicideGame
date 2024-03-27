@@ -14,5 +14,3 @@ handler.setFormatter(formatter)
 # 将处理器添加到日志记录器中
 logger.addHandler(handler)
 
-# 记录日志
-logger.info('This is a log message.')
