@@ -96,9 +96,10 @@ class ComplexFrontEncoder(json.JSONEncoder):
         if isinstance(obj, MESSAGE):
             message = obj
             new_message = self._data_helper_first(message)
-            return self.default(new_message)
+            re = self.default(new_message)
+            logger.debug( f"""{obj}\n --> \n{re}""")
+            return re
         elif isinstance(obj, FirstSimplifiedMessage):
-            logger.debug(obj)
             func = self.func_map.get(obj.dataType, self.default)
             return {"dataType": self.get_type(obj.dataType),"dataName":self.get_name(obj.dataType) , "data": func(obj.data)}
 
@@ -208,7 +209,7 @@ def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any] | Dict[st
         dataType: DATATYPE = translate_dict[dataType_str][dataName_str]
         func = func_dict[dataType]
         data = func(json_dict["data"])
-        logger.debug((dataType, data))
+        logger.debug( f"""{json_dict}\n --> \n{(dataType, data)}""")
         return (dataType, data)
     else:
         return json_dict
