@@ -32,6 +32,16 @@ from typing import List, Union, Tuple
 from myLogger import logger
 from enum import Enum
 from DarkPaperMySQL import sqlSystem as sqlSystem
+from importlib import metadata
+
+
+def get_version() -> str:
+    import os
+
+    current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(current_dir, "VERSION"), "r") as f:
+        version = f.read().strip()
+    return version
 
 
 @dataclass
@@ -112,7 +122,7 @@ class WEB:
         self.players = [None] * maxPlayer  # maxplayer 很大
         self.rooms = [None] * maxRoom
         self.sqlSystem = sqlSystem()
-        self.games = [FROZEN_GAME_TYPE("regicide", "1.1.0")]
+        self.games = [FROZEN_GAME_TYPE("regicide", get_version())]
         """
         binding     playerQueue-playerIndex-cookie-playerName
         cookie      playerName+password = cookie 
@@ -128,7 +138,7 @@ class WEB:
                     self._room_destruct(message.roomID)
 
             elif message.roomID == -1:
-                player:WEB_PLAYER = self.players[message.playerID]  #type:ignore
+                player: WEB_PLAYER = self.players[message.playerID]  # type:ignore
                 if message.dataType == WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE:
                     self.player_reverse_prepare(message.playerID)
                     self.broadcast_room_status(player.playerRoom)
@@ -165,12 +175,12 @@ class WEB:
                 elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
                     self.player_send_room_status(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.ACTION_LEAVE_ROOM:
-                    roomID =player.playerRoom
+                    roomID = player.playerRoom
                     self.player_quit_room(message.playerID)
                     self.broadcast_room_status(roomID)
                     self.player_send_room_status(message.playerID)
                 elif message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
-                    roomID =player.playerRoom
+                    roomID = player.playerRoom
                     self.player_log_out(message.playerID)
                     self.broadcast_room_status(roomID)
                     continue  # if you log out, your player will be none, so can't send room status
@@ -236,8 +246,8 @@ class WEB:
 
     def broadcast_room_status(self, roomID: Optional[int]):
         try:
-            room = self.rooms[roomID]       # type:ignore #TODO
-            for id in room.playerIndexs:    # type:ignore
+            room = self.rooms[roomID]  # type:ignore #TODO
+            for id in room.playerIndexs:  # type:ignore
                 self.player_send_room_status(id)
         except:
             pass
@@ -576,6 +586,6 @@ class WEB:
 
     def _check_game_vesion(self, game: FROZEN_GAME_TYPE) -> bool:
         return game.name in [game.name for game in self.games]
-    
+
     def end_sql(self):
         self.sqlSystem.end()
