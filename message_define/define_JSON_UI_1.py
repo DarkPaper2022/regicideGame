@@ -207,7 +207,7 @@ def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any] | Dict[st
         dataType_str: str = str(json_dict["dataType"])
         dataName_str: str = str(json_dict["dataName"])
         dataType: DATATYPE = translate_dict[dataType_str][dataName_str]
-        func = func_dict[dataType]
+        func = func_dict.get(dataType, lambda:None)
         data = func(json_dict["data"])
         logger.debug( f"""{json_dict}\n --> \n{(dataType, data)}""")
         return (dataType, data)
