@@ -547,7 +547,7 @@ class WEB:
             return 0
 
     def _find_empty_room(self, expected_max_player: int) -> int:
-        for i in range(self.maxRoom):
+        for i in range(15, self.maxRoom):
             if (self._room_ID_to_Max_player(i) == expected_max_player) and self.rooms[
                 i
             ] == None:
