@@ -101,13 +101,3 @@ recieve:{rows}""")
                             user=sqlUser,
                             password=sqlPassword,
                             database=database)
-
-
-
-
-
-if __name__ == "__main__":
-    s = sqlSystem()
-    s.adminRegister("b","b")
-    #ree,l = s.checkPassword("darkpaper","114514")
-    s.end()

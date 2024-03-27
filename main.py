@@ -14,7 +14,7 @@ try:
     port_tcp = int(sys.argv[2])
 except:
     port_tcp = 7000
-UserMax, RoomMax = 100, 1000
+UserMax, RoomMax = 10000, 10000
 
 
 web = WEB(UserMax, RoomMax)
