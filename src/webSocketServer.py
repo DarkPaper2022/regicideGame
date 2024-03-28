@@ -208,7 +208,7 @@ class WEBSOCKET_CLIENT:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.info("recvFromnetcatThread, exception Over")
+                logger.debug(str(e))
                 break
         self._player_exit()
 
