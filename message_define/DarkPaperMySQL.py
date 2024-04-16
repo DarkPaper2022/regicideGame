@@ -27,7 +27,7 @@ class sqlSystem:
         try:
             cursor = self.connection.cursor()
         except:
-            self.reconnect()
+            self._reconnect()
         cursor.execute('SELECT id, authority, password FROM accounts WHERE username=%s', 
                    (userName,))
         rows:List[Tuple[int,str,str]] = cursor.fetchall() # type: ignore
@@ -52,7 +52,7 @@ recieve:{rows}""")
         try:
             cursor = self.connection.cursor()
         except:
-            self.reconnect()
+            self._reconnect()
         sql = "INSERT INTO accounts (username, password) VALUES (%s, %s);"
         cursor.execute(sql, (userName, password))
         self.connection.commit()
@@ -70,7 +70,7 @@ recieve:{rows}""")
             try:
                 cursor = self.connection.cursor()
             except:
-                self.reconnect()
+                self._reconnect()
             cursor.execute('SELECT id FROM accounts WHERE username=%s', 
                    (userName,))
             result:List[int] = cursor.fetchall()  #type:ignore
@@ -89,7 +89,7 @@ recieve:{rows}""")
         logger.info("sql come to its end.")
         if self.connection.is_connected():
             self.connection.close()
-    def reconnect(self):
+    def _reconnect(self):
         if self.connection.is_connected():
             self.connection.close()
             logger.error("MYSQL connection is open, but now restarting...")
