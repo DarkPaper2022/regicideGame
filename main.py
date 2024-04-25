@@ -17,7 +17,7 @@ except:
 UserMax, RoomMax = 10000, 10000
 
 
-web = WEB(UserMax, RoomMax)
+web = WEB(RoomMax)
 loop = asyncio.get_event_loop()
 server_ws = webSocketServer.WEBSOCKET_SERVER(web, port_ws, loop)
 server_tcp = tcpServer.TCP_SERVER(web, port_tcp, loop)

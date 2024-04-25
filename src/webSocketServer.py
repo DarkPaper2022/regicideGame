@@ -34,18 +34,18 @@ from defineRound import ROUND
 
 class WEBSOCKET_CLIENT:
     websocket: WebSocketServerProtocol
-    systemID: Optional[playerWebSystemID]
-    playerCookie: Optional[uuid.UUID]
-    userName: Optional[str]  # be careful, once initialized it should never be changed
+    system_id: Optional[playerWebSystemID]
+    cookie: Optional[uuid.UUID]
+    username: Optional[str]  # be careful, once initialized it should never be changed
     web: WEB
-    roomID: int
+    room_id: int
 
     def __init__(self, websocket, web, timeOutSetting: int) -> None:
         self.websocket = websocket
         self.web = web
         self.socket_over_flag = False
         self.timeOutSetting = timeOutSetting
-        self.roomID = -1
+        self.room_id = -1
         self.player_exit_event = asyncio.Event()
         self.player_exit_event.clear()
 
@@ -84,10 +84,10 @@ class WEBSOCKET_CLIENT:
             return
 
     def _player_exit(self):
-        self.roomID = -1
-        self.userName = None
-        self.playerCookie = None
-        self.systemID = None
+        self.room_id = -1
+        self.username = None
+        self.cookie = None
+        self.system_id = None
         self.player_exit_event.set()
 
     #ret: optional
@@ -155,7 +155,7 @@ class WEBSOCKET_CLIENT:
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_LOG_IN:
                 try:
                     login_data: DATA_ASK_LOGIN = data
-                    self.playerCookie, self.systemID = self.web.pub_login(
+                    self.cookie, self.system_id = self.web.pub_login(
                         playerName=login_data.username,
                         password=login_data.password,
                     )
@@ -181,7 +181,7 @@ class WEBSOCKET_CLIENT:
             else:
                 logger.error("format")
 
-        self.userName = username
+        self.username = username
         rec = asyncio.create_task(self.recvThreadFunc())
         sen = asyncio.create_task(self.sendThreadFunc())
         log_out = asyncio.create_task(self.player_exit_event.wait())
@@ -193,14 +193,14 @@ class WEBSOCKET_CLIENT:
 
     # recv From  netcat
     async def recvThreadFunc(self):
-        assert self.playerCookie != None
+        assert self.cookie != None
         while True:
             try:
                 data = str(await self.websocket.recv())
                 if not data:
                     break
                 message = self.dataToMessage(data)
-                self.web.player_send_message(message, self.playerCookie)
+                self.web.player_send_message(message, self.cookie)
                 if message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     break
             except MessageFormatError as e:
@@ -214,9 +214,9 @@ class WEBSOCKET_CLIENT:
 
     # send To netcat
     async def sendThreadFunc(self):
-        assert self.playerCookie != None and self.systemID != None
+        assert self.cookie != None and self.system_id != None
         while True:
-            message = await self.web.player_get_message(self.systemID, self.playerCookie)
+            message = await self.web.player_get_message(self.system_id, self.cookie)
             data = self.messageToData(message)
             try:
                 await self.websocket.send(data)
@@ -240,7 +240,7 @@ class WEBSOCKET_CLIENT:
             data_type = re[0]
             data = re[1]
         try:    
-            room_ID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID
+            room_ID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.room_id
             messageData = None
             web_data = None
             if data_type == REGICIDE_DATATYPE.card:
@@ -248,8 +248,8 @@ class WEBSOCKET_CLIENT:
                 messageData = card_data
             elif data_type == REGICIDE_DATATYPE.speak:
                 speak_data: str = data
-                assert self.userName != None
-                messageData = TALKING_MESSAGE(time.time(), self.userName, speak_data)
+                assert self.username != None
+                messageData = TALKING_MESSAGE(time.time(), self.username, speak_data)
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 joker_data: int = data
                 messageData = joker_data
@@ -263,18 +263,18 @@ class WEBSOCKET_CLIENT:
                 pass
         except:
             raise MessageFormatError("Fuck you!")
-        assert self.systemID != None
-        message = MESSAGE(room_ID, self.systemID, data_type, messageData, web_data)
+        assert self.system_id != None
+        message = MESSAGE(room_ID, self.system_id, data_type, messageData, web_data)
         return message
 
     # Warning: not math function, self.room changed here
     def messageToData(self, message: MESSAGE) -> str:
         if message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
             room_status: DATA_UPDATE_PLAYER_STATUS = message.webData
-            self.roomID = (
+            self.room_id = (
                 -1 if room_status.playerRoom == None else room_status.playerRoom.roomID
             )
-        if message.roomID != self.roomID and message.roomID != -1:
+        if message.roomID != self.room_id and message.roomID != -1:
             logger.error(f"奇怪的信号?\n")
         data = json.dumps(message, cls=ComplexFrontEncoder)
         return data

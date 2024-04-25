@@ -101,18 +101,18 @@ class PlayerMannager:
         # TODO maybe load something ?
         self.the_set = {}
 
-    def set(self, id: playerWebSystemID, player: Optional[WebPlayer]) -> None:
+    def __setitem__(self, id: playerWebSystemID, player: Optional[WebPlayer]) -> None:
         if player is None:
             del self.the_set[id]
         else:
             self.the_set[id] = player
 
-    def get(self, id: playerWebSystemID) -> Optional[WebPlayer]:
+    def __getitem__(self, id: playerWebSystemID) -> Optional[WebPlayer]:
         return self.the_set.get(id, None)
 
     # arg: systemID should in [0,MAX)
     def get_type(self, id: playerWebSystemID) -> PLAYER_STATUS:
-        player = self.get(id)
+        player = self[id]
         if player == None:
             return PLAYER_STATUS.NONE
         else:
@@ -139,9 +139,8 @@ class WEB:
     players: PlayerMannager
     rooms: List[Union[WebRoom, None]]
 
-    def __init__(self, maxPlayer: int, maxRoom) -> None:
-        self.maxPlayer = maxPlayer  # should syntax with mysql
-        self.maxRoom = maxRoom
+    def __init__(self, maxRoom) -> None:
+        self.max_room = maxRoom
         self.hall_queue = LockQueue()
         self.web_system_queue = LockQueue()
         self.players = PlayerMannager()
@@ -163,7 +162,7 @@ class WEB:
                     self._room_destruct(message.roomID)
 
             elif message.roomID == -1:
-                player: WebPlayer = self.players.get(message.playerID)  # type:ignore
+                player: WebPlayer = self.players[message.playerID]  # type:ignore
                 if message.dataType == WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE:
                     self.player_reverse_prepare(message.playerID)
                     self.broadcast_room_status(player.room)
@@ -234,7 +233,7 @@ class WEB:
         elif message.playerID == -2:
             print(message.roomData)
         else:
-            player = self.players.get(message.playerID)
+            player = self.players[message.playerID]
             assert player != None
             assert player.room != None
             playerRoom = self.rooms[player.room]
@@ -244,14 +243,14 @@ class WEB:
     async def player_get_message(
         self, playerIndex: playerWebSystemID, cookie: uuid.UUID
     ) -> MESSAGE:
-        player = self.players.get(playerIndex)
+        player = self.players[playerIndex]
         if player != None and player.cookie == cookie:
             return await player.queue.get()
         else:
             return MESSAGE(-1, playerIndex, WEB_SYSTEM_DATATYPE.cookieWrong, None, None)
 
     def player_send_message(self, message: MESSAGE, cookie: uuid.UUID):
-        player = self.players.get(message.playerID)
+        player = self.players[message.playerID]
         assert player != None and player.cookie == cookie
         if message.roomID == -1:
             self.web_system_queue.put_nowait(message)
@@ -280,7 +279,7 @@ class WEB:
     # arg:   status should be not none
     # raise: assertion error if status is not satisfied
     def player_send_room_status(self, systemID: playerWebSystemID) -> None:
-        player = self.players.get(systemID)
+        player = self.players[systemID]
         assert player != None
         if player.room == None:
             frozen_room = None
@@ -292,8 +291,8 @@ class WEB:
                 status=room.status,
                 playerIndexs=[
                     FROZEN_PLAYER_STATUS_SeenInRoom(
-                        self.players.get(index).name,  # type:ignore
-                        self.players.get(index).status,  # type:ignore
+                        self.players[index].name,  # type:ignore
+                        self.players[index].status,  # type:ignore
                     )
                     for index in room.player_indexs
                 ],
@@ -312,7 +311,7 @@ class WEB:
         )
         player.queue.put_nowait(message)
 
-    # raise Error
+    # raise: Error
     def pub_register(self, playerName: str, password: str):
         self.accounts_data_manager.userRegister(playerName, password)
 
@@ -323,16 +322,16 @@ class WEB:
         self, playerName: str, password: str
     ) -> Tuple[uuid.UUID, playerWebSystemID]:
         logger.debug(f"""login :{playerName}, {password}""")
-        systemID, level = self._checkPassword(playerName, password)
+        systemID, level = self.accounts_data_manager.checkPassword(playerName, password)# Auth Error
         if level == PLAYER_LEVEL.superUser:
             raise AuthDenial(DINAL_TYPE.LOGIN_SUPER_USER)
         elif level == PLAYER_LEVEL.normal:
             cookie = uuid.uuid4()
-            if self.players.get(systemID) != None:
+            if self.players[systemID] != None:
                 self.player_log_out(systemID)
 
             # here the player is None or zombie
-            old_player = self.players.get(systemID)
+            old_player = self.players[systemID]
             if old_player == None:
                 player = WebPlayer(
                     systemID,
@@ -343,7 +342,7 @@ class WEB:
                     cookie=cookie,
                     status=PLAYER_STATUS.ROOM_IS_NONE,
                 )
-                self.players.set(systemID, player)
+                self.players[systemID] =player
             else:
                 old_player.cookie = cookie
                 old_player.status = PLAYER_STATUS.IN_ROOM_PLAYING
@@ -367,7 +366,7 @@ class WEB:
     # arg:   room must be not full
     # raise: excpetion if the above is not satisfied
     def player_join_room(self, systemID: playerWebSystemID, roomIndex: int) -> None:
-        player = self.players.get(systemID)
+        player = self.players[systemID]
         try:
             assert player != None
             assert player.room == None
@@ -375,7 +374,7 @@ class WEB:
             raise PlayerNumError(f"{player}")
 
         # get the room
-        if roomIndex >= 0 and roomIndex <= self.maxRoom:
+        if roomIndex >= 0 and roomIndex <= self.max_room:
             room = self.rooms[roomIndex]
         else:
             raise RoomOutOfRangeDenial  # index error
@@ -400,10 +399,10 @@ class WEB:
     # raise: no error even status is not satisfied
     def player_reverse_prepare(self, systemID: playerWebSystemID):
         if self.players.get_type(systemID) == PLAYER_STATUS.IN_ROOM_PREPARED:
-            player: WebPlayer = self.players.get(systemID)  # type:ignore
+            player: WebPlayer = self.players[systemID]  # type:ignore
             player.status = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
         elif self.players.get_type(systemID) == PLAYER_STATUS.IN_ROOM_NOT_PREPARED:
-            player: WebPlayer = self.players.get(systemID)  # type:ignore
+            player: WebPlayer = self.players[systemID]  # type:ignore
             room: WebRoom = self.rooms[player.room]  # type:ignore
 
             player.status = PLAYER_STATUS.IN_ROOM_PREPARED
@@ -433,14 +432,14 @@ class WEB:
                 WEB_SYSTEM_DATATYPE.runRoom,
                 None,
                 [
-                    (systemID, self.players.get(systemID).name)  #   type:ignore
+                    (systemID, self.players[systemID].name)  #   type:ignore
                     for systemID in room.player_indexs
                 ],
             )
         )
         room.status = ROOM_STATUS.running
         for a_systemID in room.player_indexs:
-            self.players.get(a_systemID).status = (  # type:ignore
+            self.players[a_systemID].status = (  # type:ignore
                 PLAYER_STATUS.IN_ROOM_PLAYING
             )
 
@@ -451,7 +450,7 @@ class WEB:
             self._change_player_to_zombie(systemID)
         else:
             self.player_quit_room(systemID)
-            self.players.set(systemID,None)
+            self.players[systemID]=None
 
     # arg:   systemID should in [0,MAX)
     # arg:   status should be room_is_none
@@ -461,16 +460,16 @@ class WEB:
     ) -> int:
         assert self.players.get_type(systemID) == PLAYER_STATUS.ROOM_IS_NONE
         room_ID = self._find_empty_room(expectedRoomMax)
-        player = self.players.get(systemID)
+        player = self.players[systemID]
 
         try:
             assert player != None
             assert player.room == None
-        except:
+        except AssertionError:
             raise Exception("加你大爷")
 
         # get the room
-        if room_ID >= 0 and room_ID <= self.maxRoom:
+        if room_ID >= 0 and room_ID <= self.max_room:
             room = self.rooms[room_ID]
         else:
             raise IndexError("错误的房间喵喵")  # index error
@@ -511,9 +510,9 @@ class WEB:
     def _room_destruct(self, roomIndex: int) -> None:
         room: WebRoom = self.rooms[roomIndex]  # type:ignore
         for playerIndex in room.player_indexs:
-            player: WebPlayer = self.players.get(playerIndex)  # type: ignore
+            player: WebPlayer = self.players[playerIndex]  # type: ignore
             if self.players.get_type(playerIndex) == PLAYER_STATUS.IN_ROOM_ZOMBIE:
-                self.players.set(playerIndex,None)
+                self.players[playerIndex]=None
             else:
                 player.leave_room()
         self.rooms[roomIndex] = None
@@ -538,17 +537,12 @@ class WEB:
         else:
             raise RoomFullDenial
 
-    # raise: AuthDinal
-    def _checkPassword(
-        self, playerName: str, password: str
-    ) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
-        re = self.accounts_data_manager.checkPassword(playerName, password)
-        return re
+
 
     def _checkOldCookie(
         self, playerIndex: playerWebSystemID, oldCookie: uuid.UUID
     ) -> PLAYER_LEVEL:
-        p = self.players.get(playerIndex)
+        p = self.players[playerIndex]
         if p == None:
             return PLAYER_LEVEL.illegal
         else:
@@ -556,7 +550,7 @@ class WEB:
             return level
 
     def _room_ID_to_Max_player(self, roomIndex: int) -> int:
-        if roomIndex >= 10 and roomIndex < self.maxRoom:
+        if roomIndex >= 10 and roomIndex < self.max_room:
             re = math.floor(roomIndex / 100) + 2
             re = re if (re in [2, 3, 4]) else 2
             return re
@@ -565,7 +559,7 @@ class WEB:
             return 0
 
     def _find_empty_room(self, expected_max_player: int) -> int:
-        for i in range(15, self.maxRoom):
+        for i in range(15, self.max_room):
             if (self._room_ID_to_Max_player(i) == expected_max_player) and self.rooms[
                 i
             ] == None:
@@ -580,7 +574,7 @@ class WEB:
 
         assert self.players.get_type(systemID) == PLAYER_STATUS.IN_ROOM_PLAYING
 
-        self.players.get(systemID).status = (  # type:ignore
+        self.players[systemID].status = (  # type:ignore
             PLAYER_STATUS.IN_ROOM_ZOMBIE
         )
         room: WebRoom = self.rooms[self.players[systemID].room]  # type:ignore
