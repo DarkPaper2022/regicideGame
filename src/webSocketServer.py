@@ -117,7 +117,7 @@ class WEBSOCKET_CLIENT:
             if data_type == WEB_SYSTEM_DATATYPE.ASK_REGISTER:
                 reg_data: DATA_ASK_REGISTER = data
                 try:
-                    self.web.PLAYER_REGISTER(
+                    self.web.pub_register(
                         playerName=reg_data.username,
                         password=reg_data.password,
                     )
@@ -155,7 +155,7 @@ class WEBSOCKET_CLIENT:
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_LOG_IN:
                 try:
                     login_data: DATA_ASK_LOGIN = data
-                    self.playerCookie, self.systemID = self.web.PLAYER_LOG_IN(
+                    self.playerCookie, self.systemID = self.web.pub_login(
                         playerName=login_data.username,
                         password=login_data.password,
                     )
@@ -200,7 +200,7 @@ class WEBSOCKET_CLIENT:
                 if not data:
                     break
                 message = self.dataToMessage(data)
-                self.web.playerSendMessage(message, self.playerCookie)
+                self.web.player_send_message(message, self.playerCookie)
                 if message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     break
             except MessageFormatError as e:
@@ -216,7 +216,7 @@ class WEBSOCKET_CLIENT:
     async def sendThreadFunc(self):
         assert self.playerCookie != None and self.systemID != None
         while True:
-            message = await self.web.playerGetMessage(self.systemID, self.playerCookie)
+            message = await self.web.player_get_message(self.systemID, self.playerCookie)
             data = self.messageToData(message)
             try:
                 await self.websocket.send(data)

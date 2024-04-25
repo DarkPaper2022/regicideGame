@@ -62,7 +62,7 @@ class TCP_CLIENT:
             if l0[0].strip() == b"register":
                 try:
                     l = l0[1].strip().split(b" ")
-                    self.web.PLAYER_REGISTER(
+                    self.web.pub_register(
                         playerName=l[0].decode("utf-8"), password=l[1].decode("utf-8")
                     )
                 except:
@@ -76,7 +76,7 @@ class TCP_CLIENT:
             elif l0[0].strip() == b"log in":
                 try:
                     l = l0[1].strip().split(b" ")
-                    self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
+                    self.playerCookie, self.playerIndex = self.web.pub_login(
                         playerName=l[0].decode("utf-8"), password=l[1].decode("utf-8")
                     )
                     username = l[0].decode("utf-8")
@@ -115,7 +115,7 @@ class TCP_CLIENT:
                 if not data:
                     break
                 message = self.dataToMessage(data)
-                self.web.playerSendMessage(message, self.playerCookie)
+                self.web.player_send_message(message, self.playerCookie)
                 if message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     break
             except socket.timeout:
@@ -143,7 +143,7 @@ class TCP_CLIENT:
     # send To netcat
     async def sendThreadFunc(self):
         while True:
-            message = await self.web.playerGetMessage(
+            message = await self.web.player_get_message(
                 self.playerIndex, self.playerCookie
             )
             data = UI_HEIGHT * b"\n" + self.messageToData(message)

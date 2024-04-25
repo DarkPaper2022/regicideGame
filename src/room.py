@@ -620,7 +620,7 @@ class ROOM:
 
     async def mainRead(self) -> MESSAGE:
         try:
-            message: MESSAGE = await self.web.roomGetMessage(self.roomIndex)
+            message: MESSAGE = await self.web.room_get_message(self.roomIndex)
         except Exception as e:
             self.mainSend(
                 MESSAGE(
@@ -639,4 +639,4 @@ class ROOM:
 
     def mainSend(self, message: MESSAGE):
         logger.info("SEND:" + message.dataType.name + str(message.roomData))
-        self.web.roomSendMessage(message)
+        self.web.room_send_message(message)
