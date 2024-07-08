@@ -1,8 +1,8 @@
-from webSystem import WEB
-from roomBuilder import rommBuilder
+from web_system import WEB
+from rooms.regicide_builder import rommBuilder
 import asyncio
-import tcpServer
-import webSocketServer
+import front_end.tcpServer as tcpServer
+import front_end.webSocketServer as webSocketServer
 import sys
 import atexit
 

@@ -5,6 +5,7 @@ from defineWebSystemMessage import (
     WEB_SYSTEM_DATATYPE,
     REGICIDE_DATATYPE,
 )
+
 from defineWebSystemMessage import *
 from typing import Tuple, Any, Callable
 from defineColor import COLOR
@@ -169,6 +170,7 @@ translate_dict: dict[str, dict[str, DATATYPE]] = {
         "CHANGE_PREPARE": WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE,
         "LEAVE_ROOM": WEB_SYSTEM_DATATYPE.ACTION_LEAVE_ROOM,
         "LOGOUT": WEB_SYSTEM_DATATYPE.LOG_OUT,
+        "TALK_MESSAGE":REGICIDE_DATATYPE.REGICIDE_ACTION_TALKING_MESSAGE,
     },
 }
 

@@ -1,6 +1,7 @@
 from collections import deque
 from typing import List, Union, Deque, Tuple
 from queue import Queue as LockQueue
+
 from defineRegicideMessage import (
     REGICIDE_DATATYPE,
     FROZEN_STATUS_PARTLY,
@@ -9,12 +10,14 @@ from defineRegicideMessage import (
     FROZEN_PLAYER_IN_ROOM,
     playerRoomLocation,
 )
+
 from defineWebSystemMessage import (
     MESSAGE,
     playerWebSystemID,
     WEB_SYSTEM_DATATYPE,
     DATATYPE,
 )
+
 from defineError import CardError
 from defineColor import COLOR, cardToNum
 from defineRound import ROUND
@@ -24,7 +27,8 @@ import random
 import asyncio
 import math
 import sys
-from webSystem import WEB
+from talking_system import TALKING
+from web_system import WEB
 
 
 class BOSS:
@@ -75,27 +79,6 @@ class PLAYER:
 
     def newGame(self):
         self.cards = []
-
-
-class TALKING:
-    messages: Deque[TALKING_MESSAGE]
-
-    def __init__(self) -> None:
-        self.messages = deque(maxlen=100)
-
-    def insert(self, message: TALKING_MESSAGE):
-        if len(self.messages) == 0 or self.messages[0].time < message.time:
-            self.messages.appendleft(message)
-        else:
-            # TODO: maybe a little sort ?
-            self.messages.appendleft(message)
-
-    def get(self) -> Tuple[TALKING_MESSAGE, ...]:
-        return tuple(self.messages)
-
-    def clear(self) -> None:
-        self.messages.clear()
-        return
 
 
 class ROOM:

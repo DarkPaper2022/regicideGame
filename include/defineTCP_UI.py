@@ -75,7 +75,7 @@ translate_dict:dict[str,DATATYPE] = {
     "room status":WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
     
     "status":REGICIDE_DATATYPE.askStatus,
-    "talk log":REGICIDE_DATATYPE.askTalking,
+    "talk log":REGICIDE_DATATYPE.REGICIDE_ACTION_TALKING_MESSAGE,
     "card":REGICIDE_DATATYPE.card,
     "speak":REGICIDE_DATATYPE.speak,
     "joker":REGICIDE_DATATYPE.confirmJoker 

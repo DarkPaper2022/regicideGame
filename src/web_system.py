@@ -14,6 +14,7 @@ from defineWebSystemMessage import (
     DINAL_TYPE,
     DATA_ANSWER_LOGIN,
 )
+
 from defineWebSystemMessage import *
 from defineError import (
     AuthDenial,
@@ -161,6 +162,8 @@ class WEB:
                             )
                         )
                         self.player_send_room_status(message.playerID)
+
+                    # TODO: WHAT THE HELL
                     except Exception as e:
                         systemID = message.playerID
                         player.playerQueue.put_nowait(

@@ -8,7 +8,7 @@ import time
 from dataclasses import asdict
 from myLogger import logger
 from typing import List, Any, Tuple, Union
-from webSystem import WEB
+from web_system import WEB
 from defineRegicideMessage import (
     TALKING_MESSAGE,
     FROZEN_STATUS_PARTLY,

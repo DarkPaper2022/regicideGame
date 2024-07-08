@@ -13,8 +13,8 @@ class REGICIDE_DATATYPE(Enum):
     askStatus = 1       
     #from client, none message
     REGICIDE_ANSWER_STATUS = 3    #to client
+    REGICIDE_ACTION_TALKING_MESSAGE = 2
     #hall should deal with it when room is not started
-    askTalking = 2      #from client, none message
     answerTalking = 4   #to client
     card = 5            #from client                使用: "5#S5 J5"、"5#52" 这样的方式来出牌
     startSignal = 6     #none

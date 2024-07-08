@@ -6,12 +6,14 @@ import time
 import json
 from myLogger import logger
 from typing import List, Any, Tuple, Union, Optional
-from webSystem import WEB
+from web_system import WEB
+
 from defineRegicideMessage import (
     TALKING_MESSAGE,
     FROZEN_STATUS_PARTLY,
     REGICIDE_DATATYPE,
 )
+
 from defineWebSystemMessage import (
     MESSAGE,
     playerWebSystemID,
@@ -25,6 +27,7 @@ from defineWebSystemMessage import (
     DATA_ANSWER_REGISTER,
     FROZEN_GAME_TYPE,
 )
+
 from dataclasses import dataclass
 from defineError import AuthDenial, MessageFormatError, RegisterDenial
 from define_JSON_UI_1 import strToCard, ComplexFrontEncoder
