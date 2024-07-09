@@ -1,17 +1,17 @@
-from defineRegicideMessage import FROZEN_STATUS_PARTLY, FROZEN_BOSS
-from defineWebSystemMessage import (
+from include.defineRegicideMessage import FROZEN_STATUS_PARTLY, FROZEN_BOSS
+from include.defineWebSystemMessage import (
     MESSAGE,
     DATATYPE,
     WEB_SYSTEM_DATATYPE,
     REGICIDE_DATATYPE,
 )
 
-from defineWebSystemMessage import *
+from include.defineWebSystemMessage import *
 from typing import Tuple, Any, Callable
-from defineColor import COLOR
-from defineRound import ROUND
+from include.defineColor import COLOR
+from include.defineRound import ROUND
 from dataclasses import dataclass, asdict
-from myLogger import logger
+from include.myLogger import logger
 import math
 import json
 from enum import Enum

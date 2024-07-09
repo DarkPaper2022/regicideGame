@@ -1,7 +1,7 @@
 from collections import deque
 from typing import Deque, Tuple
 
-from defineRegicideMessage import TALKING_MESSAGE
+from include.defineRegicideMessage import TALKING_MESSAGE
 
 
 class TALKING:

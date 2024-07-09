@@ -1,8 +1,8 @@
 import uuid
 import math
 from dataclasses import dataclass
-from defineRegicideMessage import GAME_SETTINGS
-from defineWebSystemMessage import (
+from include.defineRegicideMessage import GAME_SETTINGS
+from include.defineWebSystemMessage import (
     MESSAGE,
     playerWebSystemID,
     PLAYER_LEVEL,
@@ -15,8 +15,8 @@ from defineWebSystemMessage import (
     DATA_ANSWER_LOGIN,
 )
 
-from defineWebSystemMessage import *
-from defineError import (
+from include.defineWebSystemMessage import *
+from include.defineError import (
     AuthDenial,
     PlayerNumError,
     ServerBusyError,
@@ -27,12 +27,12 @@ from defineError import (
     RoomOutOfRangeDenial,
     RoomNotExistDenial,
 )
-from myLockQueue import myLockQueue as LockQueue
+from include.myLockQueue import myLockQueue as LockQueue
 from collections import deque
 from typing import List, Union, Tuple
-from myLogger import logger
+from include.myLogger import logger
 from enum import Enum
-from DarkPaperMySQL import sqlSystem as sqlSystem
+from include.DarkPaperMySQL import sqlSystem as sqlSystem
 from importlib import metadata
 
 room_ID_WEBSYSTEM = -1

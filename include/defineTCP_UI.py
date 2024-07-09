@@ -1,8 +1,8 @@
-from defineRegicideMessage import FROZEN_STATUS_PARTLY, FROZEN_BOSS,REGICIDE_DATATYPE
-from defineWebSystemMessage import WEB_SYSTEM_DATATYPE,DATATYPE
+from include.defineRegicideMessage import FROZEN_STATUS_PARTLY, FROZEN_BOSS,REGICIDE_DATATYPE
+from include.defineWebSystemMessage import WEB_SYSTEM_DATATYPE,DATATYPE
 from typing import Tuple
-from defineColor import COLOR
-from defineRound import ROUND
+from include.defineColor import COLOR
+from include.defineRound import ROUND
 import math
 
 

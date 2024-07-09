@@ -1,9 +1,9 @@
 from typing import Tuple,List
 import mysql.connector
 import re
-from defineError import AuthDenial,DINAL_TYPE,RegisterDenial,AuthError
-from myLogger import logger
-from defineWebSystemMessage import playerWebSystemID,PLAYER_LEVEL
+from include.defineError import AuthDenial,DINAL_TYPE,RegisterDenial,AuthError
+from include.myLogger import logger
+from include.defineWebSystemMessage import playerWebSystemID,PLAYER_LEVEL
 import configparser
 config = configparser.ConfigParser()
 config.read('private/config')

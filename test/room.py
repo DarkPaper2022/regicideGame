@@ -1,8 +1,8 @@
 import math
 import queue
-import regicide_room
-from defineWebSystemMessage import *
-from myLockQueue import *
+import src.rooms.regicide_room
+from include.defineWebSystemMessage import *
+from include.myLockQueue import *
 import asyncio
 import aioconsole
 

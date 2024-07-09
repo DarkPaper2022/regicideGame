@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Union, Deque, Tuple
 from queue import Queue as LockQueue
 import pickle
 import uuid
-from defineRegicideMessage import (
+from include.defineRegicideMessage import (
     REGICIDE_DATATYPE,
     FROZEN_STATUS_PARTLY,
     FROZEN_BOSS,
@@ -12,24 +12,24 @@ from defineRegicideMessage import (
     playerRoomLocation,
 )
 
-from defineWebSystemMessage import (
+from include.defineWebSystemMessage import (
     MESSAGE,
     playerWebSystemID,
     WEB_SYSTEM_DATATYPE,
     DATATYPE,
 )
 
-from defineError import CardError
-from defineColor import COLOR, cardToNum
-from defineRound import ROUND
-from myLogger import logger
+from include.defineError import CardError
+from include.defineColor import COLOR, cardToNum
+from include.defineRound import ROUND
+from include.myLogger import logger
 from dataclasses import dataclass
 import random
 import asyncio
 import math
 import sys
-from rooms.regicide_talking import TALKING
-from web_system import WEB
+from src.rooms.regicide_talking import TALKING
+from src.web_system import WEB
 
 
 class BOSS:

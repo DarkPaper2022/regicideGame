@@ -2,19 +2,19 @@ import socket
 import uuid
 import random
 import json
-from define_JSON_UI_1 import SimpleEncoder, ComplexFrontEncoder
+from include.define_JSON_UI_1 import SimpleEncoder, ComplexFrontEncoder
 import asyncio
 import time
 from dataclasses import asdict
-from myLogger import logger
+from include.myLogger import logger
 from typing import List, Any, Tuple, Union
-from web_system import WEB
-from defineRegicideMessage import (
+from src.web_system import WEB
+from include.defineRegicideMessage import (
     TALKING_MESSAGE,
     FROZEN_STATUS_PARTLY,
     REGICIDE_DATATYPE,
 )
-from defineWebSystemMessage import (
+from include.defineWebSystemMessage import (
     MESSAGE,
     playerWebSystemID,
     WEB_SYSTEM_DATATYPE,
@@ -24,9 +24,9 @@ from defineWebSystemMessage import (
     PLAYER_STATUS,
 )
 from dataclasses import dataclass
-from defineError import AuthDenial, MessageFormatError, RegisterDenial
-from defineTCP_UI import cardsToStr, bossToStr, strToCard, translate_dict
-from defineRound import ROUND
+from include.defineError import AuthDenial, MessageFormatError, RegisterDenial
+from include.defineTCP_UI import cardsToStr, bossToStr, strToCard, translate_dict
+from include.defineRound import ROUND
 
 UI_HEIGHT = 30
 
@@ -198,24 +198,10 @@ class TCP_CLIENT:
         except:
             raise MessageFormatError("Fuck you!")
         message = MESSAGE(roomID, self.playerIndex, data_type, messageData, web_data)
-        try:
-            from define_copy_memory import save_dataclass_to_file
-
-            save_dataclass_to_file(message)
-            # logger.debug("json is sending to room:\n" + str(asdict(message)))
-        except Exception as e:
-            logger.error("SHIT" + str(e))
         return message
 
     # Warning: not math function, self.room changed here
     def messageToData(self, message: MESSAGE) -> bytes:
-        try:
-            from define_copy_memory import save_dataclass_to_file
-
-            save_dataclass_to_file(message)
-            # logger.debug("json is sending to client:\n" + str(asdict(message)))
-        except Exception as e:
-            logger.error("SHIT" + str(e))
         if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n{message.roomID}".encode()
         if message.dataType == REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS:
