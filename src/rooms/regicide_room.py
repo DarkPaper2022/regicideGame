@@ -1,7 +1,8 @@
 from collections import deque
-from typing import List, Union, Deque, Tuple
+from typing import Any, Callable, Dict, List, Union, Deque, Tuple
 from queue import Queue as LockQueue
-
+import pickle
+import uuid
 from defineRegicideMessage import (
     REGICIDE_DATATYPE,
     FROZEN_STATUS_PARTLY,
@@ -27,7 +28,7 @@ import random
 import asyncio
 import math
 import sys
-from talking_system import TALKING
+from rooms.regicide_talking import TALKING
 from web_system import WEB
 
 
@@ -132,6 +133,16 @@ class ROOM:
         self.roomIndex = roomIndex
         self.playerTotalNum = self.web._room_ID_to_Max_player(roomIndex)
         self.talkings = TALKING()
+
+    def __getstate__(self) -> Dict[str, Any]:
+        re = self.__dict__
+        del re["web"]
+        return re
+
+    def __setstate__(self, state: Dict[str, Any], web: WEB) -> None:
+        self.__dict__ = state
+        self.web = web
+        return
 
     def getCard_cardHeap(self, cnt):
         notEmptyPlayerIndex = self.currentPlayer.location
@@ -382,7 +393,11 @@ class ROOM:
 
     async def start(self):
         self.startGame()
+        cnt = 0
+        save_id = uuid.uuid4()
         while True:
+            cnt += 1
+            pickle.dump(self, open(f"data/room/{save_id}_{cnt}.pkl", "wb"))
             if self.currentRound == ROUND.over:
                 return
             elif self.currentRound == ROUND.atk:
@@ -537,29 +552,30 @@ class ROOM:
 
     # ret:保证一定返回合适类型的信息
     async def dataTypeSeprator(self, expected: DATATYPE):
-        while True:
-            message = await self.mainRead()
-            if message.dataType == REGICIDE_DATATYPE.askStatus:
-                self.ioSendStatus(self._webSystemID_toPlayerLocation(message.playerID))
-                continue
-            elif message.dataType == REGICIDE_DATATYPE.askTalking:
-                self.ioSendTalkings(message.playerID)
-                continue
-            elif message.dataType != expected:
-                self.ioSendException(message.playerID, "我现在不要这种的信息啊岂可修")
-                continue
-            else:
-                return message
+        check: Callable[[MESSAGE], bool] = lambda message: message.dataType != expected
+        return await self._Seperator(check)
 
     # ret:保证一定返回合适类型、由合适人发来的消息
     async def mixSeperator(self, expected: List[Tuple[playerRoomLocation, DATATYPE]]):
+        check: Callable[[MESSAGE], bool] = (
+            lambda message: (message.playerID, message.dataType) not in expected
+        )
+        return await self._Seperator(check)
+
+    async def _Seperator(self, check: Callable[[MESSAGE], bool]):
         while True:
             message = await self.mainRead()
             if message.dataType == REGICIDE_DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.playerID))
-            elif message.dataType == REGICIDE_DATATYPE.askTalking:
+            elif message.dataType == REGICIDE_DATATYPE.REGICIDE_ACTION_TALKING_MESSAGE:
                 self.ioSendTalkings(message.playerID)
-            elif (message.playerID, message.dataType) not in expected:
+            elif message.dataType == WEB_SYSTEM_DATATYPE.dumpRoom:
+                pickle.dump(self, open(f"data/room/{message.roomData}.pkl", "wb"))
+            elif message.dataType == WEB_SYSTEM_DATATYPE.loadRoom:
+                tmp_web = self.web
+                tmp_dict = pickle.load(open(f"data/room/{message.roomData}.pkl", "rb"))
+                self.__setstate__(tmp_dict, tmp_web)
+            elif check(message):
                 self.ioSendException(message.playerID, "我现在不要这种的信息啊岂可修")
             else:
                 return message

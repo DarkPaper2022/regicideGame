@@ -35,6 +35,9 @@ from enum import Enum
 from DarkPaperMySQL import sqlSystem as sqlSystem
 from importlib import metadata
 
+room_ID_WEBSYSTEM = -1
+player_ID_WEBSYSTEM = playerWebSystemID(-1)
+
 
 def get_version() -> str:
     import os
@@ -86,7 +89,7 @@ class WEB_ROOM:
     def removePlayer(self, systemID: playerWebSystemID):
         player_out_of_room_message = MESSAGE(
             roomID=self.roomID,
-            playerID=playerWebSystemID(-1),
+            playerID=player_ID_WEBSYSTEM,
             dataType=WEB_SYSTEM_DATATYPE.PLAYER_ESCAPE,
             roomData=None,
             webData=systemID,
@@ -134,11 +137,11 @@ class WEB:
             # arg: player or room of the message is not -1
             message: MESSAGE = await self.web_system_queue.get()
             logger.debug(message)
-            if message.playerID == playerWebSystemID(-1):
+            if message.playerID == player_ID_WEBSYSTEM:
                 if message.dataType == WEB_SYSTEM_DATATYPE.destroyRoom:
                     self._room_destruct(message.roomID)
 
-            elif message.roomID == -1:
+            elif message.roomID == room_ID_WEBSYSTEM:
                 player: WEB_PLAYER = self.players[message.playerID]  # type:ignore
                 if message.dataType == WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE:
                     self.player_reverse_prepare(message.playerID)
@@ -246,6 +249,23 @@ class WEB:
                 room.roomQueue.put_nowait(message)
             else:
                 self.player_send_room_status(message.playerID)
+                
+    def adminSendMessage(self, message: MESSAGE, cookie: uuid.UUID):
+        admin = self.players[message.playerID]
+        assert admin != None and admin.playerCookie == cookie
+        if message.dataType in admin_types:
+            logger.warning(f"adminSendMessage: {message}")
+            if admin.playerLevel != PLAYER_LEVEL.superUser:
+                logger.error(f"非法的管理员操作:{message}")
+            else:
+                if message.roomID == -1:
+                    self.web_system_queue.put_nowait(message)
+                else:
+                    room = self.rooms[message.roomID]
+                    if room != None:
+                        room.roomQueue.put_nowait(message)
+                    else:
+                        logger.error(f"非法的管理员操作:{message}")  # TODO: WHAT the HELL
 
     def broadcast_room_status(self, roomID: Optional[int]):
         try:

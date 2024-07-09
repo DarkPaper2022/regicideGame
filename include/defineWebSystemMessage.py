@@ -71,8 +71,11 @@ class WEB_SYSTEM_DATATYPE(Enum):
     LOG_OUT = 102
 
     HE_IS_A_ZOMBIE = 104
+    
+    dumpRoom = 105
+    loadRoom = 106
 
-
+admin_types = [WEB_SYSTEM_DATATYPE.dumpRoom, WEB_SYSTEM_DATATYPE.loadRoom]
 
 
 DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
