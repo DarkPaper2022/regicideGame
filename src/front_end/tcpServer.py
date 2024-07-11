@@ -25,7 +25,7 @@ from include.defineWebSystemMessage import (
 )
 from dataclasses import dataclass
 from include.defineError import AuthDenial, MessageFormatError, RegisterDenial
-from include.defineTCP_UI import cardsToStr, bossToStr, strToCard, translate_dict
+from TCP_UI_tools import cardsToStr, bossToStr, strToCard, translate_dict
 from include.defineRound import ROUND
 
 UI_HEIGHT = 30
@@ -54,7 +54,8 @@ class TCP_CLIENT:
         username = ""
         while True:
             self.writer.write(0 * b"\n" + b"Username and Password, plz\n")
-            data = await self.reader.read(1024)
+            data = await self.reader.readline()
+            logger.debug(f"raw message recieved from tcp socket: {data}")
             if not data:
                 self.writer.close()
                 return
@@ -108,10 +109,12 @@ class TCP_CLIENT:
     # recv From  netcat
     async def recvThreadFunc(self):
         # 认为到这里我们拿到了一个正常的cookie和playerIndex,但是没有合适的room
+        logger.debug(f"recv thread start")
         timeOutCnt = 0
         while True:
             try:
-                data = await self.reader.read(1024)
+                data = await self.reader.readline()
+                logger.debug(f"raw message recieved from tcp socket: {data}")
                 if not data:
                     break
                 message = self.dataToMessage(data)
@@ -146,7 +149,7 @@ class TCP_CLIENT:
             message = await self.web.playerGetMessage(
                 self.playerIndex, self.playerCookie
             )
-            data = UI_HEIGHT * b"\n" + self.messageToData(message)
+            data = UI_HEIGHT * b"\n" + self.messageToData(message) + b"\n"
             try:
                 self.writer.write(data)
             except socket.timeout:
@@ -361,8 +364,9 @@ class TCP_SERVER:
                 if cnt == 10:
                     logger.error("端口怎么死活拿不到呢呢呢")
                     return
+        logger.error("I GOT HERE: tcp server end")
 
 
 async def tcpClientHandler(reader, writer, web):
     tcpClient = TCP_CLIENT(reader, writer, web, timeOutSetting=300)
-    await asyncio.create_task(tcpClient.authThread())
+    await tcpClient.authThread()

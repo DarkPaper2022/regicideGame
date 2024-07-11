@@ -14,6 +14,7 @@
     - quit#
     - logout#
     - roomstatus#
+    - loadroom#<roomID> 
 - room
     - status#
     - talk#

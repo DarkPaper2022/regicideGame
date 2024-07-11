@@ -1,6 +1,6 @@
 from include.defineRegicideMessage import FROZEN_STATUS_PARTLY, FROZEN_BOSS,REGICIDE_DATATYPE
 from include.defineWebSystemMessage import WEB_SYSTEM_DATATYPE,DATATYPE
-from typing import Tuple
+from typing import Optional, Tuple
 from include.defineColor import COLOR
 from include.defineRound import ROUND
 import math
@@ -49,9 +49,11 @@ def strToCard(b: bytes) -> int:
         color = COLOR[s[0]].value
         sRest = s[1:]
         card_str_dict = {"A": 1, "J": 11, "Q": 12, "K": 13}
-        num = card_str_dict.get(sRest, int(sRest) if 1 <= int(sRest) <= 10 else -1)
-
-        if num == -1:
+        num:Optional[int] = card_str_dict.get(sRest)
+        if num == None:
+            num = int(sRest) if 1 <= int(sRest) <= 10 else None
+        
+        if num == None:
             raise ValueError("输入处理出错")
         else:
             return color * 13 + num - 1

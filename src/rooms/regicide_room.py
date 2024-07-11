@@ -135,14 +135,12 @@ class ROOM:
         self.talkings = TALKING()
 
     def __getstate__(self) -> Dict[str, Any]:
-        re = self.__dict__
+        re = self.__dict__.copy()
         del re["web"]
+        del re["roomIndex"]
         return re
 
-    def __setstate__(self, state: Dict[str, Any], web: WEB) -> None:
-        self.__dict__ = state
-        self.web = web
-        return
+
 
     def getCard_cardHeap(self, cnt):
         notEmptyPlayerIndex = self.currentPlayer.location
@@ -552,17 +550,17 @@ class ROOM:
 
     # ret:保证一定返回合适类型的信息
     async def dataTypeSeprator(self, expected: DATATYPE):
-        check: Callable[[MESSAGE], bool] = lambda message: message.dataType != expected
-        return await self._Seperator(check)
+        check_wanted: Callable[[MESSAGE], bool] = lambda message: message.dataType == expected
+        return await self._Seperator(check_wanted)
 
     # ret:保证一定返回合适类型、由合适人发来的消息
     async def mixSeperator(self, expected: List[Tuple[playerRoomLocation, DATATYPE]]):
-        check: Callable[[MESSAGE], bool] = (
-            lambda message: (message.playerID, message.dataType) not in expected
+        check_wanted: Callable[[MESSAGE], bool] = (
+            lambda message: ( self._webSystemID_toPlayerLocation(message.playerID), message.dataType) in expected
         )
-        return await self._Seperator(check)
+        return await self._Seperator(check_wanted)
 
-    async def _Seperator(self, check: Callable[[MESSAGE], bool]):
+    async def _Seperator(self, check_wanted: Callable[[MESSAGE], bool]):
         while True:
             message = await self.mainRead()
             if message.dataType == REGICIDE_DATATYPE.askStatus:
@@ -575,7 +573,7 @@ class ROOM:
                 tmp_web = self.web
                 tmp_dict = pickle.load(open(f"data/room/{message.roomData}.pkl", "rb"))
                 self.__setstate__(tmp_dict, tmp_web)
-            elif check(message):
+            elif not check_wanted(message):
                 self.ioSendException(message.playerID, "我现在不要这种的信息啊岂可修")
             else:
                 return message
@@ -633,9 +631,9 @@ class ROOM:
             logger.debug(f"{e}")
             logger.info(f"ROOM{self.roomIndex}正常关闭了")
             sys.exit()
-        logger.info("READ:" + message.dataType.name + str(message.roomData))
+        logger.debug("room get a message:" + message.dataType.name +" " + str(message.roomData))
         return message
 
     def mainSend(self, message: MESSAGE):
-        logger.info("SEND:" + message.dataType.name + str(message.roomData))
+        logger.debug("room send a message:" + message.dataType.name+ " " + str(message.roomData))
         self.web.roomSendMessage(message)
