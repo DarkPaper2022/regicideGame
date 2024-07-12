@@ -1,7 +1,6 @@
 import uuid
 import math
 from dataclasses import dataclass
-from include.defineRegicideMessage import GAME_SETTINGS
 from include.defineWebSystemMessage import (
     MESSAGE,
     playerWebSystemID,
@@ -37,7 +36,6 @@ from importlib import metadata
 
 room_ID_WEBSYSTEM = -1
 player_ID_WEBSYSTEM = playerWebSystemID(-1)
-
 
 def get_version() -> str:
     import os
@@ -90,7 +88,7 @@ class WEB_ROOM:
         player_out_of_room_message = MESSAGE(
             roomID=self.roomID,
             playerID=player_ID_WEBSYSTEM,
-            dataType=WEB_SYSTEM_DATATYPE.PLAYER_ESCAPE,
+            data_type=WEB_SYSTEM_DATATYPE.PLAYER_ESCAPE,
             roomData=None,
             webData=systemID,
         )
@@ -117,7 +115,7 @@ class WEB:
 
     players: List[Union[WEB_PLAYER, None]]
     rooms: List[Union[WEB_ROOM, None]]
-
+    
     def __init__(self, maxPlayer: int, maxRoom) -> None:
         self.maxPlayer = maxPlayer  # should syntax with mysql
         self.maxRoom = maxRoom
@@ -138,18 +136,18 @@ class WEB:
             message: MESSAGE = await self.web_system_queue.get()
             logger.debug(message)
             if message.playerID == player_ID_WEBSYSTEM:
-                if message.dataType == WEB_SYSTEM_DATATYPE.destroyRoom:
+                if message.data_type == WEB_SYSTEM_DATATYPE.destroyRoom:
                     self._room_destruct(message.roomID)
 
             elif message.roomID == room_ID_WEBSYSTEM:
                 player: WEB_PLAYER = self.players[message.playerID]  # type:ignore
-                if message.dataType == WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE:
+                if message.data_type == WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE:
                     self.player_reverse_prepare(message.playerID)
                     self.broadcast_room_status(player.playerRoom)
-                elif message.dataType == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
+                elif message.data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                     room_ID = self.player_create_room(message.playerID, message.webData)
                     self.player_send_room_status(message.playerID)
-                elif message.dataType == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
+                elif message.data_type == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
                     try:
                         self.player_join_room(message.playerID, message.roomData)
                         self.broadcast_room_status(player.playerRoom)
@@ -178,14 +176,14 @@ class WEB:
                                 webData=str(e),
                             )
                         )
-                elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
+                elif message.data_type == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
                     self.player_send_room_status(message.playerID)
-                elif message.dataType == WEB_SYSTEM_DATATYPE.ACTION_LEAVE_ROOM:
+                elif message.data_type == WEB_SYSTEM_DATATYPE.ACTION_LEAVE_ROOM:
                     roomID = player.playerRoom
                     self.player_quit_room(message.playerID)
                     self.broadcast_room_status(roomID)
                     self.player_send_room_status(message.playerID)
-                elif message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
+                elif message.data_type == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     roomID = player.playerRoom
                     self.player_log_out(message.playerID)
                     self.broadcast_room_status(roomID)
@@ -235,7 +233,7 @@ class WEB:
                     -1, playerIndex, WEB_SYSTEM_DATATYPE.cookieWrong, None, None
                 )
 
-    def playerSendMessage(self, message: MESSAGE, cookie: uuid.UUID):
+    def player_send_message(self, message: MESSAGE, cookie: uuid.UUID):
         player = self.players[message.playerID]
         assert player != None and player.playerCookie == cookie
         if message.roomID == -1:
@@ -249,23 +247,31 @@ class WEB:
                 room.roomQueue.put_nowait(message)
             else:
                 self.player_send_room_status(message.playerID)
-                
+            
     def adminSendMessage(self, message: MESSAGE, cookie: uuid.UUID):
         admin = self.players[message.playerID]
-        assert admin != None and admin.playerCookie == cookie
-        if message.dataType in admin_types:
-            logger.warning(f"adminSendMessage: {message}")
-            if admin.playerLevel != PLAYER_LEVEL.superUser:
-                logger.error(f"非法的管理员操作:{message}")
+        assert admin != None and admin.playerCookie == cookie and admin.playerLevel == PLAYER_LEVEL.superUser
+        if message.data_type in admin_types:
+            logger.info(f"adminSendMessage: {message}")
+            if message.roomID == -1:
+                self.web_system_queue.put_nowait(message)
             else:
-                if message.roomID == -1:
-                    self.web_system_queue.put_nowait(message)
-                else:
-                    room = self.rooms[message.roomID]
-                    if room != None:
-                        room.roomQueue.put_nowait(message)
-                    else:
-                        logger.error(f"非法的管理员操作:{message}")  # TODO: WHAT the HELL
+                room = self.rooms[message.roomID]
+                assert room != None
+                room.roomQueue.put_nowait(message)
+        else:
+            self.player_send_message(message, cookie)
+
+
+
+
+
+
+
+
+
+
+
 
     def broadcast_room_status(self, roomID: Optional[int]):
         try:
@@ -320,12 +326,10 @@ class WEB:
     # ret:   A player not in any room, or keep its origin room
     def PLAYER_LOG_IN(
         self, playerName: str, password: str
-    ) -> Tuple[uuid.UUID, playerWebSystemID]:
+    ) -> Tuple[uuid.UUID, playerWebSystemID, PLAYER_LEVEL]:
         logger.debug(f"""login :{playerName}, {password}""")
-        systemID, level = self._checkPassword(playerName, password)
-        if level == PLAYER_LEVEL.superUser:
-            raise AuthDenial(DINAL_TYPE.LOGIN_SUPER_USER)
-        elif level == PLAYER_LEVEL.normal:
+        systemID, level = self._check_password(playerName, password)
+        if level in [PLAYER_LEVEL.superUser, PLAYER_LEVEL.normal]:
             cookie = uuid.uuid4()
             if self.players[systemID] != None:
                 self.player_log_out(systemID)
@@ -338,7 +342,7 @@ class WEB:
                     LockQueue(),
                     playerName=playerName,
                     playerRoom=None,
-                    playerLevel=PLAYER_LEVEL.normal,
+                    playerLevel=level,
                     playerCookie=cookie,
                     playerStatus=PLAYER_STATUS.ROOM_IS_NONE,
                 )
@@ -357,7 +361,8 @@ class WEB:
             )
             player.playerQueue.put_nowait(message)
             self.player_send_room_status(systemID)
-            return cookie, systemID
+            logger.debug("login succeed.")
+            return cookie, systemID, level
         else:
             raise AuthError
 
@@ -542,7 +547,7 @@ class WEB:
             raise RoomFullDenial
 
     # raise: AuthDinal
-    def _checkPassword(
+    def _check_password(
         self, playerName: str, password: str
     ) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
         re = self.sqlSystem.checkPassword(playerName, password)
@@ -593,7 +598,7 @@ class WEB:
             MESSAGE(
                 roomID=room.roomID,
                 playerID=playerWebSystemID(-1),
-                dataType=WEB_SYSTEM_DATATYPE.HE_IS_A_ZOMBIE,
+                data_type=WEB_SYSTEM_DATATYPE.HE_IS_A_ZOMBIE,
                 roomData=None,
                 webData=systemID,
             )

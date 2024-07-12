@@ -41,10 +41,13 @@ Boss:
 """
 
 
+
+
+
 # arg:strip outside
 # ret:legal card
-def strToCard(b: bytes) -> int:
-    s = b.decode()
+def strToCard(b: str) -> int:
+    s = b
     if s[0] in [c.name for c in COLOR]:
         color = COLOR[s[0]].value
         sRest = s[1:]
@@ -75,11 +78,13 @@ translate_dict:dict[str,DATATYPE] = {
     "quit":WEB_SYSTEM_DATATYPE.ACTION_LEAVE_ROOM,
     "log out":WEB_SYSTEM_DATATYPE.LOG_OUT,
     "room status":WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
+    "load":WEB_SYSTEM_DATATYPE.LOAD_ROOM,
+
     
     "status":REGICIDE_DATATYPE.askStatus,
     "talk log":REGICIDE_DATATYPE.REGICIDE_ACTION_TALKING_MESSAGE,
     "card":REGICIDE_DATATYPE.card,
     "speak":REGICIDE_DATATYPE.speak,
-    "joker":REGICIDE_DATATYPE.confirmJoker 
+    "joker":REGICIDE_DATATYPE.confirmJoker,
 }
 

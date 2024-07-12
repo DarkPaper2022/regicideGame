@@ -73,9 +73,9 @@ class WEB_SYSTEM_DATATYPE(Enum):
     HE_IS_A_ZOMBIE = 104
     
     dumpRoom = 105
-    loadRoom = 106
+    LOAD_ROOM = 106
 
-admin_types = [WEB_SYSTEM_DATATYPE.dumpRoom, WEB_SYSTEM_DATATYPE.loadRoom]
+admin_types = [WEB_SYSTEM_DATATYPE.dumpRoom, WEB_SYSTEM_DATATYPE.LOAD_ROOM]
 
 
 DATATYPE = Union[WEB_SYSTEM_DATATYPE, REGICIDE_DATATYPE]
@@ -147,6 +147,6 @@ class DATA_UPDATE_PLAYER_STATUS:
 class MESSAGE:
     roomID: int
     playerID: playerWebSystemID
-    dataType: DATATYPE
+    data_type: DATATYPE
     roomData: Any
     webData: Any

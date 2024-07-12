@@ -1,7 +1,7 @@
 from src.web_system import WEB
 from src.rooms.regicide_builder import rommBuilder
 import asyncio
-import src.front_end.tcpServer as tcpServer
+import src.front_end.tcp_server as tcp_server
 import src.front_end.webSocketServer as webSocketServer
 import sys
 import atexit
@@ -20,7 +20,7 @@ UserMax, RoomMax = 10000, 10000
 web = WEB(UserMax, RoomMax)
 loop = asyncio.get_event_loop()
 server_ws = webSocketServer.WEBSOCKET_SERVER(web, port_ws, loop)
-server_tcp = tcpServer.TCP_SERVER(web, port_tcp, loop)
+server_tcp = tcp_server.TCP_SERVER(web, port_tcp, loop)
 hall = rommBuilder(web)
 
 

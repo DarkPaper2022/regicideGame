@@ -1,14 +1,17 @@
 from collections import deque
+import os
 from typing import Any, Callable, Dict, List, Union, Deque, Tuple
 from queue import Queue as LockQueue
 import pickle
 import uuid
 from include.defineRegicideMessage import (
+    FROZEN_STATUS,
     REGICIDE_DATATYPE,
     FROZEN_STATUS_PARTLY,
     FROZEN_BOSS,
     TALKING_MESSAGE,
-    FROZEN_PLAYER_IN_ROOM,
+    FrozenPlayerInRoom_partly,
+    FrozenPlayerInRoom_archieve,
     playerRoomLocation,
 )
 
@@ -34,16 +37,23 @@ from src.web_system import WEB
 
 class BOSS:
     color: Union[COLOR, None]
-
-    def __init__(self, name):
+    name: int
+    def __init__(self, name:int):
         self.name = name
         self.atk = 10 + 5 * ((name % 13) - 10)
         self.hp = 2 * self.atk
         self.color = COLOR(math.floor(name / 13))
-        self.tempWeakenAtk = 0  # 暂时存在而未生效的虚弱buff总数
+        self.temp_weaken_atk = 0  # 暂时存在而未生效的虚弱buff总数
+
+    def unfroze(self, frozen: FROZEN_BOSS):
+        self.name = frozen.name
+        self.atk = frozen.atk
+        self.hp = frozen.hp
+        self.color = frozen.color
+        self.temp_weaken_atk = frozen.temp_weaken_atk
 
     def frozen(self):
-        return FROZEN_BOSS(self.name, self.atk, self.hp, self.color)
+        return FROZEN_BOSS(self.name, self.atk, self.hp, self.color, self.temp_weaken_atk)
 
     def hurt(self, cnt):
         self.hp = self.hp - cnt
@@ -53,13 +63,13 @@ class BOSS:
 
     def sameColorHandler(self, cnt):
         if self.color == COLOR.S:
-            self.tempWeakenAtk += cnt
+            self.temp_weaken_atk += cnt
         return
 
     def clearify(self):
         self.color = None
-        self.weak(self.tempWeakenAtk)
-        self.tempWeakenAtk = 0
+        self.weak(self.temp_weaken_atk)
+        self.temp_weaken_atk = 0
         return
 
 
@@ -67,12 +77,15 @@ class PLAYER:
     cards: List[int]
     location: playerRoomLocation
     webSystemID: playerWebSystemID
-
+    userName:str
+    
     def __init__(self, location, userName: str, webSystemID):
         self.cards = []
         self.location = location
         self.userName = userName
         self.webSystemID = webSystemID
+
+
 
     def deleteCards(self, cards: List[int]):
         for card in cards:
@@ -117,14 +130,28 @@ class ROOM:
 
         此时,用户发来(以函数参数的形式)同一的结构体格式(管道, 请求类型（str）,具体数据)
     """
+    
+    playerTotalNum:int
+    
     currentRound: ROUND
-    discardBossHeap: Deque[int]
+    
+    defeated_boss_heap: Deque[int]
     currentBoss: BOSS
-    currentPlayer: PLAYER
+    boss_heap:Deque[BOSS]
+    
+    current_player: PLAYER
     playerList: List[PLAYER]
-    discardHeap: Deque[int]
-    atkHeap: Deque[int]
+    
+    discard_heap: Deque[int]
+    atk_heap: Deque[int]
+    card_heap:Deque[int]
+    
+    talkings:TALKING
+    
     web: WEB
+
+
+
 
     def __init__(self, web: WEB, roomIndex: int):
         self.startFlag = False
@@ -133,22 +160,58 @@ class ROOM:
         self.roomIndex = roomIndex
         self.playerTotalNum = self.web._room_ID_to_Max_player(roomIndex)
         self.talkings = TALKING()
+        self.currentRound = ROUND.preparing
+        self.status_to_load = None
+        
+    def froze(self) -> FROZEN_STATUS:
+        players_arch = tuple([FrozenPlayerInRoom_archieve(pl.cards, pl.location) for pl in self.playerList  ])
+        talking_arch = tuple(self.talkings.messages)
+        return FROZEN_STATUS(
+            totalPlayer=self.playerTotalNum, currentRound=self.currentRound,
+            players=players_arch,
+            currentPlayerLocation=self.current_player.location,
+            card_heap=tuple(self.card_heap),
+            disCardHeap=tuple(self.discard_heap),
+            atkCardHeap=tuple(self.atk_heap),
+            defeatedBosses=tuple(self.defeated_boss_heap),
+            currentBoss=self.currentBoss.frozen(),
+            boss_heap=tuple([boss.name for boss in self.boss_heap]),
+            talking=talking_arch
+        )
+        
+    def deal_load(self, status:FROZEN_STATUS):
+            self.status_to_load = status
+            return
+            
+            
 
-    def __getstate__(self) -> Dict[str, Any]:
-        re = self.__dict__.copy()
-        del re["web"]
-        del re["roomIndex"]
-        return re
 
+    def load(self, status:FROZEN_STATUS):
+        if status.totalPlayer != self.playerTotalNum:
+            logger.warning("load failed for the room size don't fit")
+            return
+        self.talkings.messages = deque(status.talking)
+        self.boss_heap=deque([ BOSS(name) for name in status.boss_heap])
+        self.currentBoss.unfroze(status.currentBoss)
+        self.defeated_boss_heap = deque(status.defeatedBosses)
+        self.atk_heap = deque(status.atkCardHeap)
+        self.discard_heap = deque(status.disCardHeap)
+        self.card_heap = deque(status.card_heap)
+        
+        for fpl in status.players:
+            self.playerList[fpl.location].cards = fpl.cards
+            
+        self.current_player = self.playerList[status.currentPlayerLocation]
+        
 
 
     def getCard_cardHeap(self, cnt):
-        notEmptyPlayerIndex = self.currentPlayer.location
+        notEmptyPlayerIndex = self.current_player.location
         notEmptyPlayer = [i for i in range(self.playerTotalNum)]
         # player     0 1 3
         # index      0 1 2
         while cnt != 0:
-            if len(self.cardHeap) == 0:
+            if len(self.card_heap) == 0:
                 return
             elif (
                 len(self.playerList[notEmptyPlayer[notEmptyPlayerIndex]].cards)
@@ -161,7 +224,7 @@ class ROOM:
                     return
             else:
                 self.playerList[notEmptyPlayer[notEmptyPlayerIndex]].cards.append(
-                    self.cardHeap.pop()
+                    self.card_heap.pop()
                 )
                 cnt -= 1
             notEmptyPlayerIndex += 1
@@ -175,29 +238,29 @@ class ROOM:
         self.currentBoss.hurt(cnt)
 
     def update_cardHeap(self, cnt):
-        if cnt >= len(self.discardHeap):
-            random.shuffle(self.discardHeap)
-            self.cardHeap = self.discardHeap + self.cardHeap
-            self.discardHeap.clear()
+        if cnt >= len(self.discard_heap):
+            random.shuffle(self.discard_heap)
+            self.card_heap = self.discard_heap + self.card_heap
+            self.discard_heap.clear()
         else:
-            random.shuffle(self.discardHeap)
-            discardHeapList = list(self.discardHeap)
-            self.cardHeap = deque(discardHeapList[:cnt]) + self.cardHeap
-            self.discardHeap = deque(discardHeapList[cnt:])
+            random.shuffle(self.discard_heap)
+            discardHeapList = list(self.discard_heap)
+            self.card_heap = deque(discardHeapList[:cnt]) + self.card_heap
+            self.discard_heap = deque(discardHeapList[cnt:])
 
     # ret: change the state
     async def jokerRound(self) -> None:
         while True:
             location = await self.ioGetJokerNum()
-            if location == self.currentPlayer.location:
+            if location == self.current_player.location:
                 self.ioSendException(
-                    self.currentPlayer.webSystemID, "不要joker给自己！"
+                    self.current_player.webSystemID, "不要joker给自己！"
                 )
                 continue
             elif location >= self.playerTotalNum or location < 0:
-                self.ioSendException(self.currentPlayer.webSystemID, "有人在乱搞")
+                self.ioSendException(self.current_player.webSystemID, "有人在乱搞")
             else:
-                self.currentPlayer = self.playerList[location]
+                self.current_player = self.playerList[location]
                 self.currentRound = ROUND.atk
                 return
 
@@ -211,10 +274,10 @@ class ROOM:
                     break
                 else:
                     self.ioSendException(
-                        self.currentPlayer.webSystemID, "你小子乱出牌？看规则书吧你！\n"
+                        self.current_player.webSystemID, "你小子乱出牌？看规则书吧你！\n"
                     )
             except CardError as e:
-                self.ioSendException(self.currentPlayer.webSystemID, str(e))
+                self.ioSendException(self.current_player.webSystemID, str(e))
         self._atkRoundHandleLegalCards(cards)  # here change state
         return
 
@@ -253,14 +316,14 @@ class ROOM:
             self.currentRound = ROUND.over
         elif killed:
             self.ioSendGameTalk(
-                self.currentPlayer.webSystemID, "您干死它了,该您的队友干活儿了\n"
+                self.current_player.webSystemID, "您干死它了,该您的队友干活儿了\n"
             )
             self.simpleChangePlayer()
             self.currentRound = ROUND.atk
             return
         else:
             self.ioSendGameTalk(
-                self.currentPlayer.webSystemID, "您输出拉满！但是该防了现在\n"
+                self.current_player.webSystemID, "您输出拉满！但是该防了现在\n"
             )
             # currentPlayer不变哦
             self.currentRound = ROUND.defend
@@ -268,9 +331,9 @@ class ROOM:
 
     # ret: change the state
     def _atkRoundHandleLegalCards(self, cards: List[int]) -> None:
-        self.currentPlayer.deleteCards(cards)
+        self.current_player.deleteCards(cards)
         for card in cards:
-            self.atkHeap.appendleft(card)
+            self.atk_heap.appendleft(card)
         if len(cards) == 1 and (cards[0] == 53 or cards[0] == 52):
             self.currentBoss.clearify()
             self.currentRound = ROUND.jokerTime
@@ -289,7 +352,7 @@ class ROOM:
             if len(set(cards)) != len(cards):
                 return False
         for card in cards:
-            if card not in self.currentPlayer.cards:
+            if card not in self.current_player.cards:
                 return False
         if 52 in cards or 53 in cards:
             return len(cards) == 1
@@ -327,23 +390,23 @@ class ROOM:
         if currentBoss.hp > 0:
             return (False, False)
         elif currentBoss.hp == 0:
-            self.cardHeap.append(currentBoss.name)
+            self.card_heap.append(currentBoss.name)
         else:
-            self.discardHeap.appendleft(currentBoss.name)
-        self.discardBossHeap.append(currentBoss.name)
-        self.discardHeap += self.atkHeap
-        self.atkHeap.clear()
-        if len(self.bossHeap) == 0:
+            self.discard_heap.appendleft(currentBoss.name)
+        self.defeated_boss_heap.append(currentBoss.name)
+        self.discard_heap += self.atk_heap
+        self.atk_heap.clear()
+        if len(self.boss_heap) == 0:
             self.congratulations()
             return (True, True)
         else:
-            self.currentBoss = self.bossHeap.popleft()
+            self.currentBoss = self.boss_heap.popleft()
             return (True, False)
 
     # ret: change the state
     async def defendRound(self):
         if (
-            sum([cardToNum(card) for card in self.currentPlayer.cards])
+            sum([cardToNum(card) for card in self.current_player.cards])
             < self.currentBoss.atk
         ):
             self.fail()
@@ -358,44 +421,46 @@ class ROOM:
                     break
                 else:
                     self.ioSendException(
-                        self.currentPlayer.webSystemID, "你小子乱弃牌？看规则书吧你！\n"
+                        self.current_player.webSystemID, "你小子乱弃牌？看规则书吧你！\n"
                     )
             except CardError as e:
-                self.ioSendException(self.currentPlayer.webSystemID, str(e))
-        self.currentPlayer.deleteCards(cards)
+                self.ioSendException(self.current_player.webSystemID, str(e))
+        self.current_player.deleteCards(cards)
         for card in cards:
-            self.discardHeap.appendleft(card)
-        self.ioSendGameTalk(self.currentPlayer.webSystemID, "您全防住了\n")
+            self.discard_heap.appendleft(card)
+        self.ioSendGameTalk(self.current_player.webSystemID, "您全防住了\n")
         self.simpleChangePlayer()
         self.currentRound = ROUND.atk
         return
 
     def _defendRoundCheckLegalCards(self, cards: List[int]) -> bool:
         for card in cards:
-            if card not in self.currentPlayer.cards:
+            if card not in self.current_player.cards:
                 return False
         if len(set(cards)) != len(cards):
             return False
         return sum([cardToNum(card) for card in cards]) >= self.currentBoss.atk
 
-    # TODO:rename it after
-    async def run(self):
-        await self.roomThreadingFunc()
-        return
 
-    async def roomThreadingFunc(self):
+
+    async def run(self):
         self.playerList = []
         await self.ioGetPlayerRegister()
         while True:
             await self.start()
 
     async def start(self):
-        self.startGame()
+        self.init_game()
         cnt = 0
         save_id = uuid.uuid4()
         while True:
             cnt += 1
-            pickle.dump(self, open(f"data/room/{save_id}_{cnt}.pkl", "wb"))
+            pickle.dump(self.froze(), open(f"data/room/{save_id}_{cnt}.pkl", "wb"))
+            
+            if self.status_to_load !=None:
+                self.load(self.status_to_load)
+                self.status_to_load = None
+            
             if self.currentRound == ROUND.over:
                 return
             elif self.currentRound == ROUND.atk:
@@ -413,7 +478,7 @@ class ROOM:
             else:
                 raise ValueError("strange round")
 
-    def startGame(self):
+    def init_game(self):
         # 这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
         maxPlayer = self.playerTotalNum
         self.maxHandSize = 9 - maxPlayer
@@ -421,34 +486,34 @@ class ROOM:
 
         self.talkings.clear()
 
-        self.currentPlayer = self.playerList[0]
+        self.current_player = self.playerList[0]
         for player in self.playerList:
             player.newGame()
 
-        self.bossHeap = deque()
+        self.boss_heap = deque()
         for num in [10, 11, 12]:
             for color in random.sample(list(COLOR), 4):
-                self.bossHeap.append(BOSS(color.value * 13 + num))
-        self.currentBoss = self.bossHeap.popleft()
+                self.boss_heap.append(BOSS(color.value * 13 + num))
+        self.currentBoss = self.boss_heap.popleft()
 
-        self.cardHeap = deque()
+        self.card_heap = deque()
         for color in list(COLOR):
             for i in range(10):
-                self.cardHeap.append(color.value * 13 + i)
-        self.cardHeap.append(53)
-        self.cardHeap.append(52)
-        random.shuffle(self.cardHeap)
-        self.discardHeap = deque()
-        self.atkHeap = deque()
-        self.discardBossHeap = deque()
+                self.card_heap.append(color.value * 13 + i)
+        self.card_heap.append(53)
+        self.card_heap.append(52)
+        random.shuffle(self.card_heap)
+        self.discard_heap = deque()
+        self.atk_heap = deque()
+        self.defeated_boss_heap = deque()
         self.getCard_cardHeap(self.playerTotalNum * self.maxHandSize)
         self.startFlag = True
         self.currentRound = ROUND.atk
         return
 
     def simpleChangePlayer(self) -> None:
-        self.currentPlayer = self.playerList[
-            (self.currentPlayer.location + 1) % self.playerTotalNum
+        self.current_player = self.playerList[
+            (self.current_player.location + 1) % self.playerTotalNum
         ]
         return
 
@@ -471,7 +536,7 @@ class ROOM:
         if self.startFlag:
             playersLocal = tuple(
                 [
-                    FROZEN_PLAYER_IN_ROOM(
+                    FrozenPlayerInRoom_partly(
                         player.userName, len(player.cards), player.location
                     )
                     for player in self.playerList
@@ -479,19 +544,18 @@ class ROOM:
                 ]
             )
             status = FROZEN_STATUS_PARTLY(
-                disCardHeap=tuple(self.discardHeap),
-                atkCardHeap=tuple(self.atkHeap),
+                disCardHeap=tuple(self.discard_heap),
+                atkCardHeap=tuple(self.atk_heap),
                 currentRound=self.currentRound,
-                currentPlayerLocation=self.currentPlayer.location,
+                currentPlayerLocation=self.current_player.location,
                 totalPlayer=self.playerTotalNum,
                 yourLocation=playerLocation,
                 players=playersLocal,
                 yourCards=tuple(self.playerList[playerLocation].cards),
                 currentBoss=self.currentBoss.frozen(),
-                cardHeapLength=len(self.cardHeap),
-                defeatedBosses=tuple(self.discardBossHeap),
-                discardHeapLength=len(self.discardHeap),
-                elsedata=None,
+                cardHeapLength=len(self.card_heap),
+                defeatedBosses=tuple(self.defeated_boss_heap),
+                discardHeapLength=len(self.discard_heap),
             )
         else:
             l = self.playerList
@@ -499,7 +563,7 @@ class ROOM:
         retMessage: MESSAGE = MESSAGE(
             roomID=self.roomIndex,
             playerID=self.playerList[playerLocation].webSystemID,
-            dataType=REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS,
+            data_type=REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS,
             roomData=status,
             webData=None,
         )
@@ -510,7 +574,7 @@ class ROOM:
         retMessage: MESSAGE = MESSAGE(
             self.roomIndex,
             playerID=webSystemID,
-            dataType=REGICIDE_DATATYPE.answerTalking,
+            data_type=REGICIDE_DATATYPE.answerTalking,
             roomData=talking,
             webData=None,
         )
@@ -520,7 +584,7 @@ class ROOM:
         exceptMessage: MESSAGE = MESSAGE(
             self.roomIndex,
             playerID=webSystemID,
-            dataType=REGICIDE_DATATYPE.exception,
+            data_type=REGICIDE_DATATYPE.exception,
             roomData=exceptStr,
             webData=None,
         )
@@ -530,7 +594,7 @@ class ROOM:
         talkMessage: MESSAGE = MESSAGE(
             self.roomIndex,
             playerID=webSystemID,
-            dataType=REGICIDE_DATATYPE.gameTalk,
+            data_type=REGICIDE_DATATYPE.gameTalk,
             roomData=gameTalkStr,
             webData=None,
         )
@@ -550,29 +614,33 @@ class ROOM:
 
     # ret:保证一定返回合适类型的信息
     async def dataTypeSeprator(self, expected: DATATYPE):
-        check_wanted: Callable[[MESSAGE], bool] = lambda message: message.dataType == expected
+        check_wanted: Callable[[MESSAGE], bool] = lambda message: message.data_type == expected
         return await self._Seperator(check_wanted)
 
-    # ret:保证一定返回合适类型、由合适人发来的消息
-    async def mixSeperator(self, expected: List[Tuple[playerRoomLocation, DATATYPE]]):
+    # ret: MESSAGE: 保证一定返回合适类型、由合适人发来的消息
+    async def mixSeperator(self, expected: List[Tuple[playerRoomLocation, DATATYPE]]) :
         check_wanted: Callable[[MESSAGE], bool] = (
-            lambda message: ( self._webSystemID_toPlayerLocation(message.playerID), message.dataType) in expected
+            lambda message: ( self._webSystemID_toPlayerLocation(message.playerID), message.data_type) in expected
         )
         return await self._Seperator(check_wanted)
 
     async def _Seperator(self, check_wanted: Callable[[MESSAGE], bool]):
         while True:
             message = await self.mainRead()
-            if message.dataType == REGICIDE_DATATYPE.askStatus:
+            if message.data_type == REGICIDE_DATATYPE.askStatus:
                 self.ioSendStatus(self._webSystemID_toPlayerLocation(message.playerID))
-            elif message.dataType == REGICIDE_DATATYPE.REGICIDE_ACTION_TALKING_MESSAGE:
+            elif message.data_type == REGICIDE_DATATYPE.REGICIDE_ACTION_TALKING_MESSAGE:
                 self.ioSendTalkings(message.playerID)
-            elif message.dataType == WEB_SYSTEM_DATATYPE.dumpRoom:
+            elif message.data_type == WEB_SYSTEM_DATATYPE.dumpRoom:
                 pickle.dump(self, open(f"data/room/{message.roomData}.pkl", "wb"))
-            elif message.dataType == WEB_SYSTEM_DATATYPE.loadRoom:
-                tmp_web = self.web
-                tmp_dict = pickle.load(open(f"data/room/{message.roomData}.pkl", "rb"))
-                self.__setstate__(tmp_dict, tmp_web)
+            elif message.data_type == WEB_SYSTEM_DATATYPE.LOAD_ROOM:
+                path = f"data/room/{message.roomData}"
+                if not os.path.exists(path):
+                    self.ioSendException(message.playerID, "没有这个存档")
+                    continue
+                with open(path, "rb") as f:
+                    status:FROZEN_STATUS = pickle.load(f)
+                self.deal_load(status)
             elif not check_wanted(message):
                 self.ioSendException(message.playerID, "我现在不要这种的信息啊岂可修")
             else:
@@ -591,7 +659,7 @@ class ROOM:
     async def ioGetCards(self) -> List[int]:
         while True:
             messgae = await self.mixSeperator(
-                [(self.currentPlayer.location, REGICIDE_DATATYPE.card)]
+                [(self.current_player.location, REGICIDE_DATATYPE.card)]
             )
             try:
                 return messgae.roomData
@@ -605,9 +673,9 @@ class ROOM:
                 (playerRoomLocation(i), REGICIDE_DATATYPE.speak)
                 for i in range(self.playerTotalNum)
             ]
-            l = l + [(self.currentPlayer.location, REGICIDE_DATATYPE.confirmJoker)]
+            l = l + [(self.current_player.location, REGICIDE_DATATYPE.confirmJoker)]
             message = await self.mixSeperator(l)
-            if message.dataType == REGICIDE_DATATYPE.speak:
+            if message.data_type == REGICIDE_DATATYPE.speak:
                 self.talkings.insert(message.roomData)
                 for i in range(self.playerTotalNum):
                     self.ioSendTalkings(self.playerList[i].webSystemID)
@@ -623,7 +691,7 @@ class ROOM:
                 MESSAGE(
                     self.roomIndex,
                     playerID=playerWebSystemID(-1),
-                    dataType=REGICIDE_DATATYPE.gameOver,
+                    data_type=REGICIDE_DATATYPE.gameOver,
                     roomData=None,
                     webData=None,
                 )
@@ -631,9 +699,9 @@ class ROOM:
             logger.debug(f"{e}")
             logger.info(f"ROOM{self.roomIndex}正常关闭了")
             sys.exit()
-        logger.debug("room get a message:" + message.dataType.name +" " + str(message.roomData))
+        logger.debug("room get a message:" + message.data_type.name +" " + str(message.roomData))
         return message
 
     def mainSend(self, message: MESSAGE):
-        logger.debug("room send a message:" + message.dataType.name+ " " + str(message.roomData))
+        logger.debug("room send a message:" + message.data_type.name+ " " + str(message.roomData))
         self.web.roomSendMessage(message)

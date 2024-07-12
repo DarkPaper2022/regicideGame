@@ -1,4 +1,4 @@
-from src.front_end.tcpServer import TCP_CLIENT
+from src.front_end.tcp_server import TCP_Client
 
 str = "card#CA C10"
 class fake_client:
@@ -6,4 +6,4 @@ class fake_client:
         self.roomID = roomID
         self.playerIndex = playerIndex
      
-a = TCP_CLIENT.dataToMessage(fake_client(), str.encode()) # type: ignore
+a = TCP_Client.data_to_message(fake_client(), str.encode()) # type: ignore

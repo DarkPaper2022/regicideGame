@@ -1,3 +1,4 @@
+from include.TCP_UI_tools import strToCard
 from include.defineRegicideMessage import FROZEN_STATUS_PARTLY, FROZEN_BOSS
 from include.defineWebSystemMessage import (
     MESSAGE,
@@ -16,45 +17,6 @@ import math
 import json
 from enum import Enum
 
-
-# arg:strip outside
-# raise:legal card
-def strToCard(s: str) -> int:
-    if s[0] in [c.name for c in COLOR]:
-        color = COLOR[s[0]].value
-        sRest = s[1:]
-        num = (
-            1
-            if sRest == "A"
-            else (
-                11
-                if sRest == "J"
-                else (
-                    12
-                    if sRest == "Q"
-                    else (
-                        13
-                        if sRest == "K"
-                        else (
-                            int(sRest) if (int(sRest) >= 1 and int(sRest) <= 10) else -1
-                        )
-                    )
-                )
-            )
-        )
-        if num == -1:
-            raise ValueError("输入处理出错")
-        else:
-            return color * 13 + num - 1
-    else:
-        try:
-            card = int(s)
-            if card < 0 or card > 53:
-                raise ValueError("输入处理出错")
-            else:
-                return card
-        except:
-            raise ValueError("输入处理出错")
 
 
 @dataclass
@@ -155,7 +117,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "webData": message.webData,
                 "roomData": message.roomData,
             }
-        return FirstSimplifiedMessage(message.dataType, new_message_data)
+        return FirstSimplifiedMessage(message.data_type, new_message_data)
 
 
 translate_dict: dict[str, dict[str, DATATYPE]] = {

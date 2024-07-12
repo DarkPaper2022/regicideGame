@@ -30,8 +30,8 @@ from include.defineWebSystemMessage import (
 
 from dataclasses import dataclass
 from include.defineError import AuthDenial, MessageFormatError, RegisterDenial
-from include.define_JSON_UI_1 import strToCard, ComplexFrontEncoder
-from include.define_JSON_UI_1 import *
+from include.JSON_tools import strToCard, ComplexFrontEncoder
+from include.JSON_tools import *
 from include.defineRound import ROUND
 
 
@@ -60,7 +60,7 @@ class WEBSOCKET_CLIENT:
                         roomData=None,
                         playerID=playerWebSystemID(-1),
                         roomID=-1,
-                        dataType=WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION,
+                        data_type=WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION,
                         webData=DATA_ANSWER_CONNECTION(tuple(self.web.games)),
                     ),
                     cls=ComplexFrontEncoder,
@@ -130,7 +130,7 @@ class WEBSOCKET_CLIENT:
                                 roomData=None,
                                 playerID=playerWebSystemID(-1),
                                 roomID=-1,
-                                dataType=WEB_SYSTEM_DATATYPE.ANSWER_REGISTER,
+                                data_type=WEB_SYSTEM_DATATYPE.ANSWER_REGISTER,
                                 webData=DATA_ANSWER_REGISTER(
                                     success=True,
                                     error=None,
@@ -146,7 +146,7 @@ class WEBSOCKET_CLIENT:
                                 roomData=None,
                                 playerID=playerWebSystemID(-1),
                                 roomID=-1,
-                                dataType=WEB_SYSTEM_DATATYPE.ANSWER_REGISTER,
+                                data_type=WEB_SYSTEM_DATATYPE.ANSWER_REGISTER,
                                 webData=DATA_ANSWER_REGISTER(
                                     success=False,
                                     error=DINAL_TYPE.REGISTER_FORMAT_WRONG,
@@ -158,7 +158,7 @@ class WEBSOCKET_CLIENT:
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_LOG_IN:
                 try:
                     login_data: DATA_ASK_LOGIN = data
-                    self.playerCookie, self.systemID = self.web.PLAYER_LOG_IN(
+                    self.playerCookie, self.systemID,_ = self.web.PLAYER_LOG_IN(
                         playerName=login_data.username,
                         password=login_data.password,
                     )
@@ -173,7 +173,7 @@ class WEBSOCKET_CLIENT:
                                 roomID=-1,
                                 roomData=None,
                                 playerID=playerWebSystemID(-1),
-                                dataType=WEB_SYSTEM_DATATYPE.ANSWER_LOGIN,
+                                data_type=WEB_SYSTEM_DATATYPE.ANSWER_LOGIN,
                                 webData=DATA_ANSWER_LOGIN(
                                     success=False,
                                     error=e.args[0],
@@ -203,8 +203,8 @@ class WEBSOCKET_CLIENT:
                 if not data:
                     break
                 message = self.dataToMessage(data)
-                self.web.playerSendMessage(message, self.playerCookie)
-                if message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
+                self.web.player_send_message(message, self.playerCookie)
+                if message.data_type == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     break
             except MessageFormatError as e:
                 logger.debug(str(e))
@@ -228,7 +228,7 @@ class WEBSOCKET_CLIENT:
             except Exception as e:
                 break
             if (
-                message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong
+                message.data_type == WEB_SYSTEM_DATATYPE.cookieWrong
             ):
                 break
         self._player_exit()
@@ -272,7 +272,7 @@ class WEBSOCKET_CLIENT:
 
     # Warning: not math function, self.room changed here
     def messageToData(self, message: MESSAGE) -> str:
-        if message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
+        if message.data_type == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
             room_status: DATA_UPDATE_PLAYER_STATUS = message.webData
             self.roomID = (
                 -1 if room_status.playerRoom == None else room_status.playerRoom.roomID

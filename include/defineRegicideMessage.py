@@ -36,15 +36,20 @@ class FROZEN_BOSS:
     atk:int
     hp:int
     color:Union[COLOR,None]
+    temp_weaken_atk:int
 
 
 @dataclass(frozen=True)
-class FROZEN_PLAYER_IN_ROOM:
+class FrozenPlayerInRoom_partly:
     #用来给玩家阅读的静态结构 
     playerName:str
     playerHandCardCnt:int
     playerLocation:playerRoomLocation
 
+@dataclass(frozen=True)
+class FrozenPlayerInRoom_archieve:
+    cards: List[int]
+    location: playerRoomLocation
 
 
                     
@@ -62,16 +67,33 @@ class FROZEN_STATUS_PARTLY:
     atkCardHeap:Tuple[int,...]
     defeatedBosses:Tuple[int,...]
     currentBoss:FROZEN_BOSS
-    players:Tuple[FROZEN_PLAYER_IN_ROOM,...]
-    elsedata: Any
-
-
-@dataclass(frozen=True)
-class GAME_SETTINGS:
-    playerNames:Tuple[str,...]
+    players:Tuple[FrozenPlayerInRoom_partly,...]
 
 @dataclass(frozen=True)
 class TALKING_MESSAGE:
     time:float
     userName:str
     message:str
+
+@dataclass(frozen=True)
+class FROZEN_STATUS:
+    #用来给玩家阅读的静态结构     
+    totalPlayer:int
+    
+    currentRound:ROUND
+    
+    players:Tuple[FrozenPlayerInRoom_archieve,...]
+    currentPlayerLocation:playerRoomLocation
+    
+    card_heap:Tuple[int,...]
+    disCardHeap:Tuple[int,...]
+    atkCardHeap:Tuple[int,...]
+    
+    defeatedBosses:Tuple[int,...]
+    currentBoss:FROZEN_BOSS
+    boss_heap:Tuple[int,...]
+    
+    talking:Tuple[TALKING_MESSAGE,...]   
+
+
+

@@ -2,7 +2,7 @@ import socket
 import uuid
 import random
 import json
-from include.define_JSON_UI_1 import SimpleEncoder, ComplexFrontEncoder
+from include.JSON_tools import SimpleEncoder, ComplexFrontEncoder
 import asyncio
 import time
 from dataclasses import asdict
@@ -16,6 +16,7 @@ from include.defineRegicideMessage import (
 )
 from include.defineWebSystemMessage import (
     MESSAGE,
+    PLAYER_LEVEL,
     playerWebSystemID,
     WEB_SYSTEM_DATATYPE,
     DATATYPE,
@@ -25,7 +26,7 @@ from include.defineWebSystemMessage import (
 )
 from dataclasses import dataclass
 from include.defineError import AuthDenial, MessageFormatError, RegisterDenial
-from TCP_UI_tools import cardsToStr, bossToStr, strToCard, translate_dict
+from include.TCP_UI_tools import cardsToStr, bossToStr, strToCard, translate_dict
 from include.defineRound import ROUND
 
 UI_HEIGHT = 30
@@ -33,11 +34,12 @@ UI_HEIGHT = 30
 
 # recv and send NO LOCK
 # 只对socket和web的交互有线程问题、而这两个都是线程安全的
-class TCP_CLIENT:
+class TCP_Client:
     reader: asyncio.StreamReader
     writer: asyncio.StreamWriter
     playerIndex: playerWebSystemID
     playerCookie: uuid.UUID
+    player_level:PLAYER_LEVEL
     userName: str  # be careful, once initialized it should never be changed
     web: WEB
     roomID: int
@@ -50,7 +52,7 @@ class TCP_CLIENT:
         self.timeOutSetting = timeOutSetting
         self.roomID = -1
 
-    async def authThread(self):
+    async def auth_thread_func(self):
         username = ""
         while True:
             self.writer.write(0 * b"\n" + b"Username and Password, plz\n")
@@ -77,7 +79,7 @@ class TCP_CLIENT:
             elif l0[0].strip() == b"log in":
                 try:
                     l = l0[1].strip().split(b" ")
-                    self.playerCookie, self.playerIndex = self.web.PLAYER_LOG_IN(
+                    self.playerCookie, self.playerIndex,self.player_level = self.web.PLAYER_LOG_IN(
                         playerName=l[0].decode("utf-8"), password=l[1].decode("utf-8")
                     )
                     username = l[0].decode("utf-8")
@@ -101,13 +103,13 @@ class TCP_CLIENT:
                     ).encode()
                 )
         self.userName = username
-        rec = asyncio.create_task(self.recvThreadFunc())
-        sen = asyncio.create_task(self.sendThreadFunc())
+        rec = asyncio.create_task(self.recv_thread_func())
+        sen = asyncio.create_task(self.send_thread_func())
         await asyncio.gather(rec, sen)
         return
 
     # recv From  netcat
-    async def recvThreadFunc(self):
+    async def recv_thread_func(self):
         # 认为到这里我们拿到了一个正常的cookie和playerIndex,但是没有合适的room
         logger.debug(f"recv thread start")
         timeOutCnt = 0
@@ -117,9 +119,12 @@ class TCP_CLIENT:
                 logger.debug(f"raw message recieved from tcp socket: {data}")
                 if not data:
                     break
-                message = self.dataToMessage(data)
-                self.web.playerSendMessage(message, self.playerCookie)
-                if message.dataType == WEB_SYSTEM_DATATYPE.LOG_OUT:
+                message = self.data_to_message(data)
+                if self.player_level == PLAYER_LEVEL.normal:
+                    self.web.player_send_message(message, self.playerCookie)
+                else:
+                    self.web.adminSendMessage(message, self.playerCookie)
+                if message.data_type == WEB_SYSTEM_DATATYPE.LOG_OUT:
                     break
             except socket.timeout:
                 if self.overFlag == False:
@@ -135,7 +140,7 @@ class TCP_CLIENT:
                     ).encode()
                 )
             except Exception as e:
-                logger.info("recvFromnetcatThread, exception Over")
+                logger.error(f"recvFromnetcatThread, exception over: {e}")
                 break
         try:
             self.overFlag = True
@@ -144,12 +149,12 @@ class TCP_CLIENT:
             return
 
     # send To netcat
-    async def sendThreadFunc(self):
+    async def send_thread_func(self):
         while True:
             message = await self.web.playerGetMessage(
                 self.playerIndex, self.playerCookie
             )
-            data = UI_HEIGHT * b"\n" + self.messageToData(message) + b"\n"
+            data = UI_HEIGHT * b"\n" + self.message_to_data(message) + b"\n"
             try:
                 self.writer.write(data)
             except socket.timeout:
@@ -163,7 +168,7 @@ class TCP_CLIENT:
                 logger.info("sendTonetcatThread, exception Over")
                 break
             if (
-                message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong
+                message.data_type == WEB_SYSTEM_DATATYPE.cookieWrong
             ):
                 logger.info("sendTonetcatThread, cookie Over")
                 break
@@ -174,43 +179,49 @@ class TCP_CLIENT:
             return
 
     # error MessageFormatError if bytes are illegal
-    def dataToMessage(self, data: bytes) -> MESSAGE:
+    def data_to_message(self, data: bytes) -> MESSAGE:
         try:
             l = [line.strip() for line in data.strip().split(b"#")]
             data_type_str = l[0].decode()
             data_type = translate_dict[data_type_str]
             roomID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID
-            messageData = None
+            # roomID modified if load room
+            room_data = None
             web_data = None
             if data_type == REGICIDE_DATATYPE.card:
                 if len(l) == 1 or l[1] == b"":
-                    messageData = []
+                    room_data = []
                 else:
-                    messageData = [strToCard(card.strip()) for card in l[1].split()]
-                logger.info("A card Message")
+                    room_data = [strToCard(card.strip().decode()) for card in l[1].split()]
             elif data_type == REGICIDE_DATATYPE.speak:
-                messageData = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
+                room_data = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
-                messageData = int(l[1].strip())
+                room_data = int(l[1])
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
-                messageData = int(l[1].strip())
+                room_data = int(l[1])
             elif data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
-                web_data = int(l[1].strip())
+                web_data = int(l[1])
+            elif data_type == WEB_SYSTEM_DATATYPE.LOAD_ROOM:
+                roomID = int(l[1].split()[0].strip())
+                archieve_name = l[1].split()[1].strip().decode()
+                if not archieve_name.endswith(".pkl"):
+                    archieve_name += ".pkl"
+                room_data = archieve_name
             else:
                 pass
         except:
             raise MessageFormatError("Fuck you!")
-        message = MESSAGE(roomID, self.playerIndex, data_type, messageData, web_data)
+        message = MESSAGE(roomID, self.playerIndex, data_type, room_data, web_data)
         return message
 
     # Warning: not math function, self.room changed here
-    def messageToData(self, message: MESSAGE) -> bytes:
+    def message_to_data(self, message: MESSAGE) -> bytes:
         if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n{message.roomID}".encode()
-        if message.dataType == REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS:
+        if message.data_type == REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS:
             status: FROZEN_STATUS_PARTLY = message.roomData
             messageData = self._statusToStr(status)
-        elif message.dataType == REGICIDE_DATATYPE.answerTalking:
+        elif message.data_type == REGICIDE_DATATYPE.answerTalking:
             messageData = ""
             talkings: Tuple[TALKING_MESSAGE, ...] = message.roomData
             if len(talkings) == 0:
@@ -222,19 +233,19 @@ class TCP_CLIENT:
                 messageData = (
                     timeStr + " " + nameStr + "说" + "\n\t" + talkStr + "\n"
                 ) + messageData
-        elif message.dataType == REGICIDE_DATATYPE.overSignal:
+        elif message.data_type == REGICIDE_DATATYPE.overSignal:
             messageData = (
                 "真棒, 你们打败了魔王\n" if message.roomData else "寄, 阁下请重新来过\n"
             )
         elif (
-            message.dataType == WEB_SYSTEM_DATATYPE.cookieWrong
+            message.data_type == WEB_SYSTEM_DATATYPE.cookieWrong
         ):
             messageData = "你被顶号了,要不要顶回来试试?\n"
-        elif message.dataType == WEB_SYSTEM_DATATYPE.ANSWER_LOGIN:
+        elif message.data_type == WEB_SYSTEM_DATATYPE.ANSWER_LOGIN:
             messageData = (
                 f"""你登录{"成功" if message.webData.success else "失败"} 了\n"""
             )
-        elif message.dataType == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
+        elif message.data_type == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
             room_status: DATA_UPDATE_PLAYER_STATUS = message.webData
             self.roomID = (
                 -1 if room_status.playerRoom == None else room_status.playerRoom.roomID
@@ -244,7 +255,7 @@ class TCP_CLIENT:
             messageData = ""
         else:
             messageData = str(message.roomData)
-        data: bytes = message.dataType.name.encode() + b"\n" + messageData.encode()
+        data: bytes = message.data_type.name.encode() + b"\n" + messageData.encode()
         return data
 
     def _statusToStr(self, status: FROZEN_STATUS_PARTLY) -> str:
@@ -368,5 +379,5 @@ class TCP_SERVER:
 
 
 async def tcpClientHandler(reader, writer, web):
-    tcpClient = TCP_CLIENT(reader, writer, web, timeOutSetting=300)
-    await tcpClient.authThread()
+    tcpClient = TCP_Client(reader, writer, web, timeOutSetting=300)
+    await tcpClient.auth_thread_func()

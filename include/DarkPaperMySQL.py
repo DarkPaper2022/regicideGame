@@ -31,7 +31,7 @@ class sqlSystem:
         cursor.execute('SELECT id, authority, password FROM accounts WHERE username=%s', 
                    (userName,))
         rows:List[Tuple[int,str,str]] = cursor.fetchall() # type: ignore
-        logger.debug(f"""{rows}""")
+        logger.debug(f"""sql get: {rows}""")
         if len(rows) == 1:  
             p:str = str(rows[0][2]) 
             s:str = str(rows[0][1]) 
@@ -44,20 +44,21 @@ class sqlSystem:
         elif len(rows) == 0:
             raise AuthDenial(DINAL_TYPE.LOGIN_USERNAME_NOT_FOUND)
         else:
-            logger.error(f"""select {userName, password}
-recieve:{rows}""")
+            logger.error(f"""select {userName, password}\nrecieve:{rows}""")
             raise AuthError
         cursor.close()
-    def adminRegister(self,userName:str, password:str):
+    
+    def raw_register(self,userName:str, password:str, authority:str = "user"):
         try:
             cursor = self.connection.cursor()
         except:
             self.reconnect()
-        sql = "INSERT INTO accounts (username, password) VALUES (%s, %s);"
-        cursor.execute(sql, (userName, password))
+        sql = "INSERT INTO accounts (username, password, authority) VALUES (%s, %s, %s);"
+        cursor.execute(sql, (userName, password, authority))
         self.connection.commit()
         cursor.close()
-    def adminDelete(self,userName:str):
+
+    def raw_delete(self,userName:str):
         cursor = self.connection.cursor()
         sql = "DELETE FROM accounts WHERE username=%s;"
         cursor.execute(sql, (userName,))
