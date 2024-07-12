@@ -16,7 +16,7 @@ setup(
     description="a game, can play using either netcat or a frontend using json",
     long_description="No long description now",
     url="https://github.com/DarkPaper2022/regicideGame",
-    install_requires=["websockets==10.4", "mysql-connector-python==8.0.31"],
+    install_requires=["websockets", "mysql-connector-python","aioconsole"],
     classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",

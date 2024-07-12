@@ -14,7 +14,9 @@
     - quit#
     - logout#
     - roomstatus#
-    - loadroom#<roomID> <archieve name>
+    - loadroom#\<roomID> \<archieve name>
+    - dumproom#\<roomID> \<archieve name>
+
 - room
     - status#
     - talk#
@@ -22,12 +24,20 @@
     - speak#\<words>
     - joker#\<location>
 
+## 管理员说明
+- 暂时只支持tcp连接，所以暂时使用共用管理员帐号吧，之后会出https客户端的
+- 登录后可以普通地进行游戏，也可以使用管理员指令，管理员指令不局限于当前房间
+- \<archieve name> 这一参数指定了文件的相对路径
+- 之后会出对存档的编辑功能，现在只能手动打出来再存
+- loadroom的指令会在当前游戏的下一轮次开始时生效，dumproom则会立即生效
+
+
 ## 开发说明
 - 针对各种TODO,欢迎PR,
 - 有其他问题也欢迎联系本人
 - 在发送ASK_LOGIN包时,必须等待ANSWER_LOGIN
 
-## json格式说明
+## API说明
 
 1. update
     - 
@@ -90,7 +100,7 @@
         {
             "dataType":"card",
             "data":{
-                "cards":["D4", "C4"]
+                "cards":[0, 32]
             }
         }
     ```
@@ -127,8 +137,7 @@
         "roomID": -1,
         "playerID": 1,
         "dataType": "ANSWER_ROOM_STATUS",
-        "roomData": null,
-        "webData": {
+        "data": {
             "playerName": "darkpaper",
             "playerRoom": {
                 "roomID": 0,
@@ -145,7 +154,51 @@
         }
     }
     ```
+    
+    ```json
+    {
+        "roomID": -1,
+        "playerID": 1,
+        "dataType": "ANSWER_ROOM_STATUS",
+        "data": {
+            "playerName": "darkpaper",
+            "playerRoom": {
+                "totalPlayer": 2,
+                "yourLocation": 1,
+                "currentRound": "defend",
+                "currentPlayerLocation": 0,
+                "yourCards": [8,29,46,9,0,20],
+                "cardHeapLength": 19,
+                "discardHeapLength": 15,
+                "disCardHeap": [10,1,42,32,5,39,16,48,36,43,14,45,27,7,13],
+                "atkCardHeap": [],
+                "defeatedBosses": [10,36,49],
+                "currentBoss": {
+                    "name": 23,
+                    "atk": 10,
+                    "hp": 20,
+                    "color": "D",
+                    "temp_weaken_atk": 0
+                },
+                "players": [
+                    {
+                        "playerName": "a",
+                        "playerHandCardCnt": 5,
+                        "playerLocation": 0
+                    }
+                ]
+            },
+            "playerLevel": "normal"
+        }
+    }
+    ```
 
+
+
+
+
+
+    
 ## TODO List
 - webSystem 中register部分的线程安全性保障,使用sql
 - 连续跳过

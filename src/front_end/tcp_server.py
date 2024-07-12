@@ -258,7 +258,7 @@ class TCP_Client:
         data: bytes = message.data_type.name.encode() + b"\n" + messageData.encode()
         return data
 
-    def _statusToStr(self, status: FROZEN_STATUS_PARTLY) -> str:
+    def _statusToStr(self, status: FROZEN_STATUS_PARTLY) -> str:                
         cardHeapLengthStr: str = f"牌堆还剩{status.cardHeapLength}张牌\n"
         discardHeapLengthStr = f"弃牌堆有{status.discardHeapLength}张牌\n"
         defeatedBossesStr = (
