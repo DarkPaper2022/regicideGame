@@ -133,7 +133,7 @@ class WEB:
     async def websystem_message_handler(self):
         while True:
             # arg: player or room of the message is not -1
-            message: MESSAGE = await self.web_system_queue.get()
+            message = await self.web_system_queue.get()
             logger.debug(message)
             if message.playerID == player_ID_WEBSYSTEM:
                 if message.data_type == WEB_SYSTEM_DATATYPE.destroyRoom:
@@ -149,7 +149,7 @@ class WEB:
                     self.player_send_room_status(message.playerID)
                 elif message.data_type == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
                     try:
-                        self.player_join_room(message.playerID, message.roomData)
+                        self.player_join_room(message.playerID, message.webData)
                         self.broadcast_room_status(player.playerRoom)
                     except RoomDenial as e:
                         systemID = message.playerID
@@ -198,7 +198,7 @@ class WEB:
     async def roomGetMessage(self, roomIndex: int) -> MESSAGE:
         # 此处应当持续接收各个线程的输入，接到game需要的那个为止(这个事儿在game里实现了)
         room = self.rooms[roomIndex]
-        if room != None:
+        if room is not None:
             message = await room.roomQueue.get()
         return message
 
@@ -210,10 +210,10 @@ class WEB:
             print(message.roomData)
         else:
             player = self.players[message.playerID]
-            assert player != None
-            assert player.playerRoom != None
+            assert player is not None
+            assert player.playerRoom is not None
             playerRoom = self.rooms[player.playerRoom]
-            if playerRoom != None and playerRoom.roomID == message.roomID:
+            if playerRoom is not None and playerRoom.roomID == message.roomID:
                 player.playerQueue.put_nowait(message)
         return
 
@@ -221,7 +221,7 @@ class WEB:
         self, playerIndex: playerWebSystemID, cookie: uuid.UUID
     ) -> MESSAGE:
         player = self.players[playerIndex]
-        if player == None:
+        if player is None:
             # WARNING:这里的message不是从queue里取出来的哦
             return MESSAGE(-1, playerIndex, WEB_SYSTEM_DATATYPE.cookieWrong, None, None)
             # TODO
@@ -235,10 +235,10 @@ class WEB:
 
     def player_send_message(self, message: MESSAGE, cookie: uuid.UUID):
         player = self.players[message.playerID]
-        assert player != None and player.playerCookie == cookie
+        assert player is not None and player.playerCookie == cookie
         if message.roomID == -1:
             self.web_system_queue.put_nowait(message)
-        elif player.playerRoom == None:
+        elif player.playerRoom is None:
             self.player_send_room_status(message.playerID)
         else:
             assert player.playerRoom == message.roomID
@@ -250,14 +250,14 @@ class WEB:
             
     def adminSendMessage(self, message: MESSAGE, cookie: uuid.UUID):
         admin = self.players[message.playerID]
-        assert admin != None and admin.playerCookie == cookie and admin.playerLevel == PLAYER_LEVEL.superUser
+        assert admin is not None and admin.playerCookie == cookie and admin.playerLevel == PLAYER_LEVEL.superUser
         if message.data_type in admin_types:
             logger.info(f"adminSendMessage: {message}")
             if message.roomID == -1:
                 self.web_system_queue.put_nowait(message)
             else:
                 room = self.rooms[message.roomID]
-                assert room != None
+                assert room is not None
                 room.roomQueue.put_nowait(message)
         else:
             self.player_send_message(message, cookie)
@@ -286,8 +286,8 @@ class WEB:
     # raise: assertion error if status is not satisfied
     def player_send_room_status(self, systemID: playerWebSystemID) -> None:
         player = self.players[systemID]
-        assert player != None
-        if player.playerRoom == None:
+        assert player is not None
+        if player.playerRoom is None:
             frozen_room = None
         else:
             room: WEB_ROOM = self.rooms[player.playerRoom]  # type:ignore
@@ -331,12 +331,12 @@ class WEB:
         systemID, level = self._check_password(playerName, password)
         if level in [PLAYER_LEVEL.superUser, PLAYER_LEVEL.normal]:
             cookie = uuid.uuid4()
-            if self.players[systemID] != None:
+            if self.players[systemID] is not None:
                 self.player_log_out(systemID)
 
             # here the player is None or zombie
             old_player = self.players[systemID]
-            if old_player == None:
+            if old_player is None:
                 player = WEB_PLAYER(
                     systemID,
                     LockQueue(),
@@ -373,8 +373,8 @@ class WEB:
     def player_join_room(self, systemID: playerWebSystemID, roomIndex: int) -> None:
         player = self.players[systemID]
         try:
-            assert player != None
-            assert player.playerRoom == None
+            assert player is not None
+            assert player.playerRoom is None
         except:
             raise PlayerNumError(f"{player}")
 
@@ -384,7 +384,7 @@ class WEB:
         else:
             raise RoomOutOfRangeDenial  # index error
 
-        if room == None:
+        if room is None:
             raise RoomNotExistDenial
         self._room_join_in_system(roomIndex, systemID)  # room error
         player.playerRoom = roomIndex
@@ -471,8 +471,8 @@ class WEB:
         player = self.players[systemID]
 
         try:
-            assert player != None
-            assert player.playerRoom == None
+            assert player is not None
+            assert player.playerRoom is None
         except:
             raise Exception("加你大爷")
 
@@ -557,7 +557,7 @@ class WEB:
         self, playerIndex: playerWebSystemID, oldCookie: uuid.UUID
     ) -> PLAYER_LEVEL:
         p = self.players[playerIndex]
-        if p == None:
+        if p is None:
             return PLAYER_LEVEL.illegal
         else:
             level = (
@@ -578,7 +578,7 @@ class WEB:
         for i in range(15, self.maxRoom):
             if (self._room_ID_to_Max_player(i) == expected_max_player) and self.rooms[
                 i
-            ] == None:
+            ] is None:
                 return i
         raise ServerBusyError("Sorry")
 
@@ -607,7 +607,7 @@ class WEB:
     # arg: systemID should in [0,MAX)
     def _status(self, systemID: playerWebSystemID) -> PLAYER_STATUS:
         player = self.players[systemID]
-        if player == None:
+        if player is None:
             return PLAYER_STATUS.NONE
         else:
             return player.playerStatus

@@ -15,7 +15,7 @@ class rommBuilder:
     
     async def hallThreadFunc(self):
         while True:
-            message:MESSAGE = await self.web.hallGetMessage()
+            message = await self.web.hallGetMessage()
             if message.data_type == WEB_SYSTEM_DATATYPE.HALL_CREATE_ROOM:
                 room = ROOM(self.web, message.roomData)
                 await room.run()

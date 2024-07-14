@@ -2,7 +2,6 @@ import socket
 import uuid
 import random
 import json
-from include.JSON_tools import SimpleEncoder, ComplexFrontEncoder
 import asyncio
 import time
 from dataclasses import asdict
@@ -57,7 +56,7 @@ class TCP_Client:
         while True:
             self.writer.write(0 * b"\n" + b"Username and Password, plz\n")
             data = await self.reader.readline()
-            logger.debug(f"raw message recieved from tcp socket: {data}")
+            logger.debug(f"raw message recieved from tcp socket: {data!r}")
             if not data:
                 self.writer.close()
                 return
@@ -116,7 +115,7 @@ class TCP_Client:
         while True:
             try:
                 data = await self.reader.readline()
-                logger.debug(f"raw message recieved from tcp socket: {data}")
+                logger.debug(f"raw message recieved from tcp socket: {data!r}")
                 if not data:
                     break
                 message = self.data_to_message(data)
@@ -186,19 +185,19 @@ class TCP_Client:
             data_type = translate_dict[data_type_str]
             roomID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID
             # roomID modified if load room
-            room_data = None
+            room_data:Any = None
             web_data = None
             if data_type == REGICIDE_DATATYPE.card:
                 if len(l) == 1 or l[1] == b"":
                     room_data = []
                 else:
                     room_data = [strToCard(card.strip().decode()) for card in l[1].split()]
-            elif data_type == REGICIDE_DATATYPE.speak:
+            elif data_type == REGICIDE_DATATYPE.SPEAK:
                 room_data = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 room_data = int(l[1])
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
-                room_data = int(l[1])
+                web_data = int(l[1])
             elif data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                 web_data = int(l[1])
             elif data_type == WEB_SYSTEM_DATATYPE.LOAD_ROOM:
@@ -221,7 +220,7 @@ class TCP_Client:
         if message.data_type == REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS:
             status: FROZEN_STATUS_PARTLY = message.roomData
             messageData = self._statusToStr(status)
-        elif message.data_type == REGICIDE_DATATYPE.answerTalking:
+        elif message.data_type == REGICIDE_DATATYPE.ANSWER_TALKING:
             messageData = ""
             talkings: Tuple[TALKING_MESSAGE, ...] = message.roomData
             if len(talkings) == 0:
@@ -248,7 +247,7 @@ class TCP_Client:
         elif message.data_type == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
             room_status: DATA_UPDATE_PLAYER_STATUS = message.webData
             self.roomID = (
-                -1 if room_status.playerRoom == None else room_status.playerRoom.roomID
+                -1 if room_status.playerRoom is None else room_status.playerRoom.roomID
             )
             messageData = self._room_status_to_str(room_status)
         elif message.roomData == None:
@@ -317,7 +316,7 @@ class TCP_Client:
 
     def _room_status_to_str(self, status: DATA_UPDATE_PLAYER_STATUS) -> str:
         room = status.playerRoom
-        if room == None:
+        if room is None:
             re_room = "您不在房里\n"
         else:
             re_room = ""
@@ -352,7 +351,6 @@ class TCP_SERVER:
         self.sever_socket = None
         self.web = web
         self.loop = loop
-        self.taskSet = []
 
     async def serverThreadFunc(self):
         cnt = 0

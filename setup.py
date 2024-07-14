@@ -1,5 +1,5 @@
 import os
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages     # type: ignore
 
 def get_version():
     current_dir = os.path.dirname(os.path.abspath(__file__))

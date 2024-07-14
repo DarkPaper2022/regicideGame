@@ -19,6 +19,7 @@ from include.defineWebSystemMessage import (
     playerWebSystemID,
     WEB_SYSTEM_DATATYPE,
     DATATYPE,
+    DATATYPE_tuple,
     DATA_UPDATE_PLAYER_STATUS,
     FROZEN_ROOM_STATUS_inWebSystem,
     DATA_ANSWER_LOGIN,
@@ -66,7 +67,7 @@ class WEBSOCKET_CLIENT:
                     cls=ComplexFrontEncoder,
                 )
             )
-            checked: bool = await self.check_game_version()
+            checked = await self.check_game_version()
         except Exception as e:
             self._player_exit()
             return
@@ -98,7 +99,7 @@ class WEBSOCKET_CLIENT:
     def _socket_read(self, socket_data:str) -> Optional[Tuple[DATATYPE, Any]]:
         try:
             data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
-            assert isinstance(data_type, DATATYPE)
+            assert isinstance(data_type, DATATYPE_tuple)
             return data_type, data
         except:
             logger.error(socket_data)
@@ -112,7 +113,7 @@ class WEBSOCKET_CLIENT:
                 await self._socket_exit()
                 return
             re = self._socket_read(socket_data)
-            if re == None:
+            if re is None:
                 continue
             else:
                 data_type = re[0]
@@ -196,7 +197,7 @@ class WEBSOCKET_CLIENT:
 
     # recv From  netcat
     async def recvThreadFunc(self):
-        assert self.playerCookie != None
+        assert self.playerCookie is not None
         while True:
             try:
                 data = str(await self.websocket.recv())
@@ -217,7 +218,7 @@ class WEBSOCKET_CLIENT:
 
     # send To netcat
     async def sendThreadFunc(self):
-        assert self.playerCookie != None and self.systemID != None
+        assert self.playerCookie is not None and self.systemID is not None
         while True:
             message = await self.web.playerGetMessage(self.systemID, self.playerCookie)
             data = self.messageToData(message)
@@ -237,28 +238,28 @@ class WEBSOCKET_CLIENT:
     def dataToMessage(self, socket_data: str) -> MESSAGE:
         
         re = self._socket_read(socket_data)
-        if re == None:
+        if re is None:
             raise MessageFormatError(f"{socket_data}")
         else:
             data_type = re[0]
             data = re[1]
         try:    
             room_ID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID
-            messageData = None
+            room_data:Any = None
             web_data = None
             if data_type == REGICIDE_DATATYPE.card:
                 card_data: Tuple[int, ...] = data
-                messageData = card_data
-            elif data_type == REGICIDE_DATATYPE.speak:
+                room_data = card_data
+            elif data_type == REGICIDE_DATATYPE.SPEAK:
                 speak_data: str = data
-                assert self.userName != None
-                messageData = TALKING_MESSAGE(time.time(), self.userName, speak_data)
+                assert self.userName is not None
+                room_data = TALKING_MESSAGE(time.time(), self.userName, speak_data)
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 joker_data: int = data
-                messageData = joker_data
+                room_data = joker_data
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
                 join_data: int = data
-                messageData = join_data
+                web_data = join_data
             elif data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                 create_data: int = data
                 web_data = create_data
@@ -266,8 +267,8 @@ class WEBSOCKET_CLIENT:
                 pass
         except:
             raise MessageFormatError("Fuck you!")
-        assert self.systemID != None
-        message = MESSAGE(room_ID, self.systemID, data_type, messageData, web_data)
+        assert self.systemID is not None
+        message = MESSAGE(room_ID, self.systemID, data_type, room_data, web_data)
         return message
 
     # Warning: not math function, self.room changed here
@@ -275,7 +276,7 @@ class WEBSOCKET_CLIENT:
         if message.data_type == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
             room_status: DATA_UPDATE_PLAYER_STATUS = message.webData
             self.roomID = (
-                -1 if room_status.playerRoom == None else room_status.playerRoom.roomID
+                -1 if room_status.playerRoom is None else room_status.playerRoom.roomID
             )
         if message.roomID != self.roomID and message.roomID != -1:
             logger.error(f"奇怪的信号?\n")
@@ -287,7 +288,7 @@ class WEBSOCKET_CLIENT:
         if not socket_data:
             return False
         re = self._socket_read(socket_data)
-        if re == None:
+        if re is None:
             return False
         else:
             data_type = re[0]
@@ -311,7 +312,6 @@ class WEBSOCKET_SERVER:
         self.sever_socket = None
         self.web = web
         self.loop = loop
-        self.taskSet = []
 
     async def serverThreadFunc(self):
         cnt = 0

@@ -53,10 +53,9 @@ def strToCard(b: str) -> int:
         sRest = s[1:]
         card_str_dict = {"A": 1, "J": 11, "Q": 12, "K": 13}
         num:Optional[int] = card_str_dict.get(sRest)
-        if num == None:
+        if num is None:
             num = int(sRest) if 1 <= int(sRest) <= 10 else None
-        
-        if num == None:
+        if num is None:
             raise ValueError("输入处理出错")
         else:
             return color * 13 + num - 1
@@ -84,7 +83,7 @@ translate_dict:dict[str,DATATYPE] = {
     "status":REGICIDE_DATATYPE.askStatus,
     "talk log":REGICIDE_DATATYPE.REGICIDE_ACTION_TALKING_MESSAGE,
     "card":REGICIDE_DATATYPE.card,
-    "speak":REGICIDE_DATATYPE.speak,
+    "speak":REGICIDE_DATATYPE.SPEAK,
     "joker":REGICIDE_DATATYPE.confirmJoker,
 }
 
