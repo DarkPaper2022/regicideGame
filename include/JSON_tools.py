@@ -82,13 +82,13 @@ class ComplexFrontEncoder(json.JSONEncoder):
             return self.my_enum_map.get(obj, obj.name)
         elif isinstance(obj, (int, bool, str)):
             return obj
-        elif obj == None:
+        elif obj is None:
             return {}
         elif isinstance(obj, List):
             return [self.default(i) for i in obj]
 
         elif isinstance(obj, DATA_UPDATE_PLAYER_STATUS):
-            if obj.playerRoom == None:
+            if obj.playerRoom is None:
                 return {"roomID": -1}
             else:
                 return self.default(obj.playerRoom)
@@ -118,11 +118,11 @@ class ComplexFrontEncoder(json.JSONEncoder):
             return asdict(obj)
 
     def _data_helper_first(self, message: MESSAGE) -> FirstSimplifiedMessage:
-        if message.webData == None and message.roomData == None:
+        if message.webData is None and message.roomData is None:
             new_message_data = None
-        elif message.webData == None:
+        elif message.webData is None:
             new_message_data = message.roomData
-        elif message.roomData == None:
+        elif message.roomData is None:
             new_message_data = message.webData
         else:
             new_message_data = {

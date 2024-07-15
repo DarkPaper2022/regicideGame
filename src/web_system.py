@@ -37,6 +37,7 @@ from importlib import metadata
 room_ID_WEBSYSTEM = -1
 player_ID_WEBSYSTEM = playerWebSystemID(-1)
 
+
 def get_version() -> str:
     import os
 
@@ -115,7 +116,7 @@ class WEB:
 
     players: List[Union[WEB_PLAYER, None]]
     rooms: List[Union[WEB_ROOM, None]]
-    
+
     def __init__(self, maxPlayer: int, maxRoom) -> None:
         self.maxPlayer = maxPlayer  # should syntax with mysql
         self.maxRoom = maxRoom
@@ -145,8 +146,12 @@ class WEB:
                     self.player_reverse_prepare(message.playerID)
                     self.broadcast_room_status(player.playerRoom)
                 elif message.data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
-                    room_ID = self.player_create_room(message.playerID, message.webData)
-                    self.player_send_room_status(message.playerID)
+                    try:
+                        self.player_create_room(message.playerID, message.webData)
+                        self.player_send_room_status(message.playerID)
+                    except:
+                        #FIXME:
+                        pass
                 elif message.data_type == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
                     try:
                         self.player_join_room(message.playerID, message.webData)
@@ -247,10 +252,14 @@ class WEB:
                 room.roomQueue.put_nowait(message)
             else:
                 self.player_send_room_status(message.playerID)
-            
+
     def adminSendMessage(self, message: MESSAGE, cookie: uuid.UUID):
         admin = self.players[message.playerID]
-        assert admin is not None and admin.playerCookie == cookie and admin.playerLevel == PLAYER_LEVEL.superUser
+        assert (
+            admin is not None
+            and admin.playerCookie == cookie
+            and admin.playerLevel == PLAYER_LEVEL.superUser
+        )
         if message.data_type in admin_types:
             logger.info(f"adminSendMessage: {message}")
             if message.roomID == -1:
@@ -262,17 +271,6 @@ class WEB:
         else:
             self.player_send_message(message, cookie)
 
-
-
-
-
-
-
-
-
-
-
-
     def broadcast_room_status(self, roomID: Optional[int]):
         try:
             room = self.rooms[roomID]  # type:ignore #TODO
@@ -281,9 +279,12 @@ class WEB:
         except:
             pass
 
-    # arg:   systemID should in [0,MAX)
-    # arg:   status should be not none
-    # raise: assertion error if status is not satisfied
+    """
+    arg:   systemID should in [0,MAX)
+    arg:   status should be not none
+    raise: assertion error if status is not satisfied
+    """
+
     def player_send_room_status(self, systemID: playerWebSystemID) -> None:
         player = self.players[systemID]
         assert player is not None

@@ -133,6 +133,7 @@ class TCP_Client:
                 else:
                     break
             except MessageFormatError as e:
+                logger.debug(f"{e}")
                 self.writer.write(
                     (
                         UI_HEIGHT * "\n" + "Wrong Format Mesasge: 你在乱输什么啊\n"
@@ -208,8 +209,8 @@ class TCP_Client:
                 room_data = archieve_name
             else:
                 pass
-        except:
-            raise MessageFormatError("Fuck you!")
+        except Exception as e:
+            raise MessageFormatError(f"{e}")
         message = MESSAGE(roomID, self.playerIndex, data_type, room_data, web_data)
         return message
 
@@ -250,7 +251,7 @@ class TCP_Client:
                 -1 if room_status.playerRoom is None else room_status.playerRoom.roomID
             )
             messageData = self._room_status_to_str(room_status)
-        elif message.roomData == None:
+        elif message.roomData is None:
             messageData = ""
         else:
             messageData = str(message.roomData)
