@@ -214,12 +214,10 @@ class WEB:
         elif message.playerID == -2:
             print(message.roomData)
         else:
+            #FIXME
             player = self.players[message.playerID]
             assert player is not None
-            assert player.playerRoom is not None
-            playerRoom = self.rooms[player.playerRoom]
-            if playerRoom is not None and playerRoom.roomID == message.roomID:
-                player.playerQueue.put_nowait(message)
+            player.playerQueue.put_nowait(message)
         return
 
     async def playerGetMessage(

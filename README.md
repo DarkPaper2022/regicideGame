@@ -141,7 +141,7 @@
             "playerName": "darkpaper",
             "playerRoom": {
                 "roomID": 0,
-                "playerIndexs": [
+                "playerList": [
                     {
                         "userName": "darkpaper",
                         "ready": false
@@ -162,7 +162,7 @@
         "dataType": "ANSWER_ROOM_STATUS",
         "data": {
             "playerName": "darkpaper",
-            "playerRoom": {
+            "playerGame": {
                 "totalPlayer": 2,
                 "yourLocation": 1,
                 "currentRound": "defend",
