@@ -526,12 +526,11 @@ class ROOM:
 
     def _webSystemID_toPlayerLocation(
         self, webSystemID: playerWebSystemID
-    ) -> playerRoomLocation:
+    ) -> Optional[playerRoomLocation]:
         for player in self.playerList:
             if player.webSystemID == webSystemID:
                 return player.location
-        logger.error(f"什么鬼ID{webSystemID}")
-        raise ValueError(f"什么鬼ID{webSystemID}")
+        return None
 
     def ioSendStatus(self, playerLocation: playerRoomLocation):
         if self.startFlag:
@@ -635,7 +634,11 @@ class ROOM:
         while True:
             message = await self.mainRead()
             if message.data_type == REGICIDE_DATATYPE.askStatus:
-                self.ioSendStatus(self._webSystemID_toPlayerLocation(message.playerID))
+                #TODO:admin ask
+                location = self._webSystemID_toPlayerLocation(message.playerID)
+                if location is None: 
+                    raise Exception(f"systemID:{message.playerID} error when asking status, not found in {[p.webSystemID for p in self.playerList]}") 
+                self.ioSendStatus(location)
             elif message.data_type == REGICIDE_DATATYPE.REGICIDE_ACTION_TALKING_MESSAGE:
                 self.ioSendTalkings(message.playerID)
             elif message.data_type == WEB_SYSTEM_DATATYPE.dumpRoom:

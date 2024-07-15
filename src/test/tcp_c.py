@@ -2,7 +2,8 @@
 # type: ignore
 from pwn import *   
 
-user_c = remote("127.0.0.1", 7000)
+from src.test.test_config import url as tu
+user_c = remote(*tu)
 
 user_c.recv()
 user_c.sendline(b"log in#admin admin")
