@@ -81,7 +81,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "dataName": self.get_name(obj.dataType),
                 "data": func(obj.data),
             }
-
+            
         elif isinstance(obj, Enum):
             return self.my_enum_map.get(obj, obj.name)
         elif isinstance(obj, (int, bool, str)):
@@ -114,7 +114,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "playerPrepared": obj.status == PLAYER_STATUS.IN_ROOM_PREPARED,
             }
         elif isinstance(obj, DATA_UPDATE_TALKING_STATUS):
-            return{
+            return {
                 "talkList":self.default(obj.talkList)
             }    
         elif isinstance(obj, TALKING_MESSAGE):        
