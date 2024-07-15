@@ -37,6 +37,10 @@ class FirstSimplifiedMessage:
     dataType: DATATYPE
     data: Any
 
+@dataclass
+class DATA_UPDATE_TALKING_STATUS:
+    talkList: List[TALKING_MESSAGE]
+
 
 class ComplexFrontEncoder(json.JSONEncoder):
     def __init__(self, *args, **kwargs):
@@ -144,7 +148,7 @@ type_dict_str_to_enum: dict[str, dict[str, DATATYPE]] = {
         "CHANGE_PREPARE": WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE,
         "LEAVE_ROOM": WEB_SYSTEM_DATATYPE.ACTION_LEAVE_ROOM,
         "LOGOUT": WEB_SYSTEM_DATATYPE.LOG_OUT,
-        "SPEAK": REGICIDE_DATATYPE.SPEAK,
+        "TALK_MESSAGE": REGICIDE_DATATYPE.SPEAK,
     },
 }
 
@@ -175,7 +179,7 @@ func_dict: Dict[DATATYPE, Callable] = {
     REGICIDE_DATATYPE.card: lambda data: tuple(
         [strToCard(card) for card in data["cards"]]
     ),
-    REGICIDE_DATATYPE.SPEAK:lambda data:str(data["words"]),
+    REGICIDE_DATATYPE.SPEAK:lambda data:str(data["talkMessage"]),
 }
 
 
