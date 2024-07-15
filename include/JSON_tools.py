@@ -96,11 +96,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 return {"roomID": -1}
             else:
                 return self.default(obj.playerRoom)
-        elif isinstance(obj, DATA_ANSWER_LOGIN):
-            return {"success": obj.success}
-        elif isinstance(obj, DATA_ANSWER_REGISTER):
-            return {"success": obj.success}
-        elif isinstance(obj, DATA_ANSWER_JOIN_ROOM):
+        elif isinstance(obj, DATA_SIMPLE_ANSWER):
             return {"success": obj.success}
         elif isinstance(obj, FROZEN_ROOM_STATUS_inWebSystem):
             return {

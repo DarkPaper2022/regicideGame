@@ -1,3 +1,4 @@
+from http.cookies import CookieError
 import uuid
 import math
 from dataclasses import dataclass
@@ -11,14 +12,16 @@ from include.defineWebSystemMessage import (
     FROZEN_ROOM_STATUS_inWebSystem,
     PLAYER_STATUS,
     DINAL_TYPE,
-    DATA_ANSWER_LOGIN,
 )
 
 from include.defineWebSystemMessage import *
 from include.defineError import (
     AuthDenial,
-    PlayerNumError,
-    ServerBusyError,
+    CookieDenial,
+    Denial,
+    PlayerStatusDenial,
+    RoomSatusDenial,
+    ServerBusyDenial,
     RoomDenial,
     RegisterDenial,
     AuthError,
@@ -143,20 +146,42 @@ class WEB:
             elif message.roomID == room_ID_WEBSYSTEM:
                 player: WEB_PLAYER = self.players[message.playerID]  # type:ignore
                 if message.data_type == WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE:
-                    self.player_reverse_prepare(message.playerID)
-                    self.broadcast_room_status(player.playerRoom)
+                    try:
+                        self.player_reverse_prepare(message.playerID)
+                        self.broadcast_room_status(player.playerRoom)
+                    except Denial as e:
+                        systemID = message.playerID
+                        player.playerQueue.put_nowait(
+                            MESSAGE(
+                                -1,
+                                systemID,
+                                WEB_SYSTEM_DATATYPE.DENIAL,
+                                None,
+                                webData=e.enum(),
+                            )
+                        )
+                        self.player_send_room_status(message.playerID)
                 elif message.data_type == WEB_SYSTEM_DATATYPE.PLAYER_CREATE_ROOM:
                     try:
                         self.player_create_room(message.playerID, message.webData)
                         self.player_send_room_status(message.playerID)
-                    except:
-                        #FIXME:
-                        pass
+                    except Denial as e:
+                        systemID = message.playerID
+                        player.playerQueue.put_nowait(
+                            MESSAGE(
+                                -1,
+                                systemID,
+                                WEB_SYSTEM_DATATYPE.ANSWER_CREATE_ROOM,
+                                None,
+                                webData=DATA_SIMPLE_ANSWER(False, e.enum()),
+                            )
+                        )
+                        self.player_send_room_status(message.playerID)
                 elif message.data_type == WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM:
                     try:
                         self.player_join_room(message.playerID, message.webData)
                         self.broadcast_room_status(player.playerRoom)
-                    except RoomDenial as e:
+                    except Denial as e:
                         systemID = message.playerID
                         player.playerQueue.put_nowait(
                             MESSAGE(
@@ -164,23 +189,10 @@ class WEB:
                                 systemID,
                                 WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM,
                                 None,
-                                webData=DATA_ANSWER_JOIN_ROOM(False, e.enum()),
+                                webData=DATA_SIMPLE_ANSWER(False, e.enum()),
                             )
                         )
                         self.player_send_room_status(message.playerID)
-
-                    # TODO: WHAT THE HELL
-                    except Exception as e:
-                        systemID = message.playerID
-                        player.playerQueue.put_nowait(
-                            MESSAGE(
-                                -1,
-                                systemID,
-                                WEB_SYSTEM_DATATYPE.ERROR,
-                                None,
-                                webData=str(e),
-                            )
-                        )
                 elif message.data_type == WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS:
                     self.player_send_room_status(message.playerID)
                 elif message.data_type == WEB_SYSTEM_DATATYPE.ACTION_LEAVE_ROOM:
@@ -209,14 +221,16 @@ class WEB:
 
     def roomSendMessage(self, message: MESSAGE):
         # TODO:check it
-        if message.playerID == -1:
+        if message.playerID == player_ID_WEBSYSTEM:
             self.web_system_queue.put_nowait(message)
         elif message.playerID == -2:
             print(message.roomData)
         else:
-            #FIXME
             player = self.players[message.playerID]
-            assert player is not None
+            if player is None:
+                raise Exception(
+                    f"player {message.playerID} not found while room sending message."
+                )
             player.playerQueue.put_nowait(message)
         return
 
@@ -238,13 +252,18 @@ class WEB:
 
     def player_send_message(self, message: MESSAGE, cookie: uuid.UUID):
         player = self.players[message.playerID]
-        assert player is not None and player.playerCookie == cookie
-        if message.roomID == -1:
+        if player is None:
+            logger.error(f"player {message.playerID} not in system")
+            raise PlayerStatusDenial(f"player {message.playerID} not in system")
+        if player.playerCookie != cookie:
+            raise CookieDenial(f"{message.playerID} cookie wrong")
+        if message.roomID == room_ID_WEBSYSTEM:
             self.web_system_queue.put_nowait(message)
         elif player.playerRoom is None:
             self.player_send_room_status(message.playerID)
         else:
-            assert player.playerRoom == message.roomID
+            if player.playerRoom != message.roomID:  # admin don't go here
+                raise PlayerStatusDenial(f"Strange player:{player} send message.")
             room: WEB_ROOM = self.rooms[player.playerRoom]  # type:ignore
             if room.status == ROOM_STATUS.running:
                 room.roomQueue.put_nowait(message)
@@ -253,18 +272,20 @@ class WEB:
 
     def adminSendMessage(self, message: MESSAGE, cookie: uuid.UUID):
         admin = self.players[message.playerID]
-        assert (
+        if not (
             admin is not None
             and admin.playerCookie == cookie
             and admin.playerLevel == PLAYER_LEVEL.superUser
-        )
+        ):
+            raise PlayerStatusDenial(f"Strange player:{admin} send message.")
         if message.data_type in admin_types:
             logger.info(f"adminSendMessage: {message}")
             if message.roomID == -1:
                 self.web_system_queue.put_nowait(message)
             else:
                 room = self.rooms[message.roomID]
-                assert room is not None
+                if room is None:
+                    raise RoomNotExistDenial
                 room.roomQueue.put_nowait(message)
         else:
             self.player_send_message(message, cookie)
@@ -277,15 +298,15 @@ class WEB:
         except:
             pass
 
-    """
-    arg:   systemID should in [0,MAX)
-    arg:   status should be not none
-    raise: assertion error if status is not satisfied
-    """
-
     def player_send_room_status(self, systemID: playerWebSystemID) -> None:
+        """
+        arg:   systemID should in [0,MAX)
+        arg:   status should be not none
+        raise: PlayerStatusDenial if status is not satisfied
+        """
         player = self.players[systemID]
-        assert player is not None
+        if player is None:
+            raise PlayerStatusDenial(f"player not found message.")
         if player.playerRoom is None:
             frozen_room = None
         else:
@@ -356,7 +377,7 @@ class WEB:
                 systemID,
                 WEB_SYSTEM_DATATYPE.ANSWER_LOGIN,
                 None,
-                webData=DATA_ANSWER_LOGIN(success=True, error=None),
+                webData=DATA_SIMPLE_ANSWER(success=True, error=None),
             )
             player.playerQueue.put_nowait(message)
             self.player_send_room_status(systemID)
@@ -365,17 +386,16 @@ class WEB:
         else:
             raise AuthError
 
-    # arg:   player is already log in
-    # arg:   must not in any room
-    # arg:   room must be not full
-    # raise: excpetion if the above is not satisfied
     def player_join_room(self, systemID: playerWebSystemID, roomIndex: int) -> None:
+        """
+        arg:   player is already log in
+        arg:   must not in any room
+        arg:   room must be not full
+        raise: denail if the above is not satisfied
+        """
         player = self.players[systemID]
-        try:
-            assert player is not None
-            assert player.playerRoom is None
-        except:
-            raise PlayerNumError(f"{player}")
+        if player is None or player.playerRoom is not None:
+            raise PlayerStatusDenial(f"Strange player:{player} join room.")
 
         # get the room
         if roomIndex >= 0 and roomIndex <= self.maxRoom:
@@ -394,14 +414,16 @@ class WEB:
                 systemID,
                 WEB_SYSTEM_DATATYPE.ANSWER_JOIN_ROOM,
                 None,
-                webData=DATA_ANSWER_JOIN_ROOM(True, None),
+                webData=DATA_SIMPLE_ANSWER(True, None),
             )
         )
 
-    # arg:   systemID should in [0,MAX)
-    # arg:   status should be in_room_not_prepared
-    # raise: no error even status is not satisfied
     def player_reverse_prepare(self, systemID: playerWebSystemID):
+        """
+        arg:   systemID should in [0,MAX)
+        arg:   status should be in_room_not_prepared
+        raise: status denial if status is not satisfied
+        """        
         if self._status(systemID) == PLAYER_STATUS.IN_ROOM_PREPARED:
             player: WEB_PLAYER = self.players[systemID]  # type:ignore
             player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
@@ -425,13 +447,14 @@ class WEB:
             ):
                 self.room_run(room.roomID)
         else:
-            pass
+            raise PlayerStatusDenial(f"Strange player:{systemID} reverse prepare.")
 
     # arg:   room is preparing
-    # raise: assertion or attribute error
+    # raise: denial or attribute error
     def room_run(self, roomID: int):
         room: WEB_ROOM = self.rooms[roomID]  # type:ignore
-        assert room.status == ROOM_STATUS.preparing
+        if room.status != ROOM_STATUS.preparing:
+            raise RoomSatusDenial()
         room.roomQueue.put_nowait(
             MESSAGE(
                 room.roomID,
@@ -459,27 +482,28 @@ class WEB:
             self.player_quit_room(systemID)
             self.players[systemID] = None
 
-    # arg:   systemID should in [0,MAX)
-    # arg:   status should be room_is_none
-    # raise: assertion error if status is not OK
     def player_create_room(
         self, systemID: playerWebSystemID, expectedRoomMax: int
     ) -> int:
-        assert self._status(systemID) == PLAYER_STATUS.ROOM_IS_NONE
-        room_ID = self._find_empty_room(expectedRoomMax)
+        """
+        arg:   systemID should in [0,MAX)
+        arg:   status should be room_is_none
+        raise: room denial if status is not OK
+        """
         player = self.players[systemID]
+        if self._status(systemID) != PLAYER_STATUS.ROOM_IS_NONE:
+            raise PlayerStatusDenial(f"Strange player:{systemID} create room.")
+        if player is None or player.playerRoom is not None:
+            raise Exception(
+                "player status not consist."
+            )  # the check above should keep it
 
-        try:
-            assert player is not None
-            assert player.playerRoom is None
-        except:
-            raise Exception("加你大爷")
-
+        room_ID = self._find_empty_room(expectedRoomMax)
         # get the room
         if room_ID >= 0 and room_ID <= self.maxRoom:
             room = self.rooms[room_ID]
         else:
-            raise IndexError("错误的房间喵喵")  # index error
+            raise RoomOutOfRangeDenial
 
         room = self._room_construst(room_ID)
         self.rooms[room_ID] = room
@@ -492,14 +516,18 @@ class WEB:
                 None,
             )
         )
-        self._room_join_in_system(room_ID, systemID)  # no room error, here
+        self._room_join_in_system(
+            room_ID, systemID
+        )  # no room error here, because empty room can always join one
         player.playerRoom = room_ID
         player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED
         return room_ID
 
-    # arg:   systemID should in [0,MAX)
-    # arg:   status can be any
     def player_quit_room(self, systemID: playerWebSystemID):
+        """
+        arg:   systemID should in [0,MAX)
+        arg:   status can be any
+        """
         if self._status(systemID) in [
             PLAYER_STATUS.IN_ROOM_PREPARED,
             PLAYER_STATUS.IN_ROOM_NOT_PREPARED,
@@ -526,7 +554,7 @@ class WEB:
         self.rooms[roomIndex] = None
 
     # not safe
-    def _room_construst(self, roomIndex) -> WEB_ROOM:
+    def _room_construst(self, roomIndex: int) -> WEB_ROOM:
         room = WEB_ROOM(
             roomID=roomIndex,
             playerIndexs=[],
@@ -579,15 +607,16 @@ class WEB:
                 i
             ] is None:
                 return i
-        raise ServerBusyError("Sorry")
-
-    # arg:   systemID should in [0,MAX)
-    # arg:   status should be in_room_playing
-    # raise: assertion error
+        raise ServerBusyDenial
 
     def _change_player_to_zombie(self, systemID: playerWebSystemID):
-
-        assert self._status(systemID) == PLAYER_STATUS.IN_ROOM_PLAYING
+        """
+        arg:   systemID should in [0,MAX)
+        arg:   status should be in_room_playing
+        raise: exception if the caller don't check the status
+        """
+        if self._status(systemID) != PLAYER_STATUS.IN_ROOM_PLAYING:
+            raise Exception("player status not consist")
 
         self.players[systemID].playerStatus = (  # type:ignore
             PLAYER_STATUS.IN_ROOM_ZOMBIE

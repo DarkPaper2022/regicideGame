@@ -707,7 +707,7 @@ class ROOM:
                 )
             )
             logger.debug(f"{e}")
-            logger.info(f"ROOM{self.roomIndex}正常关闭了")
+            logger.info(f"ROOM {self.roomIndex} 正常关闭了")
             sys.exit()
         logger.debug(
             "room get a message:" + message.data_type.name + " " + str(message.roomData)

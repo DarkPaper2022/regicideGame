@@ -42,6 +42,8 @@ class WEB_SYSTEM_DATATYPE(Enum):
     ANSWER_REGISTER = 151
     ANSWER_JOIN_ROOM = 152
     ANSWER_CONNECTION = 153
+    ANSWER_CREATE_ROOM = 154
+    DENIAL = 180
     HALL_CREATE_ROOM = 120
     PLAYER_CREATE_ROOM = 118
     # to Hall to start a thread
@@ -101,10 +103,7 @@ class FROZEN_GAME_TYPE:
     version: str
 
 
-@dataclass
-class DATA_ANSWER_LOGIN:
-    success: bool
-    error: Optional[DINAL_TYPE]
+
 
 
 @dataclass
@@ -119,13 +118,10 @@ class DATA_ASK_REGISTER:
     password: str
 
 
-@dataclass
-class DATA_ANSWER_REGISTER:
-    success: bool
-    error: Optional[DINAL_TYPE]
+
     
 @dataclass
-class DATA_ANSWER_JOIN_ROOM:
+class DATA_SIMPLE_ANSWER:
     success: bool
     error: Optional[DINAL_TYPE]
 

@@ -197,7 +197,8 @@ class WEBSOCKET_CLIENT:
 
     # recv From  netcat
     async def recvThreadFunc(self):
-        assert self.playerCookie is not None
+        if self.playerCookie is None or self.userName is None:
+            raise Exception("Bad logic: auth func don't provide a cookie.")
         while True:
             try:
                 data = str(await self.websocket.recv())
@@ -218,7 +219,8 @@ class WEBSOCKET_CLIENT:
 
     # send To netcat
     async def sendThreadFunc(self):
-        assert self.playerCookie is not None and self.systemID is not None
+        if self.playerCookie is None or self.systemID is None:
+            raise Exception("Bad logic: auth func don't provide a cookie.")
         while True:
             message = await self.web.playerGetMessage(self.systemID, self.playerCookie)
             data = self.messageToData(message)
@@ -252,7 +254,7 @@ class WEBSOCKET_CLIENT:
                 room_data = card_data
             elif data_type == REGICIDE_DATATYPE.SPEAK:
                 speak_data: str = data
-                assert self.userName is not None
+                assert self.userName is not None    
                 room_data = TALKING_MESSAGE(time.time(), self.userName, speak_data)
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 joker_data: int = data
