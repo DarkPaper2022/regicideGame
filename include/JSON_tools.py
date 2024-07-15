@@ -113,6 +113,10 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "playerName": obj.name,
                 "playerPrepared": obj.status == PLAYER_STATUS.IN_ROOM_PREPARED,
             }
+        elif isinstance(obj, DATA_UPDATE_TALKING_STATUS):
+            return{
+                "talkList":self.default(obj.talkList)
+            }    
         elif isinstance(obj, TALKING_MESSAGE):        
             return {
                 "playerName":obj.userName,
