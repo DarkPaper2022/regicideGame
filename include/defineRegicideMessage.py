@@ -63,7 +63,7 @@ class FROZEN_STATUS_PARTLY:
     yourCards:Tuple[int,...]
     cardHeapLength:int
     discardHeapLength:int
-    disCardHeap:Tuple[int,...]
+    discardHeap:Tuple[int,...]
     atkCardHeap:Tuple[int,...]
     defeatedBosses:Tuple[int,...]
     currentBoss:FROZEN_BOSS

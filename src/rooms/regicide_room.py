@@ -548,7 +548,7 @@ class ROOM:
                 ]
             )
             status = FROZEN_STATUS_PARTLY(
-                disCardHeap=tuple(self.discard_heap),
+                discardHeap=tuple(self.discard_heap),
                 atkCardHeap=tuple(self.atk_heap),
                 currentRound=self.currentRound,
                 currentPlayerLocation=self.current_player.location,

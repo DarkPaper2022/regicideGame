@@ -285,7 +285,7 @@ class TCP_Client:
             )
         )
         currentPlayerAndRoundStr = currentRoundStr + "," + currentPlayerStr
-        disCardHeapStr = f"""弃牌堆里有这些牌:{cardsToStr(status.disCardHeap)}\n"""
+        disCardHeapStr = f"""弃牌堆里有这些牌:{cardsToStr(status.discardHeap)}\n"""
         atkCardHeapStr = f"""攻击堆里有这些牌:{cardsToStr(status.atkCardHeap)}\n"""
         playersStr: str = "您的队友:"
         for player in status.players:

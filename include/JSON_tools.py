@@ -1,5 +1,10 @@
 from include.TCP_UI_tools import strToCard
-from include.defineRegicideMessage import  FROZEN_STATUS_PARTLY, FROZEN_BOSS, TALKING_MESSAGE
+from include.defineRegicideMessage import (
+    FROZEN_STATUS_PARTLY,
+    FROZEN_BOSS,
+    TALKING_MESSAGE,
+    FrozenPlayerInRoom_partly,
+)
 from include.defineWebSystemMessage import (
     MESSAGE,
     DATATYPE,
@@ -8,7 +13,7 @@ from include.defineWebSystemMessage import (
 )
 
 from include.defineWebSystemMessage import *
-from typing import Tuple, Any, Callable
+from typing import Tuple, Any, Callable, List
 from include.defineColor import COLOR
 from include.defineRound import ROUND
 from dataclasses import dataclass, asdict
@@ -29,13 +34,11 @@ from enum import Enum
 """
 
 
-
-
-
 @dataclass
 class FirstSimplifiedMessage:
     dataType: DATATYPE
     data: Any
+
 
 @dataclass
 class DATA_UPDATE_TALKING_STATUS:
@@ -45,16 +48,12 @@ class DATA_UPDATE_TALKING_STATUS:
 class ComplexFrontEncoder(json.JSONEncoder):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.func_map: Dict[DATATYPE, Callable[[Any],Any]] = {
-            WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS: self.default,
-            WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM: self.default,
-            REGICIDE_DATATYPE.ANSWER_TALKING:self.default,
-            REGICIDE_DATATYPE.UPDATE_GAME_STATUS:self.default,
+        # self.default by default
+        self.func_map: Dict[DATATYPE, Callable[[Any], Any]] = {
             WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION: lambda x: {},
             WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE: lambda x: {},
         }
-        
-        self.my_enum_map:Dict[Enum, str] = {
+        self.my_enum_map: Dict[Enum, str] = {
             WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS: "UPDATE_ROOM_STATUS"
         }
 
@@ -81,14 +80,14 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "dataType": self.get_type(obj.dataType),
                 "dataName": self.get_name(obj.dataType),
                 "data": func(obj.data),
-            }    
+            }
         elif isinstance(obj, Enum):
             return self.my_enum_map.get(obj, obj.name)
         elif isinstance(obj, (int, bool, str)):
             return obj
         elif obj is None:
             return {}
-        elif isinstance(obj, List):
+        elif isinstance(obj, (list, tuple)):
             return [self.default(i) for i in obj]
 
         elif isinstance(obj, DATA_UPDATE_PLAYER_STATUS):
@@ -110,19 +109,38 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "playerPrepared": obj.status == PLAYER_STATUS.IN_ROOM_PREPARED,
             }
         elif isinstance(obj, DATA_UPDATE_TALKING_STATUS):
-            return {
-                "talkList":self.default(obj.talkList)
-            }    
-        elif isinstance(obj, TALKING_MESSAGE):        
-            return {
-                "playerName":obj.userName,
-                "talkMessage":obj.message
-            }
-            """
+            return {"talkList": self.default(obj.talkList)}
+        elif isinstance(obj, TALKING_MESSAGE):
+            return {"playerName": obj.userName, "talkMessage": obj.message}
         elif isinstance(obj, FROZEN_STATUS_PARTLY):
             return {
-                
-            }"""
+                "totalPlayer": obj.totalPlayer,
+                "yourLocation": obj.yourLocation,
+                "currentRound": obj.currentRound.name,
+                "currentPlayerLocation": obj.currentPlayerLocation,
+                "yourCards": self.default(obj.yourCards),
+                "cardHeapLength": obj.cardHeapLength,
+                "discardHeapLength": obj.discardHeapLength,
+                "discardHeap": self.default(obj.discardHeap),
+                "atkCardHeap": self.default(obj.atkCardHeap),
+                "defeatedBosses": self.default(obj.defeatedBosses),
+                "currentBoss": self.default(obj.currentBoss),
+                "players": self.default(sorted(obj.players, key=lambda x: x.playerLocation)),
+            }
+        elif isinstance(obj, FROZEN_BOSS):
+            return {
+                "name": obj.name,
+                "atk": obj.atk,
+                "hp": obj.hp,
+                "color": obj.color.name if obj.color is not None else None,
+                "tempWeakenAtk": obj.temp_weaken_atk,
+            }
+        elif isinstance(obj, FrozenPlayerInRoom_partly):
+            return {
+                "playerName": obj.playerName,
+                "playerHandCardCnt": obj.playerHandCardCnt,
+                "playerLocation": obj.playerLocation,
+            }
         else:
             return asdict(obj)
 
@@ -184,7 +202,7 @@ func_dict: Dict[DATATYPE, Callable] = {
     REGICIDE_DATATYPE.card: lambda data: tuple(
         [strToCard(card) for card in data["cards"]]
     ),
-    REGICIDE_DATATYPE.SPEAK:lambda data:str(data["talkMessage"]),
+    REGICIDE_DATATYPE.SPEAK: lambda data: str(data["talkMessage"]),
 }
 
 

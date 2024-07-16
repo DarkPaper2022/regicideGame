@@ -187,7 +187,6 @@
         "playerID": 1,
         "dataType": "UPDATE_GAME_STATUS",
         "data": {
-            "playerName": "darkpaper",
             "playerGame": {
                 "totalPlayer": 2,
                 "yourLocation": 1,
@@ -196,7 +195,7 @@
                 "yourCards": [8,29,46,9,0,20],
                 "cardHeapLength": 19,
                 "discardHeapLength": 15,
-                "disCardHeap": [10,1,42,32,5,39,16,48,36,43,14,45,27,7,13],
+                "discardHeap": [10,1,42,32,5,39,16,48,36,43,14,45,27,7,13],
                 "atkCardHeap": [],
                 "defeatedBosses": [10,36,49],
                 "currentBoss": {
@@ -204,7 +203,7 @@
                     "atk": 10,
                     "hp": 20,
                     "color": "D",
-                    "temp_weaken_atk": 0
+                    "tempWeakenAtk": 0
                 },
                 "players": [
                     {
@@ -213,8 +212,7 @@
                         "playerLocation": 0
                     }
                 ]
-            },
-            "playerLevel": "normal"
+            }
         }
     }
     ```
@@ -256,6 +254,6 @@
 - room 的建立：
     - HALL_CREATE_ROOM 
     - runRoom
-    
+
 - client与web的分割
     - client 管理链接
