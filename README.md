@@ -187,32 +187,30 @@
         "playerID": 1,
         "dataType": "UPDATE_GAME_STATUS",
         "data": {
-            "playerGame": {
-                "totalPlayer": 2,
-                "yourLocation": 1,
-                "currentRound": "defend",
-                "currentPlayerLocation": 0,
-                "yourCards": [8,29,46,9,0,20],
-                "cardHeapLength": 19,
-                "discardHeapLength": 15,
-                "discardHeap": [10,1,42,32,5,39,16,48,36,43,14,45,27,7,13],
-                "atkCardHeap": [],
-                "defeatedBosses": [10,36,49],
-                "currentBoss": {
-                    "name": 23,
-                    "atk": 10,
-                    "hp": 20,
-                    "color": "D",
-                    "tempWeakenAtk": 0
-                },
-                "players": [
-                    {
-                        "playerName": "a",
-                        "playerHandCardCnt": 5,
-                        "playerLocation": 0
-                    }
-                ]
-            }
+            "totalPlayer": 2,
+            "yourLocation": 1,
+            "currentRound": "defend",
+            "currentPlayerLocation": 0,
+            "yourCards": [8,29,46,9,0,20],
+            "cardHeapLength": 19,
+            "discardHeapLength": 15,
+            "discardHeap": [10,1,42,32,5,39,16,48,36,43,14,45,27,7,13],
+            "atkCardHeap": [],
+            "defeatedBosses": [10,36,49],
+            "currentBoss": {
+                "name": 23,
+                "atk": 10,
+                "hp": 20,
+                "color": "D",
+                "tempWeakenAtk": 0
+            },
+            "players": [
+                {
+                    "playerName": "a",
+                    "playerHandCardCnt": 5,
+                    "playerLocation": 0
+                }
+            ]
         }
     }
     ```
