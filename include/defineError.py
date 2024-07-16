@@ -1,7 +1,5 @@
 from enum import Enum
 
-from include.defineWebSystemMessage import PLAYER_STATUS, ROOM_STATUS
-
 class DINAL_TYPE(Enum):
     LOGIN_PASSWORD_WRONG = 0
     LOGIN_USERNAME_NOT_FOUND = 1
