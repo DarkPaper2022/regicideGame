@@ -45,6 +45,13 @@ class DATA_UPDATE_TALKING_STATUS:
     talkList: List[TALKING_MESSAGE]
 
 
+@dataclass
+class JSON_WRAPPED_GAME_STATUS:
+    playerGame: FROZEN_STATUS_PARTLY
+    playerName: str
+    playerLevel: PLAYER_LEVEL
+
+
 class ComplexFrontEncoder(json.JSONEncoder):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -112,6 +119,12 @@ class ComplexFrontEncoder(json.JSONEncoder):
             return {"talkList": self.default(obj.talkList)}
         elif isinstance(obj, TALKING_MESSAGE):
             return {"playerName": obj.userName, "talkMessage": obj.message}
+        elif isinstance(obj, JSON_WRAPPED_GAME_STATUS):
+            return {
+                "playerGame": self.default(obj.playerGame),
+                "playerName": obj.playerName,
+                "playerLevel": obj.playerLevel.name,
+            }
         elif isinstance(obj, FROZEN_STATUS_PARTLY):
             return {
                 "totalPlayer": obj.totalPlayer,

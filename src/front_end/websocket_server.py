@@ -1,3 +1,4 @@
+from os import EX_CANTCREAT
 import socket
 import uuid
 from websockets.server import serve, WebSocketServerProtocol
@@ -41,6 +42,7 @@ class WEBSOCKET_CLIENT:
     userName: Optional[str]  # be careful, once initialized it should never be changed
     web: WEB
     roomID: int
+    player_level:PLAYER_LEVEL
 
     def __init__(self, websocket, web, timeOutSetting: int) -> None:
         self.websocket = websocket
@@ -157,7 +159,7 @@ class WEBSOCKET_CLIENT:
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_LOG_IN:
                 try:
                     login_data: DATA_ASK_LOGIN = data
-                    self.playerCookie, self.systemID, _ = self.web.PLAYER_LOG_IN(
+                    self.playerCookie, self.systemID, self.player_level = self.web.PLAYER_LOG_IN(
                         playerName=login_data.username,
                         password=login_data.password,
                     )
@@ -277,6 +279,11 @@ class WEBSOCKET_CLIENT:
             self.roomID = (
                 -1 if room_status.playerRoom is None else room_status.playerRoom.roomID
             )
+        elif message.data_type == REGICIDE_DATATYPE.UPDATE_GAME_STATUS:
+            if self.userName is  None:
+                raise Exception("status not consist")
+            wrapped = JSON_WRAPPED_GAME_STATUS(message.roomData, self.userName, self.player_level) 
+            message.roomData = wrapped
         if message.roomID != self.roomID and message.roomID != -1:
             logger.error(f"奇怪的信号?\n")
         data = json.dumps(message, cls=ComplexFrontEncoder)

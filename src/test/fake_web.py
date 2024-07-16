@@ -15,5 +15,5 @@ class fake_web:
         return await self.lq.get()
 
     def roomSendMessage(self, message):
-        print( json.dumps(message, cls=ComplexFrontEncoder) )
+        print( json.dumps(message, cls=ComplexFrontEncoder, ensure_ascii=False) )
 

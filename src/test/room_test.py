@@ -31,7 +31,7 @@ async def main():
             ],
         )
     )
-    fw.lq.put_nowait(TCP_Client.data_to_message(fc_a, b"status#"))
+    fw.lq.put_nowait(TCP_Client.data_to_message(fc_a, b"room status#"))
     while True:
         select = await aioconsole.ainput()
         #print(select)
