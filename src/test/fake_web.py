@@ -1,6 +1,7 @@
 from include.myLockQueue import myLockQueue
 from src.test.fake_tcp_client import fake_client
-
+from include.JSON_tools import ComplexFrontEncoder
+import json
 class fake_web:
     lq: myLockQueue
 
@@ -14,5 +15,5 @@ class fake_web:
         return await self.lq.get()
 
     def roomSendMessage(self, message):
-        print(message)
+        print( json.dumps(message, cls=ComplexFrontEncoder) )
 

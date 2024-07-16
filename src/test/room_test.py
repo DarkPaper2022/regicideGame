@@ -18,6 +18,7 @@ print(room.playerTotalNum)
 
 async def main():
     t = asyncio.create_task(room.run())
+    fw.lq.put_nowait(MESSAGE(test_room_ID, 1145, WEB_SYSTEM_DATATYPE.LOAD_ROOM, "before_joker.pkl",None))   # type: ignore
     fw.lq.put_nowait(
         MESSAGE(
             test_room_ID,
@@ -30,7 +31,6 @@ async def main():
             ],
         )
     )
-    fw.lq.put_nowait(MESSAGE(test_room_ID, 1145, WEB_SYSTEM_DATATYPE.LOAD_ROOM, "joker.pkl",None))   # type: ignore
     fw.lq.put_nowait(TCP_Client.data_to_message(fc_a, b"status#"))
     while True:
         select = await aioconsole.ainput()

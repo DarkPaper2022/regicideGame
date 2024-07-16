@@ -183,15 +183,14 @@
     
     ```json
     {
-        "roomID": -1,
-        "playerID": 1,
-        "dataType": "UPDATE_GAME_STATUS",
+        "dataType": "UPDATE",
+        "dataName": "GAME_STATUS",
         "data": {
             "totalPlayer": 2,
-            "yourLocation": 1,
-            "currentRound": "defend",
+            "yourLocation": 0,
+            "currentRound": "atk",
             "currentPlayerLocation": 0,
-            "yourCards": [8,29,46,9,0,20],
+            "yourCards": [6,22,17,52,3],
             "cardHeapLength": 19,
             "discardHeapLength": 15,
             "discardHeap": [10,1,42,32,5,39,16,48,36,43,14,45,27,7,13],
@@ -206,9 +205,9 @@
             },
             "players": [
                 {
-                    "playerName": "a",
-                    "playerHandCardCnt": 5,
-                    "playerLocation": 0
+                    "playerName": "b",
+                    "playerHandCardCnt": 6,
+                    "playerLocation": 1
                 }
             ]
         }
