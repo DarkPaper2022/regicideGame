@@ -187,6 +187,7 @@
         "dataName": "GAME_STATUS",
         "data": {
             "totalPlayer": 2,
+            "cardMax": 7,
             "yourLocation": 0,
             "currentRound": "atk",
             "currentPlayerLocation": 0,
