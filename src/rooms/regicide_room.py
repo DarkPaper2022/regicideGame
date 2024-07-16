@@ -186,6 +186,7 @@ class ROOM:
         )
 
     def deal_load(self, status: FROZEN_STATUS):
+        logger.info(f"pre loading status")
         self.status_to_load = status
         return
 
@@ -445,8 +446,10 @@ class ROOM:
         return sum([cardToNum(card) for card in cards]) >= self.currentBoss.atk
 
     async def run(self):
+        logger.debug("room thread start")
         self.playerList = []
         await self.ioGetPlayerRegister()
+        logger.debug("room get player info, starting ...")
         while True:
             await self.start()
 
@@ -460,6 +463,7 @@ class ROOM:
 
             if self.status_to_load is not None:
                 self.load(self.status_to_load)
+                logger.info("after load room")
                 self.status_to_load = None
 
             if self.currentRound == ROUND.over:

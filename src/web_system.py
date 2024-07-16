@@ -166,6 +166,7 @@ class WEB:
                         self.player_create_room(message.playerID, message.webData)
                         self.player_send_room_status(message.playerID)
                     except Denial as e:
+                        logger.info(f"create room, but failed {e.enum().name}")
                         systemID = message.playerID
                         player.playerQueue.put_nowait(
                             MESSAGE(
@@ -266,6 +267,7 @@ class WEB:
                 raise PlayerStatusDenial(f"Strange player:{player} send message.")
             room: WEB_ROOM = self.rooms[player.playerRoom]  # type:ignore
             if room.status == ROOM_STATUS.running:
+                logger.debug(f"message arrive web_system: {message.data_type.name}")
                 room.roomQueue.put_nowait(message)
             else:
                 self.player_send_room_status(message.playerID)
@@ -370,6 +372,7 @@ class WEB:
             else:
                 old_player.playerCookie = cookie
                 old_player.playerStatus = PLAYER_STATUS.IN_ROOM_PLAYING
+                self.players[systemID] = old_player
                 player = old_player
 
             message: MESSAGE = MESSAGE(
@@ -381,7 +384,7 @@ class WEB:
             )
             player.playerQueue.put_nowait(message)
             self.player_send_room_status(systemID)
-            logger.debug("login succeed.")
+            logger.debug(f"login succeed. status:{player.playerStatus.name}")
             return cookie, systemID, level
         else:
             raise AuthError
@@ -454,7 +457,7 @@ class WEB:
     def room_run(self, roomID: int):
         room: WEB_ROOM = self.rooms[roomID]  # type:ignore
         if room.status != ROOM_STATUS.preparing:
-            raise RoomSatusDenial()
+            raise RoomSatusDenial
         room.roomQueue.put_nowait(
             MESSAGE(
                 room.roomID,
@@ -467,6 +470,7 @@ class WEB:
                 ],
             )
         )
+        logger.debug("runRoom message sending to room")
         room.status = ROOM_STATUS.running
         for a_systemID in room.playerIndexs:
             self.players[a_systemID].playerStatus = (  # type:ignore

@@ -253,7 +253,9 @@
 - 从tcp客户端直接注册账号密码
     - WARNING: **一定要注意安全性啊**
 - 将websocket和API结合起来构造浏览器前端
-- room 与 web 的分割：
-    - room 只需知道 user location，不知道 websystemID
+- room 的建立：
+    - HALL_CREATE_ROOM 
+    - runRoom
+    
 - client与web的分割
     - client 管理链接
