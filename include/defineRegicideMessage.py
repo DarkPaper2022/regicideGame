@@ -12,7 +12,7 @@ class REGICIDE_DATATYPE(Enum):
     #TODO:注释对应data的情况
     askStatus = 1       
     #from client, none message
-    REGICIDE_ANSWER_STATUS = 3    #to client
+    UPDATE_GAME_STATUS = 3    #to client
     REGICIDE_ACTION_TALKING_MESSAGE = 2
     #hall should deal with it when room is not started
     ANSWER_TALKING = 4   #to client

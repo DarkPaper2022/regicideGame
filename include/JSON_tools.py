@@ -49,6 +49,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
             WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS: self.default,
             WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM: self.default,
             REGICIDE_DATATYPE.ANSWER_TALKING:self.default,
+            REGICIDE_DATATYPE.UPDATE_GAME_STATUS:self.default,
             WEB_SYSTEM_DATATYPE.ANSWER_CONNECTION: lambda x: {},
             WEB_SYSTEM_DATATYPE.ACTION_CHANGE_PREPARE: lambda x: {},
         }
@@ -72,7 +73,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
             message = obj
             new_message = self._data_helper_first(message)
             re = self.default(new_message)
-            logger.debug(f"""{obj}\n --> \n{re}""")
+            logger.debug(f"""{obj}\n --> \n{json.dumps(re)}""")
             return re
         elif isinstance(obj, FirstSimplifiedMessage):
             func = self.func_map.get(obj.dataType, self.default)
@@ -80,8 +81,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "dataType": self.get_type(obj.dataType),
                 "dataName": self.get_name(obj.dataType),
                 "data": func(obj.data),
-            }
-            
+            }    
         elif isinstance(obj, Enum):
             return self.my_enum_map.get(obj, obj.name)
         elif isinstance(obj, (int, bool, str)):
@@ -118,6 +118,11 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "playerName":obj.userName,
                 "talkMessage":obj.message
             }
+            """
+        elif isinstance(obj, FROZEN_STATUS_PARTLY):
+            return {
+                
+            }"""
         else:
             return asdict(obj)
 
@@ -190,7 +195,7 @@ def json_1_obj_hook(json_dict: Dict[str, Any]) -> Tuple[DATATYPE, Any] | Dict[st
         dataType: DATATYPE = type_dict_str_to_enum[dataType_str][dataName_str]
         func = func_dict.get(dataType, lambda x: None)
         data = func(json_dict["data"])
-        logger.debug(f"""{json_dict}\n --> \n{(dataType, data)}""")
+        logger.debug(f"""{json.dumps(json_dict)}\n --> \n{(dataType, data)}""")
         return (dataType, data)
     else:
         return json_dict

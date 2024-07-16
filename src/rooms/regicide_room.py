@@ -563,7 +563,7 @@ class ROOM:
         retMessage: MESSAGE = MESSAGE(
             roomID=self.roomIndex,
             playerID=self.playerList[playerLocation].webSystemID,
-            data_type=REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS,
+            data_type=REGICIDE_DATATYPE.UPDATE_GAME_STATUS,
             roomData=status,
             webData=None,
         )

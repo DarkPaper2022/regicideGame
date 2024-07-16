@@ -57,13 +57,25 @@
 
 
 - 客户端发送信息:
+
     ```json
-        {
-            "dataType":"create",
-            "data":{
-                "maxPlayer":3
-                }
+    {
+        "dataType": "ASK",
+        "dataName": "CONNECTION",
+        "data": {
+            "gameName": "regicide",
+            "version": 0.1
         }
+    }    
+    ```
+    ```json
+    {
+        "dataType": "ACTION",
+        "dataName": "CREATE_ROOM",
+        "data": {
+            "maxPlayer": 4
+        }
+    }
     ```
     ```json
         {
@@ -75,13 +87,15 @@
         }
     ```
     ```json
-        {
-            "dataType":"log in",
-            "data":{
-                "userName":"darkpaper",
-                "password":"114514"
-            }
+    {
+        "dataType": "ASK",
+        "dataName": "LOGIN",
+        "data": {
+            "username": "114514",
+            "password": "114514"
         }
+    }
+
     ```
     ```json
         {
@@ -92,9 +106,18 @@
         }
     ```
     ```json
-        {
-            "dataType":"prepare"
-        }
+    {
+        "dataType": "ACTION",
+        "dataName": "CHANGE_PREPARE",
+        "data": {}
+    }
+    ```
+    ```json
+    {
+        "dataType": "ACTION",
+        "dataName": "LEAVE_ROOM",
+        "data": {}
+    }
     ```
     ```json
         {
@@ -121,12 +144,13 @@
         }
     ```
     ```json
-        {
-            "dataType":"speak",
-            "data":{
-                "words":"哦shit"
-            }
+    {
+        "dataType": "ACTION",
+        "dataName": "TALK_MESSAGE",
+        "data": {
+            "talkMessage": "test1"
         }
+    }
     ```
 
 
@@ -134,23 +158,25 @@
 - 客户端接收信息:
     ```json
     {
-        "roomID": -1,
-        "playerID": 1,
-        "dataType": "ANSWER_ROOM_STATUS",
+        "dataType": "UPDATE",
+        "dataName": "ROOM_STATUS",
         "data": {
-            "playerName": "darkpaper",
-            "playerRoom": {
-                "roomID": 0,
-                "playerList": [
-                    {
-                        "userName": "darkpaper",
-                        "ready": false
-                    }
-                ],
-                "maxPlayer": 2,
-                "status": "preparing"
-            },
-            "playerLevel": "normal"
+            "roomID": 201,
+            "maxPlayer": 4,
+            "playerList": [
+                {
+                    "playerName": "123456",
+                    "playerPrepared": false
+                }
+            ]
+        }
+    }
+
+    {
+        "dataType": "UPDATE",
+        "dataName": "ROOM_STATUS",
+        "data": {
+            "roomID": -1
         }
     }
     ```
@@ -159,7 +185,7 @@
     {
         "roomID": -1,
         "playerID": 1,
-        "dataType": "ANSWER_ROOM_STATUS",
+        "dataType": "UPDATE_GAME_STATUS",
         "data": {
             "playerName": "darkpaper",
             "playerGame": {

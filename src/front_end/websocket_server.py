@@ -22,10 +22,8 @@ from include.defineWebSystemMessage import (
     DATATYPE_tuple,
     DATA_UPDATE_PLAYER_STATUS,
     FROZEN_ROOM_STATUS_inWebSystem,
-    DATA_ANSWER_LOGIN,
     DINAL_TYPE,
     DATA_ANSWER_CONNECTION,
-    DATA_ANSWER_REGISTER,
     FROZEN_GAME_TYPE,
 )
 
@@ -94,9 +92,9 @@ class WEBSOCKET_CLIENT:
         self.systemID = None
         self.player_exit_event.set()
 
-    #ret: optional
-    #raise: no exception
-    def _socket_read(self, socket_data:str) -> Optional[Tuple[DATATYPE, Any]]:
+    # ret: optional
+    # raise: no exception
+    def _socket_read(self, socket_data: str) -> Optional[Tuple[DATATYPE, Any]]:
         try:
             data_type, data = json.loads(socket_data, object_hook=json_1_obj_hook)
             assert isinstance(data_type, DATATYPE_tuple)
@@ -132,7 +130,7 @@ class WEBSOCKET_CLIENT:
                                 playerID=playerWebSystemID(-1),
                                 roomID=-1,
                                 data_type=WEB_SYSTEM_DATATYPE.ANSWER_REGISTER,
-                                webData=DATA_ANSWER_REGISTER(
+                                webData=DATA_SIMPLE_ANSWER(
                                     success=True,
                                     error=None,
                                 ),
@@ -148,7 +146,7 @@ class WEBSOCKET_CLIENT:
                                 playerID=playerWebSystemID(-1),
                                 roomID=-1,
                                 data_type=WEB_SYSTEM_DATATYPE.ANSWER_REGISTER,
-                                webData=DATA_ANSWER_REGISTER(
+                                webData=DATA_SIMPLE_ANSWER(
                                     success=False,
                                     error=DINAL_TYPE.REGISTER_FORMAT_WRONG,
                                 ),
@@ -159,7 +157,7 @@ class WEBSOCKET_CLIENT:
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_LOG_IN:
                 try:
                     login_data: DATA_ASK_LOGIN = data
-                    self.playerCookie, self.systemID,_ = self.web.PLAYER_LOG_IN(
+                    self.playerCookie, self.systemID, _ = self.web.PLAYER_LOG_IN(
                         playerName=login_data.username,
                         password=login_data.password,
                     )
@@ -175,11 +173,12 @@ class WEBSOCKET_CLIENT:
                                 roomData=None,
                                 playerID=playerWebSystemID(-1),
                                 data_type=WEB_SYSTEM_DATATYPE.ANSWER_LOGIN,
-                                webData=DATA_ANSWER_LOGIN(
+                                webData=DATA_SIMPLE_ANSWER(
                                     success=False,
                                     error=e.args[0],
                                 ),
-                            ),cls=ComplexFrontEncoder
+                            ),
+                            cls=ComplexFrontEncoder,
                         )
                     )
             else:
@@ -230,31 +229,29 @@ class WEBSOCKET_CLIENT:
                 break
             except Exception as e:
                 break
-            if (
-                message.data_type == WEB_SYSTEM_DATATYPE.cookieWrong
-            ):
+            if message.data_type == WEB_SYSTEM_DATATYPE.cookieWrong:
                 break
         self._player_exit()
 
     # error MessageFormatError if bytes are illegal
     def dataToMessage(self, socket_data: str) -> MESSAGE:
-        
+
         re = self._socket_read(socket_data)
         if re is None:
             raise MessageFormatError(f"{socket_data}")
         else:
             data_type = re[0]
             data = re[1]
-        try:    
+        try:
             room_ID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID
-            room_data:Any = None
+            room_data: Any = None
             web_data = None
             if data_type == REGICIDE_DATATYPE.card:
                 card_data: Tuple[int, ...] = data
                 room_data = card_data
             elif data_type == REGICIDE_DATATYPE.SPEAK:
                 speak_data: str = data
-                assert self.userName is not None    
+                assert self.userName is not None
                 room_data = TALKING_MESSAGE(time.time(), self.userName, speak_data)
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 joker_data: int = data
@@ -283,6 +280,7 @@ class WEBSOCKET_CLIENT:
         if message.roomID != self.roomID and message.roomID != -1:
             logger.error(f"奇怪的信号?\n")
         data = json.dumps(message, cls=ComplexFrontEncoder)
+        logger.debug(f"send json: {data}")
         return data
 
     async def check_game_version(self) -> bool:
@@ -295,7 +293,7 @@ class WEBSOCKET_CLIENT:
         else:
             data_type = re[0]
             data = re[1]
-        if data_type!= WEB_SYSTEM_DATATYPE.ASK_CONNECTION:
+        if data_type != WEB_SYSTEM_DATATYPE.ASK_CONNECTION:
             return False
         else:
             game_and_version: FROZEN_GAME_TYPE = data

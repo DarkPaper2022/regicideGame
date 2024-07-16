@@ -218,7 +218,7 @@ class TCP_Client:
     def message_to_data(self, message: MESSAGE) -> bytes:
         if message.roomID != self.roomID and message.roomID != -1:
             return f"奇怪的信号?\n{message.roomID}".encode()
-        if message.data_type == REGICIDE_DATATYPE.REGICIDE_ANSWER_STATUS:
+        if message.data_type == REGICIDE_DATATYPE.UPDATE_GAME_STATUS:
             status: FROZEN_STATUS_PARTLY = message.roomData
             messageData = self._statusToStr(status)
         elif message.data_type == REGICIDE_DATATYPE.ANSWER_TALKING:

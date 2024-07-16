@@ -57,7 +57,7 @@ class WEB_SYSTEM_DATATYPE(Enum):
     # from client or from web
     # to let the hall know you are prepared
 
-    ACTION_LEAVE_ROOM = 120  # to room
+    ACTION_LEAVE_ROOM = 129  # to room
     # room should deal with it
 
     PLAYER_ESCAPE = 114
