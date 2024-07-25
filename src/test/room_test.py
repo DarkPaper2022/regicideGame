@@ -4,15 +4,15 @@ import src.rooms.regicide_room as regicide_room
 from include.defineWebSystemMessage import *
 from include.myLockQueue import *
 import asyncio
-import aioconsole
+import aioconsole   #type: ignore
 from src.test.fake_web import fake_web
 from src.test.fake_tcp_client import fake_client
 from src.front_end.tcp_server import TCP_Client
 
 test_room_ID = 15
 fw = fake_web()
-fc_a = fake_client(test_room_ID, 33)
-fc_b = fake_client(test_room_ID, 44)
+fc_a = fake_client(test_room_ID, 33,"a")
+fc_b = fake_client(test_room_ID, 44,"b")
 room = regicide_room.ROOM(fw, test_room_ID)  # type:ignore
 print(room.playerTotalNum)
 
@@ -26,16 +26,16 @@ async def main():
             WEB_SYSTEM_DATATYPE.runRoom,
             None,
             [
-                (fc_a.playerIndex, "a"),
-                (fc_b.playerIndex, "b"),
+                (fc_a.playerIndex, fc_a.userName),
+                (fc_b.playerIndex, fc_b.userName),
             ],
         )
     )
-    fw.lq.put_nowait(TCP_Client.data_to_message(fc_a, b"room status#"))
+    fw.lq.put_nowait(TCP_Client.data_to_message( fc_a , b"room status#"))   # type: ignore
     while True:
-        select = await aioconsole.ainput()
+        select:str = await aioconsole.ainput()
         #print(select)
-        fw.lq.put_nowait(MESSAGE)
+        fw.lq.put_nowait(TCP_Client.data_to_message( fc_a , select.encode()))   # type: ignore
         await asyncio.sleep(5)
     await t
 

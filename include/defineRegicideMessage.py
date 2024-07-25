@@ -15,15 +15,15 @@ class REGICIDE_DATATYPE(Enum):
     UPDATE_GAME_STATUS = 3    #to client
     REGICIDE_ACTION_TALKING_MESSAGE = 2
     #hall should deal with it when room is not started
-    ANSWER_TALKING = 4   #to client
-    card = 5            #from client                使用: "5#S5 J5"、"5#52" 这样的方式来出牌
-    startSignal = 6     #none
-    exception = 7       #to client                  TODO:no str
-    SPEAK = 9           #from client
-    confirmJoker = 10   #from client
-    overSignal = 11     #to client
-    gameTalk = 12       #to client                  TODO:no str
-    gameOver = 19       #to hall
+    UPDATE_TALKING = 4   #to client
+    card = 5             # from client                使用: "5#S5 J5"、"5#52" 这样的方式来出牌
+    startSignal = 6      # none
+    exception = 7        # to client                  TODO:no str
+    SPEAK = 9            # from client
+    confirmJoker = 10    # from client
+    overSignal = 11      # to client
+    gameTalk = 12        # to client                  TODO:no str
+    gameOver = 19        # to hall
 
 
 

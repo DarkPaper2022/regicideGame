@@ -1,0 +1,117 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "localhost/main.schema.json",
+    "type": "object",
+    "properties": {
+        "dataType": { "enum": ["ASK", "ACTION", "UPDATE"] },
+        "dataName": { "enum": ["ROOM_STATUS", "GAME_STATUS"] },
+        "data": { "type": "object" }
+    },
+    "definitions": {
+        "card": {
+            "oneOf": [
+                { "type": "integer" },
+                {
+                    "type": "string",
+                    "pattern": "^(梅花|方片|红桃|黑桃)(A|2|3|4|5|6|7|8|9|10|J|Q|K)$|^小王$|^大王$"
+                }
+            ]
+        },
+        "room_status": {
+            "oneOf": [
+                {
+                    "type": "object",
+                    "properties": { "roomID": { "const": -1 } },
+                    "required": ["roomID"]
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "roomID": { "type": "integer" },
+                        "maxPlayer": { "type": "integer" },
+                        "playerList": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "playerName": { "type": "string" },
+                                    "playerPrepared": { "type": "boolean" }
+                                },
+                                "required": ["playerName", "playerPrepared"]
+                            }
+                        }
+                    },
+                    "required": ["roomID", "maxPlayer", "playerList"]
+                }
+            ]
+        },
+        "game_status": {
+            "properties": {
+                "totalPlayer": { "enum": [2, 3, 4] },
+                "yourLocation": { "enum": [0, 1, 2, 3] },
+                "currentRound": { "enum": ["atk", "defend", "jokerTime", "preparing"] },
+                "currentPlayerLocation": { "enum": [0, 1, 2, 3] },
+                "yourCards": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/card" }
+                },
+                "cardHeapLength": { "type": "integer" },
+                "discardHeapLength": { "type": "integer" },
+                "discardHeap": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/card" }
+                },
+                "atkCardHeap": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/card" }
+                },
+                "defeatedBosses": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/card" }
+                },
+                "currentBoss": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "$ref": "#/definitions/card" },
+                        "atk": { "type": "integer" },
+                        "hp": { "type": "integer" },
+                        "color": { "enum": ["D", "S", "H", "C", null] },
+                        "tempWeakenAtk": { "type": "integer" }
+                    }
+                },
+                "players": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "playerName": { "type": "string" },
+                            "playerHandCardCnt": { "type": "integer" },
+                            "playerLocation": { "enum": [0, 1, 2, 3] }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "anyOf": [
+        {
+            "if": { "properties": { "dataType": { "const": "UPDATE" } } },
+            "then": {
+                "anyOf": [
+                    {
+                        "if": { "properties": { "dataName": { "const": "ROOM_STATUS" } } },
+                        "then": { "properties": { "data": { "$ref": "#/definitions/room_status" } } },
+                        "else": false
+                    },
+                    {
+                        "if": { "properties": { "dataName": { "const": "GAME_STATUS" } } },
+                        "then": { "properties": { "data": { "$ref": "#/definitions/game_status" } } },
+                        "else": false
+                    }
+                ]
+            },
+            "else": false
+        }
+    ],
+    "required": ["dataType", "dataName", "data"]
+}

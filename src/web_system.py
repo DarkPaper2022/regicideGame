@@ -426,7 +426,7 @@ class WEB:
         arg:   systemID should in [0,MAX)
         arg:   status should be in_room_not_prepared
         raise: status denial if status is not satisfied
-        """        
+        """
         if self._status(systemID) == PLAYER_STATUS.IN_ROOM_PREPARED:
             player: WEB_PLAYER = self.players[systemID]  # type:ignore
             player.playerStatus = PLAYER_STATUS.IN_ROOM_NOT_PREPARED

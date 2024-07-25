@@ -221,7 +221,7 @@ class TCP_Client:
         if message.data_type == REGICIDE_DATATYPE.UPDATE_GAME_STATUS:
             status: FROZEN_STATUS_PARTLY = message.roomData
             messageData = self._statusToStr(status)
-        elif message.data_type == REGICIDE_DATATYPE.ANSWER_TALKING:
+        elif message.data_type == REGICIDE_DATATYPE.UPDATE_TALKING:
             messageData = ""
             talkings: Tuple[TALKING_MESSAGE, ...] = message.roomData
             if len(talkings) == 0:

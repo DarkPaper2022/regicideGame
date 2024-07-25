@@ -162,7 +162,7 @@ class ROOM:
         self.talkings = TALKING()
         self.currentRound = ROUND.preparing
         self.status_to_load = None
-
+        self.skip_cnt = 0
     def froze(self) -> FROZEN_STATUS:
         players_arch = tuple(
             [
@@ -337,6 +337,10 @@ class ROOM:
         self.current_player.deleteCards(cards)
         for card in cards:
             self.atk_heap.appendleft(card)
+        if len(cards) == 0:
+            self.skip_cnt += 1
+        else:
+            self.skip_cnt = 0
         if len(cards) == 1 and (cards[0] == 53 or cards[0] == 52):
             self.currentBoss.clearify()
             self.currentRound = ROUND.jokerTime
@@ -350,7 +354,7 @@ class ROOM:
         if len(cards) > self.maxHandSize:
             return False
         elif len(cards) == 0:
-            return True
+            return self.skip_cnt != self.maxHandSize - 1
         else:
             if len(set(cards)) != len(cards):
                 return False
@@ -578,7 +582,7 @@ class ROOM:
         retMessage: MESSAGE = MESSAGE(
             self.roomIndex,
             playerID=webSystemID,
-            data_type=REGICIDE_DATATYPE.ANSWER_TALKING,
+            data_type=REGICIDE_DATATYPE.UPDATE_TALKING,
             roomData=talking,
             webData=None,
         )
