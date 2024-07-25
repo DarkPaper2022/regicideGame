@@ -50,6 +50,7 @@
                 "totalPlayer": { "enum": [2, 3, 4] },
                 "yourLocation": { "enum": [0, 1, 2, 3] },
                 "currentRound": { "enum": ["atk", "defend", "jokerTime", "preparing"] },
+                "skipCnt": { "enum": [0, 1, 2] },
                 "currentPlayerLocation": { "enum": [0, 1, 2, 3] },
                 "yourCards": {
                     "type": "array",
@@ -90,7 +91,23 @@
                         }
                     }
                 }
-            }
+            },
+            "required": [
+                "totalPlayer",
+                "yourLocation",
+                "currentRound",
+                "skipCnt",
+                "currentPlayerLocation",
+                "yourCards",
+                "cardHeapLength",
+                "discardHeapLength",
+                "discardHeap",
+                "atkCardHeap",
+                "defeatedBosses",
+                "currentBoss",
+                "players"
+            ],
+            "additionalProperties": false
         }
     },
     "anyOf": [

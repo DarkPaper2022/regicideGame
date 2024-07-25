@@ -172,6 +172,7 @@ class ROOM:
         )
         talking_arch = tuple(self.talkings.messages)
         return FROZEN_STATUS(
+            skipCnt=self.skip_cnt,
             totalPlayer=self.playerTotalNum,
             currentRound=self.currentRound,
             players=players_arch,
@@ -552,6 +553,7 @@ class ROOM:
                 ]
             )
             status = FROZEN_STATUS_PARTLY(
+                skipCnt=self.skip_cnt,
                 discardHeap=tuple(self.discard_heap),
                 atkCardHeap=tuple(self.atk_heap),
                 currentRound=self.currentRound,

@@ -1,5 +1,6 @@
 from dataclasses import dataclass,field
 from typing import Any,List,Tuple,Union,NewType
+from unittest import skip
 from include.defineColor import COLOR
 from include.defineRound import ROUND
 from enum import Enum
@@ -59,6 +60,7 @@ class FROZEN_STATUS_PARTLY:
     totalPlayer:int
     yourLocation:playerRoomLocation
     currentRound:ROUND
+    skipCnt:int
     currentPlayerLocation:playerRoomLocation
     yourCards:Tuple[int,...]
     cardHeapLength:int
@@ -83,6 +85,7 @@ class FROZEN_STATUS:
     totalPlayer:int
     
     currentRound:ROUND
+    skipCnt:int
     
     players:Tuple[FrozenPlayerInRoom_archieve,...]
     currentPlayerLocation:playerRoomLocation

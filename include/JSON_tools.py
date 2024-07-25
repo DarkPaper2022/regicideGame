@@ -127,6 +127,7 @@ class ComplexFrontEncoder(json.JSONEncoder):
             }
         elif isinstance(obj, FROZEN_STATUS_PARTLY):
             return {
+                "skipCnt":obj.skipCnt,
                 "totalPlayer": obj.totalPlayer,
                 "cardMax": 9 - obj.totalPlayer,
                 "yourLocation": obj.yourLocation,
