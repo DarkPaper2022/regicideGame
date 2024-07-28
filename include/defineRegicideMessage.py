@@ -7,7 +7,7 @@ from enum import Enum
 import math
 
 playerRoomLocation = NewType("playerRoomLocation",int) 
-
+Card = NewType("Card",int)
 
 class REGICIDE_DATATYPE(Enum):
     #TODO:注释对应data的情况
@@ -33,7 +33,7 @@ class REGICIDE_DATATYPE(Enum):
 
 @dataclass(frozen=True)
 class FROZEN_BOSS:
-    name:int
+    name:Card
     atk:int
     hp:int
     color:Union[COLOR,None]
@@ -49,7 +49,7 @@ class FrozenPlayerInRoom_partly:
 
 @dataclass(frozen=True)
 class FrozenPlayerInRoom_archieve:
-    cards: List[int]
+    cards: List[Card]
     location: playerRoomLocation
 
 
@@ -62,12 +62,12 @@ class FROZEN_STATUS_PARTLY:
     currentRound:ROUND
     skipCnt:int
     currentPlayerLocation:playerRoomLocation
-    yourCards:Tuple[int,...]
+    yourCards:Tuple[Card,...]
     cardHeapLength:int
     discardHeapLength:int
-    discardHeap:Tuple[int,...]
-    atkCardHeap:Tuple[int,...]
-    defeatedBosses:Tuple[int,...]
+    discardHeap:Tuple[Card,...]
+    atkCardHeap:Tuple[Card,...]
+    defeatedBosses:Tuple[Card,...]
     currentBoss:FROZEN_BOSS
     players:Tuple[FrozenPlayerInRoom_partly,...]
 
@@ -90,13 +90,13 @@ class FROZEN_STATUS:
     players:Tuple[FrozenPlayerInRoom_archieve,...]
     currentPlayerLocation:playerRoomLocation
     
-    card_heap:Tuple[int,...]
-    disCardHeap:Tuple[int,...]
-    atkCardHeap:Tuple[int,...]
+    card_heap:Tuple[Card,...]
+    disCardHeap:Tuple[Card,...]
+    atkCardHeap:Tuple[Card,...]
     
-    defeatedBosses:Tuple[int,...]
+    defeatedBosses:Tuple[Card,...]
     currentBoss:FROZEN_BOSS
-    boss_heap:Tuple[int,...]
+    boss_heap:Tuple[Card,...]
     
     talking:Tuple[TALKING_MESSAGE,...]   
 

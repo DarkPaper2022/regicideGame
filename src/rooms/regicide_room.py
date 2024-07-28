@@ -10,6 +10,7 @@ from include.defineRegicideMessage import (
     FROZEN_STATUS_PARTLY,
     FROZEN_BOSS,
     TALKING_MESSAGE,
+    Card,
     FrozenPlayerInRoom_partly,
     FrozenPlayerInRoom_archieve,
     playerRoomLocation,
@@ -22,7 +23,7 @@ from include.defineWebSystemMessage import (
     DATATYPE,
 )
 
-from include.defineError import CardError
+from include.defineError import CardDenial
 from include.defineColor import COLOR, cardToNum
 from include.defineRound import ROUND
 from include.myLogger import logger
@@ -37,9 +38,9 @@ from src.web_system import WEB
 
 class BOSS:
     color: Union[COLOR, None]
-    name: int
+    name: Card
 
-    def __init__(self, name: int):
+    def __init__(self, name: Card):
         self.name = name
         self.atk = 10 + 5 * ((name % 13) - 10)
         self.hp = 2 * self.atk
@@ -77,7 +78,7 @@ class BOSS:
 
 
 class PLAYER:
-    cards: List[int]
+    cards: List[Card]
     location: playerRoomLocation
     webSystemID: playerWebSystemID
     userName: str
@@ -88,7 +89,7 @@ class PLAYER:
         self.userName = userName
         self.webSystemID = webSystemID
 
-    def deleteCards(self, cards: List[int]):
+    def deleteCards(self, cards: List[Card]):
         for card in cards:
             self.cards.remove(card)
 
@@ -136,16 +137,16 @@ class ROOM:
 
     currentRound: ROUND
 
-    defeated_boss_heap: Deque[int]
+    defeated_boss_heap: Deque[Card]
     currentBoss: BOSS
     boss_heap: Deque[BOSS]
 
     current_player: PLAYER
     playerList: List[PLAYER]
 
-    discard_heap: Deque[int]
-    atk_heap: Deque[int]
-    card_heap: Deque[int]
+    discard_heap: Deque[Card]
+    atk_heap: Deque[Card]
+    card_heap: Deque[Card]
 
     talkings: TALKING
 
@@ -280,13 +281,13 @@ class ROOM:
                         self.current_player.webSystemID,
                         "你小子乱出牌？看规则书吧你！\n",
                     )
-            except CardError as e:
+            except CardDenial as e:
                 self.ioSendException(self.current_player.webSystemID, str(e))
         self._atkRoundHandleLegalCards(cards)  # here change state
         return
 
     # ret change the state
-    def _atkRoundHandleLegalCardsWithoutJoker(self, cards: List[int]) -> None:
+    def _atkRoundHandleLegalCardsWithoutJoker(self, cards: List[Card]) -> None:
         if len(cards) == 0:
             self.currentRound = ROUND.defend
             # self.simpleChangePlayer() 不用改哦
@@ -334,7 +335,7 @@ class ROOM:
             return
 
     # ret: change the state
-    def _atkRoundHandleLegalCards(self, cards: List[int]) -> None:
+    def _atkRoundHandleLegalCards(self, cards: List[Card]) -> None:
         self.current_player.deleteCards(cards)
         for card in cards:
             self.atk_heap.appendleft(card)
@@ -351,7 +352,7 @@ class ROOM:
             self._atkRoundHandleLegalCardsWithoutJoker(cards)  # here change state
             return
 
-    def _atkRoundCheckLegalCards(self, cards: List[int]) -> bool:
+    def _atkRoundCheckLegalCards(self, cards: List[Card]) -> bool:
         if len(cards) > self.maxHandSize:
             return False
         elif len(cards) == 0:
@@ -432,7 +433,7 @@ class ROOM:
                         self.current_player.webSystemID,
                         "你小子乱弃牌？看规则书吧你！\n",
                     )
-            except CardError as e:
+            except CardDenial as e:
                 self.ioSendException(self.current_player.webSystemID, str(e))
         self.current_player.deleteCards(cards)
         for card in cards:
@@ -442,7 +443,7 @@ class ROOM:
         self.currentRound = ROUND.atk
         return
 
-    def _defendRoundCheckLegalCards(self, cards: List[int]) -> bool:
+    def _defendRoundCheckLegalCards(self, cards: List[Card]) -> bool:
         for card in cards:
             if card not in self.current_player.cards:
                 return False
@@ -503,15 +504,15 @@ class ROOM:
         self.boss_heap = deque()
         for num in [10, 11, 12]:
             for color in random.sample(list(COLOR), 4):
-                self.boss_heap.append(BOSS(color.value * 13 + num))
+                self.boss_heap.append(BOSS(Card(color.value * 13 + num)))
         self.currentBoss = self.boss_heap.popleft()
 
         self.card_heap = deque()
         for color in list(COLOR):
             for i in range(10):
-                self.card_heap.append(color.value * 13 + i)
-        self.card_heap.append(53)
-        self.card_heap.append(52)
+                self.card_heap.append(Card(color.value * 13 + i))
+        self.card_heap.append(Card(53))
+        self.card_heap.append(Card(52))
         random.shuffle(self.card_heap)
         self.discard_heap = deque()
         self.atk_heap = deque()
@@ -676,7 +677,7 @@ class ROOM:
             self.playerList.append(player)
         return
 
-    async def ioGetCards(self) -> List[int]:
+    async def ioGetCards(self) -> List[Card]:
         while True:
             messgae = await self.mixSeperator(
                 [(self.current_player.location, REGICIDE_DATATYPE.card)]

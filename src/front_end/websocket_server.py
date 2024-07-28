@@ -30,7 +30,7 @@ from include.defineWebSystemMessage import (
 
 from dataclasses import dataclass
 from include.defineError import AuthDenial, MessageFormatError, RegisterDenial
-from include.JSON_tools import strToCard, ComplexFrontEncoder
+from include.JSON_tools import str_to_card, ComplexFrontEncoder
 from include.JSON_tools import *
 from include.defineRound import ROUND
 

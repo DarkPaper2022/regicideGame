@@ -10,20 +10,17 @@
     "definitions": {
         "card": {
             "oneOf": [
-                { "type": "integer" },
                 {
-                    "type": "string",
-                    "pattern": "^(梅花|方片|红桃|黑桃)(A|2|3|4|5|6|7|8|9|10|J|Q|K)$|^小王$|^大王$"
-                }
+                    "description": "0 表示梅花A, 13 表示方片A, 26 表示红桃A, 39表示黑桃A, 52 表示小王, 53 表示大王。 具体请查看 include.JSON_tools.card_to_str_chs",
+                    "type": "integer"
+                },
+                { "type": "string", "pattern": "^(梅花|方片|红桃|黑桃)(A|2|3|4|5|6|7|8|9|10|J|Q|K)$|^小王$|^大王$" },
+                { "type": "string", "pattern": "^(C|D|H|S)(A|2|3|4|5|6|7|8|9|10|J|Q|K)$|^J1$|^J2$" }
             ]
         },
         "room_status": {
             "oneOf": [
-                {
-                    "type": "object",
-                    "properties": { "roomID": { "const": -1 } },
-                    "required": ["roomID"]
-                },
+                { "type": "object", "properties": { "roomID": { "const": -1 } }, "required": ["roomID"] },
                 {
                     "type": "object",
                     "properties": {
@@ -52,24 +49,12 @@
                 "currentRound": { "enum": ["atk", "defend", "jokerTime", "preparing"] },
                 "skipCnt": { "enum": [0, 1, 2] },
                 "currentPlayerLocation": { "enum": [0, 1, 2, 3] },
-                "yourCards": {
-                    "type": "array",
-                    "items": { "$ref": "#/definitions/card" }
-                },
+                "yourCards": { "type": "array", "items": { "$ref": "#/definitions/card" } },
                 "cardHeapLength": { "type": "integer" },
                 "discardHeapLength": { "type": "integer" },
-                "discardHeap": {
-                    "type": "array",
-                    "items": { "$ref": "#/definitions/card" }
-                },
-                "atkCardHeap": {
-                    "type": "array",
-                    "items": { "$ref": "#/definitions/card" }
-                },
-                "defeatedBosses": {
-                    "type": "array",
-                    "items": { "$ref": "#/definitions/card" }
-                },
+                "discardHeap": { "type": "array", "items": { "$ref": "#/definitions/card" } },
+                "atkCardHeap": { "type": "array", "items": { "$ref": "#/definitions/card" } },
+                "defeatedBosses": { "type": "array", "items": { "$ref": "#/definitions/card" } },
                 "currentBoss": {
                     "type": "object",
                     "properties": {

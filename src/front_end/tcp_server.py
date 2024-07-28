@@ -25,7 +25,7 @@ from include.defineWebSystemMessage import (
 )
 from dataclasses import dataclass
 from include.defineError import AuthDenial, MessageFormatError, RegisterDenial
-from include.TCP_UI_tools import cardsToStr, bossToStr, strToCard, translate_dict
+from include.TCP_UI_tools import cards_to_str_TCP, bossToStr, str_to_card, translate_dict
 from include.defineRound import ROUND
 
 UI_HEIGHT = 30
@@ -192,7 +192,7 @@ class TCP_Client:
                 if len(l) == 1 or l[1] == b"":
                     room_data = []
                 else:
-                    room_data = [strToCard(card.strip().decode()) for card in l[1].split()]
+                    room_data = [str_to_card(card.strip().decode()) for card in l[1].split()]
             elif data_type == REGICIDE_DATATYPE.SPEAK:
                 room_data = TALKING_MESSAGE(time.time(), self.userName, l[1].decode())
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
@@ -262,7 +262,7 @@ class TCP_Client:
         cardHeapLengthStr: str = f"牌堆还剩{status.cardHeapLength}张牌\n"
         discardHeapLengthStr = f"弃牌堆有{status.discardHeapLength}张牌\n"
         defeatedBossesStr = (
-            f"您已经打败了{(cardsToStr(status.defeatedBosses))},还有{12 - len(status.defeatedBosses)}个哦\n"
+            f"您已经打败了{(cards_to_str_TCP(status.defeatedBosses))},还有{12 - len(status.defeatedBosses)}个哦\n"
             if len(status.defeatedBosses) != 0
             else "还有12个boss要打哦\n"
         )
@@ -285,8 +285,8 @@ class TCP_Client:
             )
         )
         currentPlayerAndRoundStr = currentRoundStr + "," + currentPlayerStr
-        disCardHeapStr = f"""弃牌堆里有这些牌:{cardsToStr(status.discardHeap)}\n"""
-        atkCardHeapStr = f"""攻击堆里有这些牌:{cardsToStr(status.atkCardHeap)}\n"""
+        disCardHeapStr = f"""弃牌堆里有这些牌:{cards_to_str_TCP(status.discardHeap)}\n"""
+        atkCardHeapStr = f"""攻击堆里有这些牌:{cards_to_str_TCP(status.atkCardHeap)}\n"""
         playersStr: str = "您的队友:"
         for player in status.players:
             preDelta = player.playerLocation - status.yourLocation
@@ -299,7 +299,7 @@ class TCP_Client:
 
 """
         yourCardsStr = f"""{"YourCards"}:
-        {cardsToStr(status.yourCards)}
+        {cards_to_str_TCP(status.yourCards)}
     """
         currentBossStr = bossToStr(status.currentBoss)
         re: str = (

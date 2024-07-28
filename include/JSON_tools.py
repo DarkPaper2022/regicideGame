@@ -1,8 +1,9 @@
-from include.TCP_UI_tools import strToCard
+from include.defineError import CardDenial
 from include.defineRegicideMessage import (
     FROZEN_STATUS_PARTLY,
     FROZEN_BOSS,
     TALKING_MESSAGE,
+    Card,
     FrozenPlayerInRoom_partly,
 )
 from include.defineWebSystemMessage import (
@@ -20,6 +21,7 @@ from dataclasses import dataclass, asdict
 from include.myLogger import logger
 import math
 import json
+import re
 from enum import Enum
 
 
@@ -51,6 +53,105 @@ class JSON_WRAPPED_GAME_STATUS:
     playerName: str
     playerLevel: PLAYER_LEVEL
 
+
+def card_to_str_chs(card: Card) -> str:
+    if card == 52:
+        return "小王"
+    elif card == 53:
+        return "大王"
+    else:
+        num = card % 13 + 1
+        numStr = (
+            "A"
+            if (num == 1)
+            else (
+                "J"
+                if (num == 11)
+                else "Q" if (num == 12) else "K" if (num == 13) else str(num)
+            )
+        )
+        color = COLOR(math.floor(card / 13))
+        colorStr = str(color)
+        return colorStr + numStr
+
+def str_to_card_chs(cardStr: str) -> Card:
+    if cardStr == "小王":
+        return Card(52)
+    elif cardStr == "大王":
+        return Card(53)
+    else:
+        l = re.match(r"^(梅花|方片|红桃|黑桃)(A|2|3|4|5|6|7|8|9|10|J|Q|K)$", cardStr)
+        assert l is not None, "cardStr is not a card"
+        color_str = l.group(1)
+        num_str = l.group(2)
+        color = (
+            COLOR.H
+            if color_str == "红桃"
+            else (
+                COLOR.D
+                if color_str == "方片"
+                else (
+                    COLOR.C
+                    if color_str == "梅花"
+                    else COLOR.S if color_str == "黑桃" else None
+                )
+            )
+        )
+        num_str_dict = {"A": 1, "J": 11, "Q": 12, "K": 13}
+        num: Optional[int] = num_str_dict.get(num_str)
+        if num is None:
+            num = int(num_str) if 1 <= int(num_str) <= 10 else None
+        if num is None:
+            raise CardDenial("输入处理出错")
+        else:
+            assert color is not None, "color is None"
+            return Card(color.value * 13 + num - 1)
+
+def str_to_card_eng(b: str) -> Card:
+    s = b
+    try:
+        assert s[0] in [c.name for c in COLOR]
+    except:
+        raise CardDenial("输入处理出错")
+    color = COLOR[s[0]].value
+    sRest = s[1:]
+    card_str_dict = {"A": 1, "J": 11, "Q": 12, "K": 13}
+    num:Optional[int] = card_str_dict.get(sRest)
+    if num is None:
+        num = int(sRest) if 1 <= int(sRest) <= 10 else None
+    if num is None:
+        raise CardDenial("输入处理出错")
+    else:
+        return Card(color * 13 + num - 1)
+
+def str_to_card_num(card_str: str) -> Card:
+    try:    
+        card = int(card_str)
+    except:
+        raise CardDenial("输入处理出错")
+    if card < 0 or card > 53:
+        raise CardDenial("输入处理出错")
+    else:
+         return Card(card)
+
+def str_to_card(cardStr:str) -> Card:
+    try:
+        card = str_to_card_chs(cardStr)
+        return card
+    except CardDenial:
+        pass
+    
+    try:
+        card = str_to_card_eng(cardStr)
+        return card
+    except CardDenial:
+        pass
+    
+    try:
+        card = str_to_card_num(cardStr)
+        return card
+    except CardDenial:
+        raise CardDenial("输入处理出错")    
 
 class ComplexFrontEncoder(json.JSONEncoder):
     def __init__(self, *args, **kwargs):
@@ -127,24 +228,26 @@ class ComplexFrontEncoder(json.JSONEncoder):
             }
         elif isinstance(obj, FROZEN_STATUS_PARTLY):
             return {
-                "skipCnt":obj.skipCnt,
+                "skipCnt": obj.skipCnt,
                 "totalPlayer": obj.totalPlayer,
                 "cardMax": 9 - obj.totalPlayer,
                 "yourLocation": obj.yourLocation,
                 "currentRound": obj.currentRound.name,
                 "currentPlayerLocation": obj.currentPlayerLocation,
-                "yourCards": self.default(obj.yourCards),
+                "yourCards": [card_to_str_chs(card) for card in obj.yourCards],
                 "cardHeapLength": obj.cardHeapLength,
                 "discardHeapLength": obj.discardHeapLength,
-                "discardHeap": self.default(obj.discardHeap),
-                "atkCardHeap": self.default(obj.atkCardHeap),
-                "defeatedBosses": self.default(obj.defeatedBosses),
+                "discardHeap": [card_to_str_chs(card) for card in obj.discardHeap],
+                "atkCardHeap": [card_to_str_chs(card) for card in obj.atkCardHeap],
+                "defeatedBosses": [card_to_str_chs(card) for card in obj.defeatedBosses],
                 "currentBoss": self.default(obj.currentBoss),
-                "players": self.default(sorted(obj.players, key=lambda x: x.playerLocation)),
+                "players": self.default(
+                    sorted(obj.players, key=lambda x: x.playerLocation)
+                ),
             }
         elif isinstance(obj, FROZEN_BOSS):
             return {
-                "name": obj.name,
+                "name": card_to_str_chs(obj.name),
                 "atk": obj.atk,
                 "hp": obj.hp,
                 "color": obj.color.name if obj.color is not None else None,
@@ -201,6 +304,8 @@ type_dict_str_to_enum: dict[str, dict[str, DATATYPE]] = {
 """
 
 
+
+
 func_dict: Dict[DATATYPE, Callable] = {
     WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON: lambda: None,
     WEB_SYSTEM_DATATYPE.ASK_LOG_IN: lambda data: DATA_ASK_LOGIN(
@@ -215,7 +320,7 @@ func_dict: Dict[DATATYPE, Callable] = {
     ),
     WEB_SYSTEM_DATATYPE.ASK_JOIN_ROOM: lambda data: int(data["joinRoomID"]),
     REGICIDE_DATATYPE.card: lambda data: tuple(
-        [strToCard(card) for card in data["cards"]]
+        [str_to_card(card) for card in data["cards"]]
     ),
     REGICIDE_DATATYPE.SPEAK: lambda data: str(data["talkMessage"]),
 }
