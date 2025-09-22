@@ -22,14 +22,12 @@
             "oneOf": [
                 { "type": "object", "properties": { "roomID": { "const": -1 } }, "required": ["roomID"] },
                 {
-                    "type": "object",
                     "properties": {
                         "roomID": { "type": "integer" },
                         "maxPlayer": { "type": "integer" },
                         "playerList": {
                             "type": "array",
                             "items": {
-                                "type": "object",
                                 "properties": {
                                     "playerName": { "type": "string" },
                                     "playerPrepared": { "type": "boolean" }
@@ -56,7 +54,6 @@
                 "atkCardHeap": { "type": "array", "items": { "$ref": "#/definitions/card" } },
                 "defeatedBosses": { "type": "array", "items": { "$ref": "#/definitions/card" } },
                 "currentBoss": {
-                    "type": "object",
                     "properties": {
                         "name": { "$ref": "#/definitions/card" },
                         "atk": { "type": "integer" },
@@ -73,7 +70,8 @@
                             "playerName": { "type": "string" },
                             "playerHandCardCnt": { "type": "integer" },
                             "playerLocation": { "enum": [0, 1, 2, 3] }
-                        }
+                        },
+                        "required": ["playerName", "playerHandCardCnt", "playerLocation"]
                     }
                 }
             },
@@ -108,6 +106,40 @@
                     {
                         "if": { "properties": { "dataName": { "const": "GAME_STATUS" } } },
                         "then": { "properties": { "data": { "$ref": "#/definitions/game_status" } } },
+                        "else": false
+                    }
+                ]
+            },
+            "else": false
+        },
+        {
+            "if": { "properties": { "dataType": { "const": "ACTION" } } },
+            "then": {
+                "anyOf": [
+                    {
+                        "if": { "properties": { "dataName": { "const": "CARD" } } },
+                        "then": {
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cards": { "type": "array", "items": { "$ref": "#/definitions/card" } }
+                                    }
+                                }
+                            }
+                        },
+                        "else": false
+                    },
+                    {
+                        "if": { "properties": { "dataName": { "const": "JOKER" } } },
+                        "then": {
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "properties": { "jokerLocation": { "enum": [0, 1, 2, 3] } }
+                                }
+                            }
+                        },
                         "else": false
                     }
                 ]

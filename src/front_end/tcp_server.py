@@ -5,15 +5,15 @@ import json
 import asyncio
 import time
 from dataclasses import asdict
-from include.myLogger import logger
+from src.include.myLogger import logger
 from typing import List, Any, Tuple, Union
 from src.web_system import WEB
-from include.defineRegicideMessage import (
+from src.include.defineRegicideMessage import (
     TALKING_MESSAGE,
     FROZEN_STATUS_PARTLY,
     REGICIDE_DATATYPE,
 )
-from include.defineWebSystemMessage import (
+from src.include.defineWebSystemMessage import (
     MESSAGE,
     PLAYER_LEVEL,
     playerWebSystemID,
@@ -24,9 +24,9 @@ from include.defineWebSystemMessage import (
     PLAYER_STATUS,
 )
 from dataclasses import dataclass
-from include.defineError import AuthDenial, MessageFormatError, RegisterDenial
-from include.TCP_UI_tools import cards_to_str_TCP, bossToStr, str_to_card, translate_dict
-from include.defineRound import ROUND
+from src.include.defineError import AuthDenial, MessageFormatError, RegisterDenial
+from src.include.TCP_UI_tools import cards_to_str_TCP, bossToStr, str_to_card, translate_dict
+from src.include.defineRound import ROUND
 
 UI_HEIGHT = 30
 
@@ -149,7 +149,7 @@ class TCP_Client:
             return
 
     # send To netcat
-    async def send_thread_func(self):
+    async def send_thread_func(self) -> None:
         while True:
             message = await self.web.playerGetMessage(
                 self.playerIndex, self.playerCookie
@@ -353,7 +353,7 @@ class TCP_SERVER:
         self.web = web
         self.loop = loop
 
-    async def serverThreadFunc(self):
+    async def serverThreadFunc(self) -> None:
         cnt = 0
         while True:
             try:
@@ -377,6 +377,6 @@ class TCP_SERVER:
         logger.error("I GOT HERE: tcp server end")
 
 
-async def tcpClientHandler(reader, writer, web):
+async def tcpClientHandler(reader, writer, web) -> None:
     tcpClient = TCP_Client(reader, writer, web, timeOutSetting=300)
     await tcpClient.auth_thread_func()

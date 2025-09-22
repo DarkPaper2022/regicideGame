@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Union, Deque, Tuple
 from queue import Queue as LockQueue
 import pickle
 import uuid
-from include.defineRegicideMessage import (
+from src.include.defineRegicideMessage import (
     FROZEN_STATUS,
     REGICIDE_DATATYPE,
     FROZEN_STATUS_PARTLY,
@@ -16,17 +16,17 @@ from include.defineRegicideMessage import (
     playerRoomLocation,
 )
 
-from include.defineWebSystemMessage import (
+from src.include.defineWebSystemMessage import (
     MESSAGE,
     playerWebSystemID,
     WEB_SYSTEM_DATATYPE,
     DATATYPE,
 )
 
-from include.defineError import CardDenial
-from include.defineColor import COLOR, cardToNum
-from include.defineRound import ROUND
-from include.myLogger import logger
+from src.include.defineError import CardDenial
+from src.include.defineColor import COLOR, cardToNum
+from src.include.defineRound import ROUND
+from src.include.myLogger import logger
 from dataclasses import dataclass
 import random
 import asyncio
@@ -164,6 +164,7 @@ class ROOM:
         self.currentRound = ROUND.preparing
         self.status_to_load = None
         self.skip_cnt = 0
+
     def froze(self) -> FROZEN_STATUS:
         players_arch = tuple(
             [
@@ -491,9 +492,9 @@ class ROOM:
 
     def init_game(self):
         # 这里的game向web提供了4个位置,由web来决定哪个位置编号给哪个客户端，目前来看是按顺序给的
-        maxPlayer = self.playerTotalNum
-        self.maxHandSize = 9 - maxPlayer
-        self.playerTotalNum = maxPlayer
+        max_player = self.playerTotalNum
+        self.maxHandSize = 9 - max_player
+        self.playerTotalNum = max_player
 
         self.talkings.clear()
 
@@ -645,15 +646,19 @@ class ROOM:
         while True:
             message = await self.mainRead()
             if message.data_type == REGICIDE_DATATYPE.askStatus:
-                #TODO:admin ask
+                # TODO:admin ask
                 location = self._webSystemID_toPlayerLocation(message.playerID)
-                if location is None: 
-                    raise Exception(f"systemID:{message.playerID} error when asking status, not found in {[p.webSystemID for p in self.playerList]}") 
+                if location is None:
+                    raise Exception(
+                        f"systemID:{message.playerID} error when asking status, not found in {[p.webSystemID for p in self.playerList]}"
+                    )
                 self.ioSendStatus(location)
             elif message.data_type == REGICIDE_DATATYPE.REGICIDE_ACTION_TALKING_MESSAGE:
                 self.ioSendTalkings(message.playerID)
             elif message.data_type == WEB_SYSTEM_DATATYPE.dumpRoom:
-                pickle.dump(self, open(f"data/room/{message.roomData}.pkl", "wb"))
+                pickle.dump(
+                    self.froze(), open(f"data/room/{message.roomData}.pkl", "wb")
+                )
             elif message.data_type == WEB_SYSTEM_DATATYPE.LOAD_ROOM:
                 path = f"data/room/{message.roomData}"
                 if not os.path.exists(path):
@@ -682,11 +687,12 @@ class ROOM:
             messgae = await self.mixSeperator(
                 [(self.current_player.location, REGICIDE_DATATYPE.card)]
             )
-            try:
+            if isinstance(messgae.roomData, list) and all(
+                [isinstance(card, int) for card in messgae.roomData]
+            ):
                 return messgae.roomData
-            except:
-                self.ioSendException(messgae.playerID, "卡牌格式错误")
-                continue
+            else:
+                self.ioSendException(self.current_player.webSystemID, "这也不是牌啊")
 
     async def ioGetJokerNum(self) -> playerRoomLocation:
         while True:
@@ -700,9 +706,15 @@ class ROOM:
                 self.talkings.insert(message.roomData)
                 for i in range(self.playerTotalNum):
                     self.ioSendTalkings(self.playerList[i].webSystemID)
+            elif message.data_type == REGICIDE_DATATYPE.confirmJoker:
+                if isinstance(message.roomData, int):
+                    return playerRoomLocation(message.roomData)
+                else:
+                    self.ioSendException(
+                        self.current_player.webSystemID, "这也不是位置啊"
+                    )
             else:
-                # TODO:bad logic
-                return message.roomData
+                raise Exception("strange message")
 
     async def mainRead(self) -> MESSAGE:
         try:

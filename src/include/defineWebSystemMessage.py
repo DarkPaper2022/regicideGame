@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Any, List, Tuple, Union, NewType, Dict, Optional
-from include.defineColor import COLOR
-from include.defineRound import ROUND
+from src.include.defineColor import COLOR
+from src.include.defineRound import ROUND
 from enum import Enum
-from include.defineRegicideMessage import REGICIDE_DATATYPE
-from include.defineError import DINAL_TYPE
+from src.include.defineRegicideMessage import REGICIDE_DATATYPE
+from src.include.defineError import DINAL_TYPE
 
 playerWebSystemID = NewType("playerWebSystemID", int)
 

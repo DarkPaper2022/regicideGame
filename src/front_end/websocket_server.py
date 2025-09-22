@@ -5,17 +5,17 @@ from websockets.server import serve, WebSocketServerProtocol
 import asyncio
 import time
 import json
-from include.myLogger import logger
+from src.include.myLogger import logger
 from typing import List, Any, Tuple, Union, Optional
 from src.web_system import WEB
 
-from include.defineRegicideMessage import (
+from src.include.defineRegicideMessage import (
     TALKING_MESSAGE,
     FROZEN_STATUS_PARTLY,
     REGICIDE_DATATYPE,
 )
 
-from include.defineWebSystemMessage import (
+from src.include.defineWebSystemMessage import (
     MESSAGE,
     playerWebSystemID,
     WEB_SYSTEM_DATATYPE,
@@ -26,13 +26,20 @@ from include.defineWebSystemMessage import (
     DINAL_TYPE,
     DATA_ANSWER_CONNECTION,
     FROZEN_GAME_TYPE,
+    PLAYER_LEVEL
 )
 
 from dataclasses import dataclass
-from include.defineError import AuthDenial, MessageFormatError, RegisterDenial
-from include.JSON_tools import str_to_card, ComplexFrontEncoder
-from include.JSON_tools import *
-from include.defineRound import ROUND
+from src.include.defineError import (
+    AuthDenial,
+    Denial,
+    MessageFormatError,
+    PlayerStatusDenial,
+    RegisterDenial,
+)
+from src.include.JSON_tools import str_to_card, ComplexFrontEncoder
+from src.include.JSON_tools import *
+from src.include.defineRound import ROUND
 
 
 class WEBSOCKET_CLIENT:
@@ -42,7 +49,7 @@ class WEBSOCKET_CLIENT:
     userName: Optional[str]  # be careful, once initialized it should never be changed
     web: WEB
     roomID: int
-    player_level:PLAYER_LEVEL
+    player_level: PLAYER_LEVEL
 
     def __init__(self, websocket, web, timeOutSetting: int) -> None:
         self.websocket = websocket
@@ -159,9 +166,11 @@ class WEBSOCKET_CLIENT:
             elif data_type == WEB_SYSTEM_DATATYPE.ASK_LOG_IN:
                 try:
                     login_data: DATA_ASK_LOGIN = data
-                    self.playerCookie, self.systemID, self.player_level = self.web.PLAYER_LOG_IN(
-                        playerName=login_data.username,
-                        password=login_data.password,
+                    self.playerCookie, self.systemID, self.player_level = (
+                        self.web.PLAYER_LOG_IN(
+                            playerName=login_data.username,
+                            password=login_data.password,
+                        )
                     )
                     username = login_data.username
                     break
@@ -245,6 +254,7 @@ class WEBSOCKET_CLIENT:
             data_type = re[0]
             data = re[1]
         try:
+            # preset the room_ID
             room_ID = -1 if type(data_type) == WEB_SYSTEM_DATATYPE else self.roomID
             room_data: Any = None
             web_data = None
@@ -253,7 +263,8 @@ class WEBSOCKET_CLIENT:
                 room_data = card_data
             elif data_type == REGICIDE_DATATYPE.SPEAK:
                 speak_data: str = data
-                assert self.userName is not None
+                if self.userName is None:
+                    raise PlayerStatusDenial("")
                 room_data = TALKING_MESSAGE(time.time(), self.userName, speak_data)
             elif data_type == REGICIDE_DATATYPE.confirmJoker:
                 joker_data: int = data
@@ -266,7 +277,7 @@ class WEBSOCKET_CLIENT:
                 web_data = create_data
             else:
                 pass
-        except:
+        except Denial:
             raise MessageFormatError("Fuck you!")
         assert self.systemID is not None
         message = MESSAGE(room_ID, self.systemID, data_type, room_data, web_data)
@@ -280,9 +291,11 @@ class WEBSOCKET_CLIENT:
                 -1 if room_status.playerRoom is None else room_status.playerRoom.roomID
             )
         elif message.data_type == REGICIDE_DATATYPE.UPDATE_GAME_STATUS:
-            if self.userName is  None:
+            if self.userName is None:
                 raise Exception("status not consist")
-            wrapped = JSON_WRAPPED_GAME_STATUS(message.roomData, self.userName, self.player_level) 
+            wrapped = JSON_WRAPPED_GAME_STATUS(
+                message.roomData, self.userName, self.player_level
+            )
             message.roomData = wrapped
         if message.roomID != self.roomID and message.roomID != -1:
             logger.error(f"奇怪的信号?\n")
@@ -320,7 +333,7 @@ class WEBSOCKET_SERVER:
         self.web = web
         self.loop = loop
 
-    async def serverThreadFunc(self):
+    async def serverThreadFunc(self) :
         cnt = 0
         while True:
             try:

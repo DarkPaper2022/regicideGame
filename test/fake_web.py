@@ -1,6 +1,6 @@
-from include.myLockQueue import myLockQueue
-from src.test.fake_tcp_client import fake_client
-from include.JSON_tools import ComplexFrontEncoder
+from src.include.myLockQueue import myLockQueue
+from test.fake_tcp_client import fake_client
+from src.include.JSON_tools import ComplexFrontEncoder
 import json
 class fake_web:
     lq: myLockQueue

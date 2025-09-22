@@ -1,8 +1,8 @@
 import math
 import queue
 import src.rooms.regicide_room as regicide_room
-from include.defineWebSystemMessage import *
-from include.myLockQueue import *
+from src.include.defineWebSystemMessage import *
+from src.include.myLockQueue import *
 import asyncio
 import aioconsole   #type: ignore
 from src.test.fake_web import fake_web

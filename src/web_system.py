@@ -2,7 +2,7 @@ from http.cookies import CookieError
 import uuid
 import math
 from dataclasses import dataclass
-from include.defineWebSystemMessage import (
+from src.include.defineWebSystemMessage import (
     MESSAGE,
     playerWebSystemID,
     PLAYER_LEVEL,
@@ -11,11 +11,10 @@ from include.defineWebSystemMessage import (
     DATA_UPDATE_PLAYER_STATUS,
     FROZEN_ROOM_STATUS_inWebSystem,
     PLAYER_STATUS,
-    DINAL_TYPE,
 )
 
-from include.defineWebSystemMessage import *
-from include.defineError import (
+from src.include.defineWebSystemMessage import *
+from src.include.defineError import (
     AuthDenial,
     CookieDenial,
     Denial,
@@ -29,12 +28,12 @@ from include.defineError import (
     RoomOutOfRangeDenial,
     RoomNotExistDenial,
 )
-from include.myLockQueue import myLockQueue as LockQueue
+from src.include.myLockQueue import myLockQueue as LockQueue
 from collections import deque
-from typing import List, Union, Tuple
-from include.myLogger import logger
+from typing import List, Union, Tuple, Optional
+from src.include.myLogger import logger
 from enum import Enum
-from include.DarkPaperMySQL import sqlSystem as sqlSystem
+from src.include.DarkPaperMySQL import sqlSystem as sqlSystem
 from importlib import metadata
 
 room_ID_WEBSYSTEM = -1
@@ -69,7 +68,7 @@ class WEB_PLAYER:
 
     # arg: player should in the room and not a zombie
     # ret: deal with the player part, you should deal with the room part on your own
-    def leave_room(self):
+    def remove_room(self):
         self.playerRoom = None
         self.playerStatus = PLAYER_STATUS.ROOM_IS_NONE
 
@@ -88,7 +87,7 @@ class WEB_ROOM:
 
     # arg: player should in the room and not a zombie
     # ret: deal with the room part, you should deal with the player part on your own
-    def removePlayer(self, systemID: playerWebSystemID):
+    def remove_player(self, systemID: playerWebSystemID):
         player_out_of_room_message = MESSAGE(
             roomID=self.roomID,
             playerID=player_ID_WEBSYSTEM,
@@ -96,7 +95,7 @@ class WEB_ROOM:
             roomData=None,
             webData=systemID,
         )
-        self.roomQueue.put_nowait(player_out_of_room_message)  # type:ignore
+        self.roomQueue.put_nowait(player_out_of_room_message)
         self.playerIndexs = [p for p in self.playerIndexs if p != systemID]
 
 
@@ -113,8 +112,10 @@ class WEB:
         TODO also, we may have a "gc" to destroy the room which exist too long
             in case the room is not so good
              "gc" for player: we dont do that
-    send and get Func:
-        in send func, we may deal with it according to the hook
+
+    spec:
+        elements, connection, message
+
     """
 
     players: List[Union[WEB_PLAYER, None]]
@@ -134,7 +135,7 @@ class WEB:
         cookie      playerName+password = cookie 
         """
 
-    async def websystem_message_handler(self):
+    async def websystem_message_handler(self) -> None:
         while True:
             # arg: player or room of the message is not -1
             message = await self.web_system_queue.get()
@@ -293,12 +294,16 @@ class WEB:
             self.player_send_message(message, cookie)
 
     def broadcast_room_status(self, roomID: Optional[int]):
+        if roomID is None:
+            return
+        room = self.rooms[roomID]
+        if room is None:
+            return
         try:
-            room = self.rooms[roomID]  # type:ignore #TODO
-            for id in room.playerIndexs:  # type:ignore
+            for id in room.playerIndexs:
                 self.player_send_room_status(id)
-        except:
-            pass
+        except PlayerStatusDenial:
+            logger.error(f"player {id} not in system")
 
     def player_send_room_status(self, systemID: playerWebSystemID) -> None:
         """
@@ -312,7 +317,8 @@ class WEB:
         if player.playerRoom is None:
             frozen_room = None
         else:
-            room: WEB_ROOM = self.rooms[player.playerRoom]  # type:ignore
+            room = self.rooms[player.playerRoom]
+            assert room is not None
             frozen_room = FROZEN_ROOM_STATUS_inWebSystem(
                 roomID=room.roomID,
                 maxPlayer=room.maxPlayer,
@@ -326,7 +332,7 @@ class WEB:
                 ],
             )
         message = MESSAGE(
-            -1,
+            room_ID_WEBSYSTEM,
             systemID,
             WEB_SYSTEM_DATATYPE.UPDATE_PLAYER_STATUS,
             None,
@@ -387,6 +393,7 @@ class WEB:
             logger.debug(f"login succeed. status:{player.playerStatus.name}")
             return cookie, systemID, level
         else:
+            # unsupported player level
             raise AuthError
 
     def player_join_room(self, systemID: playerWebSystemID, roomIndex: int) -> None:
@@ -440,7 +447,7 @@ class WEB:
             for a_systemID in room.playerIndexs:
                 if (
                     self.players[a_systemID].playerStatus  # type:ignore
-                    == PLAYER_STATUS.IN_ROOM_PREPARED  # type:ignore
+                    == PLAYER_STATUS.IN_ROOM_PREPARED
                 ):
                     cnt += 1
 
@@ -538,8 +545,8 @@ class WEB:
         ]:
             player: WEB_PLAYER = self.players[systemID]  # type:ignore
             room: WEB_ROOM = self.rooms[player.playerRoom]  # type:ignore
-            room.removePlayer(systemID)
-            player.leave_room()
+            room.remove_player(systemID)
+            player.remove_room()
         elif self._status(systemID) == PLAYER_STATUS.IN_ROOM_PLAYING:
             self._change_player_to_zombie(systemID)
         else:
@@ -554,7 +561,7 @@ class WEB:
             if self._status(playerIndex) == PLAYER_STATUS.IN_ROOM_ZOMBIE:
                 self.players[playerIndex] = None
             else:
-                player.leave_room()
+                player.remove_room()
         self.rooms[roomIndex] = None
 
     # not safe

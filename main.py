@@ -27,7 +27,7 @@ hall = rommBuilder(web)
 atexit.register(web.end_sql)
 
 
-async def main():
+async def main() -> None:
     s_ws = asyncio.create_task(server_ws.serverThreadFunc())
     s_tcp = asyncio.create_task(server_tcp.serverThreadFunc())
     h = asyncio.create_task(hall.start())

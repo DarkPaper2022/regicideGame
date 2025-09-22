@@ -1,6 +1,6 @@
 mysql-connector-python
 websockets
 aioconsole
-
+flask
 # this package is very very useful for testing, though it may be no formal enough   
 # pwntools

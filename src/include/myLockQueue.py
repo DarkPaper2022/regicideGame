@@ -1,7 +1,7 @@
 import asyncio
 from queue import Queue
 
-from include.defineWebSystemMessage import MESSAGE
+from src.include.defineWebSystemMessage import MESSAGE
 
 
 class myLockQueue:
@@ -18,7 +18,7 @@ class myLockQueue:
             m = self.queue.get_nowait()
         return m
 
-    def put_nowait(self, element: MESSAGE):
+    def put_nowait(self, element: MESSAGE) -> None:
         if self.queue.empty():
             self.queue.put_nowait(element)
             self.event.set()

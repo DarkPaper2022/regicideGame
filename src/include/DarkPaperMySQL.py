@@ -1,9 +1,9 @@
 from typing import Tuple,List
 import mysql.connector
 import re
-from include.defineError import AuthDenial,DINAL_TYPE,RegisterDenial,AuthError
-from include.myLogger import logger
-from include.defineWebSystemMessage import playerWebSystemID,PLAYER_LEVEL
+from src.include.defineError import AuthDenial,DINAL_TYPE,RegisterDenial,AuthError
+from src.include.myLogger import logger
+from src.include.defineWebSystemMessage import playerWebSystemID,PLAYER_LEVEL
 import configparser
 config = configparser.ConfigParser()
 config.read('private/config')
@@ -26,7 +26,7 @@ class sqlSystem:
     def checkPassword(self, userName:str, password:str) -> Tuple[playerWebSystemID, PLAYER_LEVEL]:
         try:
             cursor = self.connection.cursor()
-        except:
+        except ValueError:
             self.reconnect()
         cursor.execute('SELECT id, authority, password FROM accounts WHERE username=%s', 
                    (userName,))
@@ -51,7 +51,7 @@ class sqlSystem:
     def raw_register(self,userName:str, password:str, authority:str = "user"):
         try:
             cursor = self.connection.cursor()
-        except:
+        except ValueError:
             self.reconnect()
         sql = "INSERT INTO accounts (username, password, authority) VALUES (%s, %s, %s);"
         cursor.execute(sql, (userName, password, authority))
@@ -70,7 +70,7 @@ class sqlSystem:
         if re.match(pattern, userName) and re.match(pattern, password):
             try:
                 cursor = self.connection.cursor()
-            except:
+            except ValueError:
                 self.reconnect()
             cursor.execute('SELECT id FROM accounts WHERE username=%s', 
                    (userName,))

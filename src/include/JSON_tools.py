@@ -1,24 +1,24 @@
-from include.defineError import CardDenial
-from include.defineRegicideMessage import (
+from src.include.defineError import CardDenial
+from src.include.defineRegicideMessage import (
     FROZEN_STATUS_PARTLY,
     FROZEN_BOSS,
     TALKING_MESSAGE,
     Card,
     FrozenPlayerInRoom_partly,
+    REGICIDE_DATATYPE,
 )
-from include.defineWebSystemMessage import (
+from src.include.defineWebSystemMessage import (
     MESSAGE,
     DATATYPE,
     WEB_SYSTEM_DATATYPE,
-    REGICIDE_DATATYPE,
 )
 
-from include.defineWebSystemMessage import *
-from typing import Tuple, Any, Callable, List
-from include.defineColor import COLOR
-from include.defineRound import ROUND
+from src.include.defineWebSystemMessage import *
+from typing import Tuple, Any, Callable, List, Dict, Optional
+from src.include.defineColor import COLOR
+from src.include.defineRound import ROUND
 from dataclasses import dataclass, asdict
-from include.myLogger import logger
+from src.include.myLogger import logger
 import math
 import json
 import re
@@ -74,6 +74,7 @@ def card_to_str_chs(card: Card) -> str:
         colorStr = str(color)
         return colorStr + numStr
 
+
 def str_to_card_chs(cardStr: str) -> Card:
     if cardStr == "小王":
         return Card(52)
@@ -81,7 +82,8 @@ def str_to_card_chs(cardStr: str) -> Card:
         return Card(53)
     else:
         l = re.match(r"^(梅花|方片|红桃|黑桃)(A|2|3|4|5|6|7|8|9|10|J|Q|K)$", cardStr)
-        assert l is not None, "cardStr is not a card"
+        if l is None:
+            raise CardDenial("cardStr is not a card")
         color_str = l.group(1)
         num_str = l.group(2)
         color = (
@@ -97,6 +99,8 @@ def str_to_card_chs(cardStr: str) -> Card:
                 )
             )
         )
+        if color is None:
+            raise CardDenial("输入处理出错")
         num_str_dict = {"A": 1, "J": 11, "Q": 12, "K": 13}
         num: Optional[int] = num_str_dict.get(num_str)
         if num is None:
@@ -104,19 +108,17 @@ def str_to_card_chs(cardStr: str) -> Card:
         if num is None:
             raise CardDenial("输入处理出错")
         else:
-            assert color is not None, "color is None"
             return Card(color.value * 13 + num - 1)
+
 
 def str_to_card_eng(b: str) -> Card:
     s = b
-    try:
-        assert s[0] in [c.name for c in COLOR]
-    except:
+    if s[0] not in [c.name for c in COLOR]:
         raise CardDenial("输入处理出错")
     color = COLOR[s[0]].value
     sRest = s[1:]
     card_str_dict = {"A": 1, "J": 11, "Q": 12, "K": 13}
-    num:Optional[int] = card_str_dict.get(sRest)
+    num: Optional[int] = card_str_dict.get(sRest)
     if num is None:
         num = int(sRest) if 1 <= int(sRest) <= 10 else None
     if num is None:
@@ -124,34 +126,37 @@ def str_to_card_eng(b: str) -> Card:
     else:
         return Card(color * 13 + num - 1)
 
+
 def str_to_card_num(card_str: str) -> Card:
-    try:    
+    try:
         card = int(card_str)
-    except:
+    except ValueError:
         raise CardDenial("输入处理出错")
     if card < 0 or card > 53:
         raise CardDenial("输入处理出错")
     else:
-         return Card(card)
+        return Card(card)
 
-def str_to_card(cardStr:str) -> Card:
+
+def str_to_card(cardStr: str) -> Card:
     try:
         card = str_to_card_chs(cardStr)
         return card
     except CardDenial:
         pass
-    
+
     try:
         card = str_to_card_eng(cardStr)
         return card
     except CardDenial:
         pass
-    
+
     try:
         card = str_to_card_num(cardStr)
         return card
     except CardDenial:
-        raise CardDenial("输入处理出错")    
+        raise CardDenial("输入处理出错")
+
 
 class ComplexFrontEncoder(json.JSONEncoder):
     def __init__(self, *args, **kwargs):
@@ -239,7 +244,9 @@ class ComplexFrontEncoder(json.JSONEncoder):
                 "discardHeapLength": obj.discardHeapLength,
                 "discardHeap": [card_to_str_chs(card) for card in obj.discardHeap],
                 "atkCardHeap": [card_to_str_chs(card) for card in obj.atkCardHeap],
-                "defeatedBosses": [card_to_str_chs(card) for card in obj.defeatedBosses],
+                "defeatedBosses": [
+                    card_to_str_chs(card) for card in obj.defeatedBosses
+                ],
                 "currentBoss": self.default(obj.currentBoss),
                 "players": self.default(
                     sorted(obj.players, key=lambda x: x.playerLocation)
@@ -304,10 +311,8 @@ type_dict_str_to_enum: dict[str, dict[str, DATATYPE]] = {
 """
 
 
-
-
-func_dict: Dict[DATATYPE, Callable] = {
-    WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON: lambda: None,
+func_dict: Dict[DATATYPE, Callable[[Dict[str, Any]], Any]] = {
+    WEB_SYSTEM_DATATYPE.ILLEAGAL_JSON: lambda data: None,
     WEB_SYSTEM_DATATYPE.ASK_LOG_IN: lambda data: DATA_ASK_LOGIN(
         username=(data["username"]), password=data["password"]
     ),
